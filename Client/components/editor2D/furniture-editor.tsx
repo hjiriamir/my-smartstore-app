@@ -1,0 +1,1689 @@
+"use client"
+
+import Link from "next/link"
+
+import { useEffect } from "react"
+
+import { useState } from "react"
+import { DndProvider, useDrag, useDrop } from "react-dnd"
+import { HTML5Backend } from "react-dnd-html5-backend"
+import { Canvas } from "@react-three/fiber"
+import { OrbitControls } from "@react-three/drei"
+import {
+  Plus,
+  Minus,
+  Save,
+  Package,
+  Settings,
+  Grid,
+  CuboidIcon as Cube,
+  ArrowLeft,
+  Search,
+  Trash2,
+  Snowflake,
+} from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog"
+import { useToast } from "@/hooks/use-toast"
+import { useProductStore } from "@/lib/product-store"
+import { useFurnitureStore } from "@/lib/furniture-store"
+import type { Product } from "@/lib/product-store"
+import type { FurnitureType, FurnitureItem, FurnitureProduct } from "@/lib/furniture-store"
+import {
+  WallDisplay,
+  ClothingRack,
+  AccessoryDisplay,
+  ModularCube,
+  GondolaDisplay,
+  TableDisplay,
+  RefrigeratorDisplay,
+  RefrigeratedShowcase,
+  ClothingDisplay,
+  ClothingWallDisplay,
+} from "@/components/editor2D/furniture-3d-components"
+import * as THREE from "three"
+
+// Drag item types
+const ItemTypes = {
+  PRODUCT: "product",
+  FURNITURE_PRODUCT: "furniture_product",
+}
+
+// Product Item Component (draggable from product list)
+const ProductItem = ({ product }: { product: Product }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.PRODUCT,
+    item: { id: product.primary_Id, type: ItemTypes.PRODUCT },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }))
+
+  return (
+    <div
+      ref={drag}
+      className={`
+        flex flex-col items-center p-2 border rounded-md cursor-move
+        ${isDragging ? "opacity-50" : ""}
+        hover:border-primary hover:bg-primary/5 transition-colors
+      `}
+    >
+      <div className="relative w-16 h-16 bg-white rounded-md flex items-center justify-center overflow-hidden">
+        {product.image ? (
+          <img
+            src={product.image || "/placeholder.svg"}
+            alt={product.name}
+            className="object-contain w-full h-full p-1"
+          />
+        ) : (
+          <Package className="h-8 w-8 text-muted-foreground/30" />
+        )}
+      </div>
+      <div className="mt-2 text-center">
+        <div className="text-xs font-medium truncate w-20">{product.name}</div>
+        <div className="text-[10px] text-muted-foreground truncate w-20">{product.primary_Id}</div>
+      </div>
+    </div>
+  )
+}
+
+// Furniture Cell Component (droppable)
+const FurnitureCell = ({
+  cell,
+  products,
+  onDrop,
+  onRemove,
+  cellWidth,
+  cellHeight,
+}: {
+  cell: { id: string; x: number; y: number; productId: string | null }
+  products: Product[]
+  onDrop: (cellId: string, productId: string) => void
+  onRemove: (cellId: string) => void
+  cellWidth: number
+  cellHeight: number
+}) => {
+  const product = cell.productId ? products.find((p) => p.primary_Id === cell.productId) : null
+
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: [ItemTypes.PRODUCT, ItemTypes.FURNITURE_PRODUCT],
+    drop: (item: { id: string; type: string }) => {
+      onDrop(cell.id, item.id)
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }))
+
+  // For products that are already in the furniture
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.FURNITURE_PRODUCT,
+    item: {
+      id: cell.productId,
+      type: ItemTypes.FURNITURE_PRODUCT,
+    },
+    canDrag: !!cell.productId,
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }))
+
+  return (
+    <div
+      ref={drop}
+      className={`
+        relative border border-dashed flex items-center justify-center
+        ${isOver ? "bg-primary/10 border-primary" : "border-gray-300"}
+        ${product ? "border-solid" : ""}
+      `}
+      style={{
+        width: `${cellWidth}px`,
+        height: `${cellHeight}px`,
+        borderColor: product ? "#22c55e" : undefined,
+      }}
+    >
+      {product && (
+        <div
+          ref={drag}
+          className={`
+            absolute inset-1 flex flex-col items-center justify-center bg-white rounded-sm
+            ${isDragging ? "opacity-50" : ""}
+            cursor-move
+          `}
+        >
+          <div className="relative flex-1 w-full flex items-center justify-center p-1">
+            {product.image ? (
+              <img
+                src={product.image || "/placeholder.svg"}
+                alt={product.name}
+                className="object-contain max-h-full max-w-full"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center bg-muted/20 rounded-sm"
+                style={{ backgroundColor: product.color || "#f3f4f6" }}
+              >
+                <span className="text-xs text-center px-1">{product.name}</span>
+              </div>
+            )}
+          </div>
+          <div className="absolute top-0 right-0 flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 bg-white rounded-full shadow-sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemove(cell.id)
+              }}
+            >
+              <Trash2 className="h-3 w-3 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Furniture Settings Dialog Component
+const FurnitureSettingsDialog = ({ furniture, updateFurniture }) => {
+  const [localFurniture, setLocalFurniture] = useState<FurnitureItem>({ ...furniture })
+
+  const handleChange = (key: keyof FurnitureItem, value: any) => {
+    setLocalFurniture((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleSave = () => {
+    updateFurniture(localFurniture)
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Settings className="h-4 w-4 mr-2" />
+          Paramètres
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Paramètres du meuble</DialogTitle>
+          <DialogDescription>Configurez les paramètres de ce meuble.</DialogDescription>
+        </DialogHeader>
+
+        <Tabs defaultValue="general">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">Général</TabsTrigger>
+            <TabsTrigger value="appearance">Apparence</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm font-medium">Nom du meuble</label>
+              <Input
+                value={localFurniture.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Sections</label>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleChange("sections", Math.max(1, localFurniture.sections - 1))}
+                    disabled={localFurniture.sections <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={localFurniture.sections}
+                    onChange={(e) => handleChange("sections", Math.max(1, Number.parseInt(e.target.value) || 1))}
+                    className="text-center"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleChange("sections", localFurniture.sections + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Emplacements par section</label>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleChange("slots", Math.max(1, localFurniture.slots - 1))}
+                    disabled={localFurniture.slots <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={localFurniture.slots}
+                    onChange={(e) => handleChange("slots", Math.max(1, Number.parseInt(e.target.value) || 1))}
+                    className="text-center"
+                  />
+                  <Button variant="outline" size="icon" onClick={() => handleChange("slots", localFurniture.slots + 1)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Largeur (m)</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={localFurniture.width}
+                  onChange={(e) => handleChange("width", Number.parseFloat(e.target.value))}
+                  className="text-center"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Hauteur (m)</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={localFurniture.height}
+                  onChange={(e) => handleChange("height", Number.parseFloat(e.target.value))}
+                  className="text-center"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Profondeur (m)</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={localFurniture.depth}
+                  onChange={(e) => handleChange("depth", Number.parseFloat(e.target.value))}
+                  className="text-center"
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="appearance" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Couleur du meuble</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  value={localFurniture.color || "#333333"}
+                  onChange={(e) => handleChange("color", e.target.value)}
+                  className="w-10 h-10 rounded cursor-pointer"
+                />
+                <Input
+                  value={localFurniture.color || "#333333"}
+                  onChange={(e) => handleChange("color", e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Annuler</Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button onClick={handleSave}>Appliquer</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Save Furniture Dialog Component
+const SaveFurnitureDialog = ({ furniture, products, onSave }) => {
+  const [name, setName] = useState(furniture.name)
+  const [description, setDescription] = useState("")
+
+  const handleSave = () => {
+    onSave(name, description)
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>
+          <Save className="h-4 w-4 mr-2" />
+          Enregistrer
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Enregistrer le meuble</DialogTitle>
+          <DialogDescription>
+            Enregistrez ce meuble dans votre bibliothèque pour le réutiliser dans vos agencements.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-4">
+          <div>
+            <label className="text-sm font-medium">Nom du meuble</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Description</label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Aperçu</label>
+            <div className="border rounded-md p-4 bg-muted/20">
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-muted/30 rounded-md flex items-center justify-center">
+                  {getFurnitureIcon(furniture.type)}
+                </div>
+                <div>
+                  <h4 className="font-medium">{name}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {furniture.sections} sections, {furniture.slots} emplacements
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {products.filter((p) => p !== null).length} produits placés
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Annuler</Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button onClick={handleSave}>Enregistrer</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Helper function to get furniture icon
+const getFurnitureIcon = (type: FurnitureType) => {
+  switch (type) {
+    case "clothing-rack":
+      return <Package className="h-8 w-8 text-muted-foreground" />
+    case "wall-display":
+      return <Grid className="h-8 w-8 text-muted-foreground" />
+    case "accessory-display":
+      return <Package className="h-8 w-8 text-muted-foreground" />
+    case "modular-cube":
+      return <Cube className="h-8 w-8 text-muted-foreground" />
+    case "gondola":
+      return <Grid className="h-8 w-8 text-muted-foreground" />
+    case "table":
+      return <Package className="h-8 w-8 text-muted-foreground" />
+    case "refrigerator":
+      return <Snowflake className="h-8 w-8 text-muted-foreground" />
+    case "refrigerated-showcase":
+      return <Snowflake className="h-8 w-8 text-muted-foreground" />
+    default:
+      return <Package className="h-8 w-8 text-muted-foreground" />
+  }
+}
+
+// Ajouter une fonction de débogage pour aider à résoudre les problèmes de chargement d'images
+
+// Ajouter cette fonction dans le composant FurnitureEditor
+const debugImageLoading = (productId: string) => {
+  const product = products.find((p) => p.primary_Id === productId)
+  if (!product) {
+    console.error("Product not found:", productId)
+    return
+  }
+
+  console.log("Debugging image loading for product:", product.name)
+  console.log("Image URL:", product.image)
+
+  if (!product.image) {
+    console.warn("Product has no image URL")
+    return
+  }
+
+  // Tester le chargement de l'image
+  const img = new Image()
+  img.crossOrigin = "anonymous"
+  img.onload = () => {
+    console.log("Image loaded successfully:", img.width, "x", img.height)
+
+    // Tester la création d'une texture
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    canvas.width = img.width
+    canvas.height = img.height
+
+    try {
+      ctx.drawImage(img, 0, 0)
+      console.log("Image drawn to canvas successfully")
+
+      // Tester la création d'une texture THREE.js
+      const texture = new THREE.CanvasTexture(canvas)
+      console.log("Texture created successfully:", texture)
+    } catch (err) {
+      console.error("Error drawing image to canvas:", err)
+    }
+  }
+
+  img.onerror = (err) => {
+    console.error("Error loading image:", err)
+    console.log("Trying to fetch the image with fetch API...")
+
+    // Tester avec fetch
+    fetch(product.image)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        console.log("Fetch successful:", response.status)
+        return response.blob()
+      })
+      .then((blob) => {
+        console.log("Blob retrieved:", blob.type, blob.size)
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err)
+      })
+  }
+
+  img.src = product.image
+}
+
+// Main Furniture Editor Component
+export function FurnitureEditor() {
+  const { toast } = useToast()
+  const { products } = useProductStore()
+  const [currentFurniture, setCurrentFurniture] = useState<FurnitureItem>({
+    id: `furniture-${Date.now()}`,
+    type: "wall-display",
+    name: "Présentoir mural",
+    sections: 3,
+    slots: 6,
+    width: 3,
+    height: 2,
+    depth: 0.5,
+    color: "#f0f0f0",
+    x: 0,
+    y: 0,
+    z: 0,
+    rotation: 0,
+  })
+
+  // Cells for 2D view
+  const [cells, setCells] = useState<{ id: string; x: number; y: number; productId: string | null }[]>([])
+  const productsForDisplay = cells
+    .filter((cell) => cell.productId !== null)
+    .map((cell) => {
+      return {
+        id: `product-${cell.id}`,
+        productId: cell.productId,
+        section: cell.y,
+        position: cell.x,
+        furnitureId: currentFurniture.id,
+      }
+    })
+
+  const { addFurniture } = useFurnitureStore()
+
+  const [viewMode, setViewMode] = useState<"2D" | "3D">("2D")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
+
+  // Calculate cell dimensions for 2D view
+  const cellWidth = 100
+  const cellHeight = 80
+
+  // Get unique suppliers
+  const suppliers = [...new Set(products.map((product) => product.supplier))].filter(Boolean).sort()
+
+  // Filter products
+  const filteredProducts = products.filter((product) => {
+    // Search term filter
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.primary_Id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.supplier && product.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
+
+    // Category filter
+    const matchesCategory =
+      !selectedCategory ||
+      product.category1_id === selectedCategory ||
+      product.category2_id === selectedCategory ||
+      product.category3_id === selectedCategory
+
+    // Supplier filter
+    const matchesSupplier = !selectedSupplier || product.supplier === selectedSupplier
+
+    return matchesSearch && matchesCategory && matchesSupplier
+  })
+
+  // Initialize cells when furniture changes
+  useEffect(() => {
+    const newCells = []
+    for (let section = 0; section < currentFurniture.sections; section++) {
+      for (let slot = 0; slot < currentFurniture.slots; slot++) {
+        newCells.push({
+          id: `cell-${section}-${slot}`,
+          x: slot,
+          y: section,
+          productId: null,
+        })
+      }
+    }
+    setCells(newCells)
+  }, [currentFurniture.sections, currentFurniture.slots])
+
+  // Handle drop on cell
+  const handleDrop = (cellId: string, productId: string) => {
+    setCells((prev) => prev.map((cell) => (cell.id === cellId ? { ...cell, productId } : cell)))
+  }
+
+  // Handle remove product from cell
+  const handleRemoveProduct = (cellId: string) => {
+    setCells((prev) => prev.map((cell) => (cell.id === cellId ? { ...cell, productId: null } : cell)))
+  }
+
+  // Update furniture settings
+  const updateFurniture = (updatedFurniture: FurnitureItem) => {
+    setCurrentFurniture(updatedFurniture)
+
+    toast({
+      title: "Paramètres mis à jour",
+      description: "Les paramètres du meuble ont été mis à jour.",
+    })
+  }
+
+  // Save furniture to library
+  const saveFurnitureToLibrary = (name: string, description: string) => {
+    // Get products from cells
+    const furnitureProducts: FurnitureProduct[] = cells
+      .filter((cell) => cell.productId !== null)
+      .map((cell) => ({
+        productId: cell.productId!,
+        section: cell.y,
+        position: cell.x,
+      }))
+
+    // Create furniture item to save
+    const furnitureToSave: FurnitureItem = {
+      ...currentFurniture,
+      id: `furniture-${Date.now()}`,
+      name,
+    }
+
+    // Add to furniture store
+    addFurniture(furnitureToSave, furnitureProducts, description)
+
+    toast({
+      title: "Meuble enregistré",
+      description: `Le meuble "${name}" a été enregistré dans votre bibliothèque.`,
+    })
+  }
+
+  // Ajouter le nouveau type de meuble dans la fonction changeFurnitureType
+  const changeFurnitureType = (type: FurnitureType) => {
+    // Default values based on type
+    const defaults = {
+      "clothing-rack": {
+        name: "Portant à vêtements",
+        sections: 2,
+        slots: 5,
+        width: 2,
+        height: 1.8,
+        depth: 0.6,
+        color: "#666666",
+      },
+      "wall-display": {
+        name: "Présentoir mural",
+        sections: 3,
+        slots: 6,
+        width: 3,
+        height: 2,
+        depth: 0.5,
+        color: "#f0f0f0",
+      },
+      "accessory-display": {
+        name: "Présentoir à accessoires",
+        sections: 3,
+        slots: 4,
+        width: 1,
+        height: 1.5,
+        depth: 0.5,
+        color: "#666666",
+      },
+      "modular-cube": {
+        name: "Cube modulable",
+        sections: 3,
+        slots: 9,
+        width: 1.5,
+        height: 1.5,
+        depth: 0.5,
+        color: "#8B4513",
+      },
+      gondola: {
+        name: "Gondole",
+        sections: 3,
+        slots: 6,
+        width: 2,
+        height: 1.5,
+        depth: 0.8,
+        color: "#e0e0e0",
+      },
+      table: {
+        name: "Table de présentation",
+        sections: 1,
+        slots: 9,
+        width: 1.5,
+        height: 0.8,
+        depth: 0.8,
+        color: "#8B4513",
+      },
+      refrigerator: {
+        name: "Réfrigérateur",
+        sections: 3,
+        slots: 6,
+        width: 1.5,
+        height: 2,
+        depth: 0.8,
+        color: "#333333",
+      },
+      "refrigerated-showcase": {
+        name: "Frigo-Présentoir",
+        sections: 2,
+        slots: 6,
+        width: 2.5,
+        height: 1.2,
+        depth: 0.8,
+        color: "#444444",
+      },
+      "clothing-display": {
+        name: "Présentoir de vêtements",
+        sections: 2,
+        slots: 8,
+        width: 2.5,
+        height: 1.8,
+        depth: 0.6,
+        color: "#f5f5f5",
+      },
+      "clothing-wall": {
+        name: "Mur d'exposition vêtements",
+        sections: 4,
+        slots: 6,
+        width: 4,
+        height: 2.2,
+        depth: 0.8,
+        color: "#5D4037", // Couleur bois foncé
+      },
+    }
+
+    setCurrentFurniture({
+      ...currentFurniture,
+      type,
+      ...defaults[type],
+    })
+
+    // Clear cells when changing type
+    setCells([])
+  }
+
+  // Ajouter le nouveau type dans la fonction render3DFurniture
+  const render3DFurniture = () => {
+    const props = {
+      furniture: currentFurniture,
+      displayItems: productsForDisplay,
+      products,
+      onRemove: () => {},
+    }
+
+    switch (currentFurniture.type) {
+      case "clothing-rack":
+        return <ClothingRack {...props} />
+      case "wall-display":
+        return <WallDisplay {...props} />
+      case "accessory-display":
+        return <AccessoryDisplay {...props} />
+      case "modular-cube":
+        return <ModularCube {...props} />
+      case "gondola":
+        return <GondolaDisplay {...props} />
+      case "table":
+        return <TableDisplay {...props} />
+      case "refrigerator":
+        return <RefrigeratorDisplay {...props} />
+      case "refrigerated-showcase":
+        return (
+          <>
+            <RefrigeratedShowcase {...props} />
+            {/* Ajouter un éclairage supplémentaire pour le frigo-présentoir */}
+            <ambientLight intensity={0.7} />
+            <spotLight position={[0, 3, 3]} angle={0.5} penumbra={0.5} intensity={0.8} castShadow />
+          </>
+        )
+      case "clothing-display":
+        return <ClothingDisplay {...props} />
+      case "clothing-wall":
+        return <ClothingWallDisplay {...props} />
+      default:
+        return null
+    }
+  }
+
+  // Ajouter cette fonction d'aide pour ajuster les couleurs
+  function adjustColor(color, amount) {
+    // Convertir la couleur hex en RGB
+    let r = Number.parseInt(color.substring(1, 3), 16)
+    let g = Number.parseInt(color.substring(3, 5), 16)
+    let b = Number.parseInt(color.substring(5, 7), 16)
+
+    // Ajuster les valeurs
+    r = Math.max(0, Math.min(255, r + amount))
+    g = Math.max(0, Math.min(255, g + amount))
+    b = Math.max(0, Math.min(255, b + amount))
+
+    // Convertir en hex
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+  }
+
+  const renderRefrigerator2D = () => {
+    return (
+      <div className="relative">
+        {/* Section labels */}
+        <div className="absolute right-full top-0 bottom-0 pr-2">
+          {Array.from({ length: currentFurniture.sections }).map((_, rowIndex) => (
+            <div
+              key={`row-${rowIndex}`}
+              className="flex items-center justify-end font-medium text-sm text-muted-foreground"
+              style={{
+                height: `${cellHeight}px`,
+                width: "20px",
+              }}
+            >
+              {rowIndex + 1}
+            </div>
+          ))}
+        </div>
+
+        {/* Column numbers */}
+        <div className="absolute bottom-full left-0 right-0 pb-2">
+          <div className="flex">
+            {Array.from({ length: currentFurniture.slots }).map((_, colIndex) => (
+              <div
+                key={`col-${colIndex}`}
+                className="flex items-center justify-center font-medium text-sm text-muted-foreground"
+                style={{
+                  width: `${cellWidth}px`,
+                  height: "20px",
+                }}
+              >
+                {colIndex + 1}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Refrigerator outline */}
+        <div className="border-2 border-gray-800 rounded-md overflow-hidden">
+          {/* Grid for products */}
+          <div
+            className="grid gap-0"
+            style={{
+              gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+              gridTemplateRows: `repeat(${currentFurniture.sections}, ${cellHeight}px)`,
+            }}
+          >
+            {cells.map((cell) => (
+              <div key={cell.id} className="border border-dashed border-gray-300">
+                <FurnitureCell
+                  key={cell.id}
+                  cell={cell}
+                  products={products}
+                  onDrop={handleDrop}
+                  onRemove={handleRemoveProduct}
+                  cellWidth={cellWidth}
+                  cellHeight={cellHeight}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Base/cooling unit */}
+        <div className="w-full h-16 bg-gray-800 rounded-b-md flex items-center justify-between px-4 mt-1">
+          <div className="w-8 h-8 bg-gray-700 rounded-md flex items-center justify-center">
+            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+          </div>
+          <div className="w-3/4 h-10 bg-gray-900 rounded-md"></div>
+          <div className="w-8 h-8 bg-gray-700 rounded-md flex items-center justify-center">
+            <Snowflake className="h-5 w-5 text-blue-300" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderRefrigeratedShowcase2D = () => {
+    return (
+      <div className="relative">
+        {/* Section labels */}
+        <div className="absolute right-full top-0 bottom-0 pr-2">
+          {Array.from({ length: currentFurniture.sections }).map((_, rowIndex) => (
+            <div
+              key={`row-${rowIndex}`}
+              className="flex items-center justify-end font-medium text-sm text-muted-foreground"
+              style={{
+                height: `${cellHeight}px`,
+                width: "20px",
+              }}
+            >
+              {rowIndex + 1}
+            </div>
+          ))}
+        </div>
+
+        {/* Column numbers */}
+        <div className="absolute bottom-full left-0 right-0 pb-2">
+          <div className="flex">
+            {Array.from({ length: currentFurniture.slots }).map((_, colIndex) => (
+              <div
+                key={`col-${colIndex}`}
+                className="flex items-center justify-center font-medium text-sm text-muted-foreground"
+                style={{
+                  width: `${cellWidth}px`,
+                  height: "20px",
+                }}
+              >
+                {colIndex + 1}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Refrigerated showcase outline */}
+        <div className="border-2 border-gray-600 rounded-md overflow-hidden bg-gray-100">
+          {/* Glass top */}
+          <div className="w-full h-6 bg-blue-100 opacity-30 border-b border-gray-400"></div>
+
+          {/* Grid for products */}
+          <div
+            className="grid gap-0"
+            style={{
+              gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+              gridTemplateRows: `repeat(${currentFurniture.sections}, ${cellHeight}px)`,
+            }}
+          >
+            {cells.map((cell) => (
+              <div key={cell.id} className="border border-dashed border-gray-300">
+                <FurnitureCell
+                  key={cell.id}
+                  cell={cell}
+                  products={products}
+                  onDrop={handleDrop}
+                  onRemove={handleRemoveProduct}
+                  cellWidth={cellWidth}
+                  cellHeight={cellHeight}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Base */}
+        <div className="w-full h-8 bg-gray-600 rounded-b-md mt-1"></div>
+      </div>
+    )
+  }
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div className="container mx-auto py-6 max-w-full">
+        <div className="flex flex-col space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/furniture-library">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <h1 className="text-2xl font-bold">Éditeur de Meuble</h1>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="flex border rounded-md mr-2">
+                <Button
+                  variant={viewMode === "2D" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("2D")}
+                  className="rounded-r-none"
+                >
+                  <Grid className="h-4 w-4 mr-2" />
+                  2D
+                </Button>
+                <Button
+                  variant={viewMode === "3D" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("3D")}
+                  className="rounded-l-none"
+                >
+                  <Cube className="h-4 w-4 mr-2" />
+                  3D
+                </Button>
+              </div>
+
+              <FurnitureSettingsDialog furniture={currentFurniture} updateFurniture={updateFurniture} />
+
+              <SaveFurnitureDialog
+                furniture={currentFurniture}
+                products={productsForDisplay}
+                onSave={saveFurnitureToLibrary}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left sidebar */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardContent className="p-4">
+                  <Tabs defaultValue="type">
+                    <TabsList className="grid grid-cols-2 mb-4">
+                      <TabsTrigger value="type">
+                        <Package className="h-4 w-4 mr-2" />
+                        Type
+                      </TabsTrigger>
+                      <TabsTrigger value="products">
+                        <Package className="h-4 w-4 mr-2" />
+                        Produits
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="type" className="space-y-4">
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-medium">Type de meuble</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant={currentFurniture.type === "clothing-rack" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("clothing-rack")}
+                          >
+                            <Package className="h-4 w-4 mr-2" />
+                            Portant
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "wall-display" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("wall-display")}
+                          >
+                            <Grid className="h-4 w-4 mr-2" />
+                            Mural
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "accessory-display" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("accessory-display")}
+                          >
+                            <Package className="h-4 w-4 mr-2" />
+                            Accessoires
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "modular-cube" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("modular-cube")}
+                          >
+                            <Cube className="h-4 w-4 mr-2" />
+                            Cube
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "gondola" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("gondola")}
+                          >
+                            <Grid className="h-4 w-4 mr-2" />
+                            Gondole
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "table" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("table")}
+                          >
+                            <Package className="h-4 w-4 mr-2" />
+                            Table
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "refrigerator" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("refrigerator")}
+                          >
+                            <Snowflake className="h-4 w-4 mr-2" />
+                            Frigo
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "refrigerated-showcase" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("refrigerated-showcase")}
+                          >
+                            <Snowflake className="h-4 w-4 mr-2" />
+                            Frigo-Présentoir
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "clothing-display" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("clothing-display")}
+                          >
+                            <Package className="h-4 w-4 mr-2" />
+                            Présentoir vêtements
+                          </Button>
+                          <Button
+                            variant={currentFurniture.type === "clothing-wall" ? "default" : "outline"}
+                            className="justify-start"
+                            onClick={() => changeFurnitureType("clothing-wall")}
+                          >
+                            <Grid className="h-4 w-4 mr-2" />
+                            Mur d'exposition
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-medium">Configuration</h3>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Sections</label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() =>
+                                  updateFurniture({
+                                    ...currentFurniture,
+                                    sections: Math.max(1, currentFurniture.sections - 1),
+                                  })
+                                }
+                                disabled={currentFurniture.sections <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={currentFurniture.sections}
+                                onChange={(e) =>
+                                  updateFurniture({
+                                    ...currentFurniture,
+                                    sections: Math.max(1, Number.parseInt(e.target.value) || 1),
+                                  })
+                                }
+                                className="text-center"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() =>
+                                  updateFurniture({ ...currentFurniture, sections: currentFurniture.sections + 1 })
+                                }
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Emplacements par section</label>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() =>
+                                  updateFurniture({
+                                    ...currentFurniture,
+                                    slots: Math.max(1, currentFurniture.slots - 1),
+                                  })
+                                }
+                                disabled={currentFurniture.slots <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={currentFurniture.slots}
+                                onChange={(e) =>
+                                  updateFurniture({
+                                    ...currentFurniture,
+                                    slots: Math.max(1, Number.parseInt(e.target.value) || 1),
+                                  })
+                                }
+                                className="text-center"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() =>
+                                  updateFurniture({ ...currentFurniture, slots: currentFurniture.slots + 1 })
+                                }
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Dimensions</label>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="text-xs text-muted-foreground">Largeur (m)</label>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={currentFurniture.width}
+                                  onChange={(e) =>
+                                    updateFurniture({ ...currentFurniture, width: Number.parseFloat(e.target.value) })
+                                  }
+                                  className="text-center"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground">Hauteur (m)</label>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={currentFurniture.height}
+                                  onChange={(e) =>
+                                    updateFurniture({ ...currentFurniture, height: Number.parseFloat(e.target.value) })
+                                  }
+                                  className="text-center"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground">Profondeur (m)</label>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={currentFurniture.depth}
+                                  onChange={(e) =>
+                                    updateFurniture({ ...currentFurniture, depth: Number.parseFloat(e.target.value) })
+                                  }
+                                  className="text-center"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Couleur</label>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="color"
+                                value={currentFurniture.color || "#333333"}
+                                onChange={(e) => updateFurniture({ ...currentFurniture, color: e.target.value })}
+                                className="w-10 h-10 rounded cursor-pointer"
+                              />
+                              <Input
+                                value={currentFurniture.color || "#333333"}
+                                onChange={(e) => updateFurniture({ ...currentFurniture, color: e.target.value })}
+                                className="flex-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="products" className="space-y-4">
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Rechercher un produit..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          icon={<Search className="h-4 w-4 text-muted-foreground" />}
+                        />
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <select
+                            className="p-2 border rounded-md text-sm"
+                            value={selectedCategory || ""}
+                            onChange={(e) => setSelectedCategory(e.target.value || null)}
+                          >
+                            <option value="">Toutes les catégories</option>
+                            {/* Add categories here */}
+                          </select>
+
+                          <select
+                            className="p-2 border rounded-md text-sm"
+                            value={selectedSupplier || ""}
+                            onChange={(e) => setSelectedSupplier(e.target.value || null)}
+                          >
+                            <option value="">Tous les fournisseurs</option>
+                            {suppliers.map((supplier) => (
+                              <option key={supplier} value={supplier}>
+                                {supplier}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">{filteredProducts.length} produits trouvés</div>
+
+                      <ScrollArea className="h-[calc(100vh-300px)]">
+                        <div className="grid grid-cols-2 gap-2 p-1">
+                          {filteredProducts.map((product) => (
+                            <ProductItem key={product.primary_Id} product={product} />
+                          ))}
+                          {filteredProducts.length === 0 && (
+                            <div className="col-span-2 text-center py-8 text-muted-foreground">
+                              Aucun produit ne correspond à votre recherche
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+                  </Tabs>
+                  {cells.some((cell) => cell.productId) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const productCell = cells.find((cell) => cell.productId)
+                        if (productCell) {
+                          debugImageLoading(productCell.productId)
+                        }
+                      }}
+                      className="mt-2"
+                    >
+                      Déboguer chargement d'images
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Main display area */}
+            <div className="lg:col-span-3">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-medium">{currentFurniture.name}</h2>
+                    <div className="text-sm text-muted-foreground">
+                      {currentFurniture.sections} sections × {currentFurniture.slots} emplacements
+                    </div>
+                  </div>
+
+                  {viewMode === "2D" ? (
+                    <div className="overflow-auto border rounded-md p-4 bg-muted/20">
+                      <div
+                        className="relative bg-white"
+                        style={{
+                          width: `${currentFurniture.type === "clothing-rack" ? cellWidth * currentFurniture.slots : cellWidth * currentFurniture.slots + 2}px`,
+                          minHeight: `${currentFurniture.type === "clothing-rack" ? cellHeight * 2 : cellHeight * currentFurniture.sections + 2}px`,
+                        }}
+                      >
+                        {currentFurniture.type === "clothing-rack" ? (
+                          // Interface spécifique pour portant à vêtements
+                          <div className="relative">
+                            {/* Barre du portant */}
+                            <div
+                              className="w-full h-4 bg-gray-400 rounded-t-md"
+                              style={{ backgroundColor: currentFurniture.color }}
+                            ></div>
+
+                            {/* Zone de dépôt pour les vêtements */}
+                            <div className="flex justify-center mt-2">
+                              {Array.from({ length: currentFurniture.slots }).map((_, slotIndex) => {
+                                const cell = cells.find((c) => c.x === slotIndex && c.y === 0)
+                                return (
+                                  <FurnitureCell
+                                    key={`rack-${slotIndex}`}
+                                    cell={cell || { id: `cell-0-${slotIndex}`, x: slotIndex, y: 0, productId: null }}
+                                    products={products}
+                                    onDrop={handleDrop}
+                                    onRemove={handleRemoveProduct}
+                                    cellWidth={cellWidth}
+                                    cellHeight={cellHeight * 2 - 10}
+                                  />
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ) : currentFurniture.type === "table" ? (
+                          // Interface spécifique pour table
+                          <div className="relative">
+                            {/* Surface de la table */}
+                            <div
+                              className="w-full h-full border-2 rounded-md"
+                              style={{
+                                backgroundColor: currentFurniture.color,
+                                borderColor: adjustColor(currentFurniture.color, -30),
+                                padding: "8px",
+                              }}
+                            >
+                              <div
+                                className="grid gap-2"
+                                style={{
+                                  gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(currentFurniture.slots))}, 1fr)`,
+                                  gridTemplateRows: `repeat(${Math.ceil(Math.sqrt(currentFurniture.slots))}, 1fr)`,
+                                }}
+                              >
+                                {cells.map((cell) => (
+                                  <FurnitureCell
+                                    key={cell.id}
+                                    cell={cell}
+                                    products={products}
+                                    onDrop={handleDrop}
+                                    onRemove={handleRemoveProduct}
+                                    cellWidth={(cellWidth / Math.ceil(Math.sqrt(currentFurniture.slots))) * 0.9}
+                                    cellHeight={(cellHeight / Math.ceil(Math.sqrt(currentFurniture.slots))) * 0.9}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : currentFurniture.type === "refrigerator" ? (
+                          // Interface spécifique pour réfrigérateur
+                          renderRefrigerator2D()
+                        ) : currentFurniture.type === "refrigerated-showcase" ? (
+                          // Interface spécifique pour frigo-présentoir
+                          renderRefrigeratedShowcase2D()
+                        ) : currentFurniture.type === "clothing-display" ? (
+                          // Interface spécifique pour présentoir de vêtements
+                          <div className="relative">
+                            {/* Structure du présentoir */}
+                            <div className="border-2 border-gray-300 rounded-md p-2 bg-gray-50">
+                              {/* Section labels */}
+                              <div className="absolute right-full top-0 bottom-0 pr-2">
+                                {Array.from({ length: currentFurniture.sections }).map((_, rowIndex) => (
+                                  <div
+                                    key={`row-${rowIndex}`}
+                                    className="flex items-center justify-end font-medium text-sm text-muted-foreground"
+                                    style={{
+                                      height: `${cellHeight}px`,
+                                      width: "20px",
+                                    }}
+                                  >
+                                    {rowIndex + 1}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Column numbers */}
+                              <div className="absolute bottom-full left-0 right-0 pb-2">
+                                <div className="flex">
+                                  {Array.from({ length: currentFurniture.slots }).map((_, colIndex) => (
+                                    <div
+                                      key={`col-${colIndex}`}
+                                      className="flex items-center justify-center font-medium text-sm text-muted-foreground"
+                                      style={{
+                                        width: `${cellWidth}px`,
+                                        height: "20px",
+                                      }}
+                                    >
+                                      {colIndex + 1}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Barre horizontale supérieure */}
+                              <div className="w-full h-4 bg-gray-300 mb-2 rounded-t-sm"></div>
+
+                              {/* Grille pour les produits */}
+                              <div
+                                className="grid gap-2"
+                                style={{
+                                  gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+                                  gridTemplateRows: `repeat(${currentFurniture.sections}, ${cellHeight}px)`,
+                                }}
+                              >
+                                {cells.map((cell) => (
+                                  <FurnitureCell
+                                    key={cell.id}
+                                    cell={cell}
+                                    products={products}
+                                    onDrop={handleDrop}
+                                    onRemove={handleRemoveProduct}
+                                    cellWidth={cellWidth}
+                                    cellHeight={cellHeight}
+                                  />
+                                ))}
+                              </div>
+
+                              {/* Base du présentoir */}
+                              <div className="w-full h-6 bg-gray-300 mt-2 rounded-b-sm flex items-center justify-between px-4">
+                                <div className="w-1/3 h-4 bg-gray-400 rounded-sm"></div>
+                                <div className="w-1/3 h-4 bg-gray-400 rounded-sm"></div>
+                                <div className="w-1/3 h-4 bg-gray-400 rounded-sm"></div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : currentFurniture.type === "clothing-wall" ? (
+                          // Interface spécifique pour mur d'exposition vêtements
+                          <div className="relative">
+                            {/* Structure du mur d'exposition */}
+                            <div className="border-2 border-amber-900 rounded-md p-2 bg-amber-50">
+                              {/* Section labels */}
+                              <div className="absolute right-full top-0 bottom-0 pr-2">
+                                {Array.from({ length: 3 }).map((_, rowIndex) => (
+                                  <div
+                                    key={`row-${rowIndex}`}
+                                    className="flex items-center justify-end font-medium text-sm text-muted-foreground"
+                                    style={{
+                                      height: `${cellHeight}px`,
+                                      width: "20px",
+                                    }}
+                                  >
+                                    {rowIndex === 0 ? "Costumes" : rowIndex === 1 ? "Chemises" : "Pantalons"}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Column numbers */}
+                              <div className="absolute bottom-full left-0 right-0 pb-2">
+                                <div className="flex">
+                                  {Array.from({ length: currentFurniture.sections }).map((_, colIndex) => (
+                                    <div
+                                      key={`col-${colIndex}`}
+                                      className="flex items-center justify-center font-medium text-sm text-muted-foreground"
+                                      style={{
+                                        width: `${cellWidth * (currentFurniture.slots / currentFurniture.sections)}px`,
+                                        height: "20px",
+                                      }}
+                                    >
+                                      {`Section ${colIndex + 1}`}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Grille pour les produits */}
+                              <div className="grid grid-rows-3 gap-2">
+                                {/* Rangée supérieure pour les costumes */}
+                                <div
+                                  className="grid gap-2"
+                                  style={{
+                                    gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+                                    height: `${cellHeight}px`,
+                                  }}
+                                >
+                                  {cells
+                                    .filter((cell) => cell.y === 0)
+                                    .map((cell) => (
+                                      <FurnitureCell
+                                        key={cell.id}
+                                        cell={cell}
+                                        products={products}
+                                        onDrop={handleDrop}
+                                        onRemove={handleRemoveProduct}
+                                        cellWidth={cellWidth}
+                                        cellHeight={cellHeight}
+                                      />
+                                    ))}
+                                </div>
+
+                                {/* Rangée du milieu pour les chemises */}
+                                <div
+                                  className="grid gap-2"
+                                  style={{
+                                    gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+                                    height: `${cellHeight}px`,
+                                  }}
+                                >
+                                  {cells
+                                    .filter((cell) => cell.y === 1)
+                                    .map((cell) => (
+                                      <FurnitureCell
+                                        key={cell.id}
+                                        cell={cell}
+                                        products={products}
+                                        onDrop={handleDrop}
+                                        onRemove={handleRemoveProduct}
+                                        cellWidth={cellWidth}
+                                        cellHeight={cellHeight}
+                                      />
+                                    ))}
+                                </div>
+
+                                {/* Rangée inférieure pour les pantalons */}
+                                <div
+                                  className="grid gap-2"
+                                  style={{
+                                    gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+                                    height: `${cellHeight}px`,
+                                  }}
+                                >
+                                  {cells
+                                    .filter((cell) => cell.y === 2)
+                                    .map((cell) => (
+                                      <FurnitureCell
+                                        key={cell.id}
+                                        cell={cell}
+                                        products={products}
+                                        onDrop={handleDrop}
+                                        onRemove={handleRemoveProduct}
+                                        cellWidth={cellWidth}
+                                        cellHeight={cellHeight}
+                                      />
+                                    ))}
+                                </div>
+                              </div>
+
+                              {/* Tiroirs en bas */}
+                              <div className="w-full h-8 bg-amber-900 mt-2 rounded-b-sm flex items-center justify-between px-4">
+                                <div className="w-1/4 h-4 bg-gray-700 rounded-sm"></div>
+                                <div className="w-1/4 h-4 bg-gray-700 rounded-sm"></div>
+                                <div className="w-1/4 h-4 bg-gray-700 rounded-sm"></div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // Interface par défaut pour les autres types de meubles (étagères, gondoles, etc.)
+                          <>
+                            {/* Section labels */}
+                            <div className="absolute right-full top-0 bottom-0 pr-2">
+                              {Array.from({ length: currentFurniture.sections }).map((_, rowIndex) => (
+                                <div
+                                  key={`row-${rowIndex}`}
+                                  className="flex items-center justify-end font-medium text-sm text-muted-foreground"
+                                  style={{
+                                    height: `${cellHeight}px`,
+                                    width: "20px",
+                                  }}
+                                >
+                                  {rowIndex + 1}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Column numbers */}
+                            <div className="absolute bottom-full left-0 right-0 pb-2">
+                              <div className="flex">
+                                {Array.from({ length: currentFurniture.slots }).map((_, colIndex) => (
+                                  <div
+                                    key={`col-${colIndex}`}
+                                    className="flex items-center justify-center font-medium text-sm text-muted-foreground"
+                                    style={{
+                                      width: `${cellWidth}px`,
+                                      height: "20px",
+                                    }}
+                                  >
+                                    {colIndex + 1}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Grid */}
+                            <div
+                              className="grid"
+                              style={{
+                                gridTemplateColumns: `repeat(${currentFurniture.slots}, ${cellWidth}px)`,
+                                gridTemplateRows: `repeat(${currentFurniture.sections}, ${cellHeight}px)`,
+                              }}
+                            >
+                              {cells.map((cell) => (
+                                <FurnitureCell
+                                  key={cell.id}
+                                  cell={cell}
+                                  products={products}
+                                  onDrop={handleDrop}
+                                  onRemove={handleRemoveProduct}
+                                  cellWidth={cellWidth}
+                                  cellHeight={cellHeight}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border rounded-md overflow-hidden" style={{ height: "600px" }}>
+                      <Canvas shadows>
+                        {render3DFurniture()}
+                        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+                        <ambientLight intensity={0.5} />
+                        <directionalLight position={[5, 5, 5]} intensity={0.6} castShadow />
+                        <directionalLight position={[-5, 5, -5]} intensity={0.4} />
+                      </Canvas>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DndProvider>
+  )
+}

@@ -1,0 +1,14 @@
+planogramme_id;"dimension_longueur_planogramme	";"dimension_largeur_planogramme	";nb_etageres;nb_colonnes;emplacement_magasin;magasin_id;"surface_magasin_m2	";produit_id;fournisseur;categorie_produit;promo_en_cours;ventes_moyennes;stock_moyen;prev_demande;position_etagere;position_colonne;score_priorite
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P001;Stil;Vetements;1;100;50;150;1;1;0.595
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P002;Stil;Vetements;0;50;20;70;1;2;0.595
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P003;Stil;Vetements;1;150;60;120;1;3;0.715
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P004;Boga;Alimentaire;1;120;10;100;1;4;0.610
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P005;Boga;Alimentaire;0;70;20;100;1;5;0.400
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P006;samsung;Alimentaire;0;90;35;95;2;1;0.475
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P007;Stil;Alimentaire;1;50;40;40;2;2;0.400
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P008;samsung;Electronique;1;200;50;220;2;3;0.800
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P009;Boga;Vetements;0;80;30;100;2;4;0.460
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P010;samsung;Electronique;1;130;19;130;2;5;0.685
+PL_1;200;100;4;5;Zone centrale;MG_001;200;P011;Stil;Electronique;1;111;20;120;3;1;0.655
+PL_1;250;120;5;6;Entree;MG_001;200;P012;Boga;Vetements;0;122;13;130;1;1;0.610
+PL_1;250;120;5;6;Entree;MG_001;200;P013;Stil;Electronique;0;100;40;90;1;2;0.520

@@ -1,0 +1,255 @@
+/* PricingTable.css */
+.pricing-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-title {
+    font-size: 3rem;
+    color: #2d3748;
+    margin-bottom: 4rem;
+    position: relative;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.pricing-title::after {
+    content: '';
+    position: absolute;
+    bottom: -1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 4px;
+    background: #4299e1;
+    border-radius: 2px;
+}
+
+.pricing-cards {
+    display: flex;
+    gap: 3rem;
+    justify-content: center;
+    align-items: stretch;
+    position: relative;
+    z-index: 1;
+}
+
+.pricing-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 450px;
+    position: relative;
+    border: 2px solid transparent;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #4299e1;
+}
+
+.pricing-card h3 {
+    font-size: 1.8rem;
+    color: #1a202c;
+    margin-bottom: 2rem;
+    font-weight: 700;
+}
+
+.price {
+    font-size: 3.5rem;
+    color: #4299e1;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.price span {
+    font-size: 1.2rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+.features {
+    list-style: none;
+    padding: 0;
+    margin: 2.5rem 0;
+    text-align: right;
+}
+
+.features li {
+    margin-bottom: 1.2rem;
+    color: #4a5568;
+    padding-right: 2rem;
+    position: relative;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.features li:before {
+    content: "✓";
+    position: absolute;
+    right: 0;
+    color: #48bb78;
+    font-weight: 700;
+}
+
+.cta-button {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    padding: 1.2rem 2.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-button::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255,255,255,0.1);
+    transform: translateX(-100%) rotate(45deg);
+    transition: all 0.5s ease;
+}
+
+.cta-button:hover::after {
+    transform: translateX(100%) rotate(45deg);
+}
+
+.cta-button:hover {
+    box-shadow: 0 5px 15px rgba(66, 153, 225, 0.4);
+}
+
+.pricing-card.popular:before {
+    content: "الأكثر شيوعاً";
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    padding: 0.5rem 2rem;
+    font-size: 0.9rem;
+    border-radius: 30px;
+    font-weight: 600;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+/* Table Comparison Styling */
+.comparison-table {
+    margin-top: 6rem;
+    background: rgba(255,255,255,0.9);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.comparison-table h3 {
+    font-size: 2.2rem;
+    color: #2d3748;
+    margin-bottom: 3rem;
+}
+
+.comparison-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+}
+
+.comparison-table th {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    padding: 1.2rem;
+    font-size: 1.1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.comparison-table td {
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+.comparison-table tr:nth-child(even) td {
+    background-color: #f8fafc;
+}
+
+.comparison-table td:nth-child(2),
+.comparison-table td:nth-child(3) {
+    font-weight: bold;
+    color: #2d3748;
+}
+
+/* Adding icons for yes/no */
+.comparison-table td:not(:first-child)::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    background-size: contain;
+}
+
+.comparison-table td[data-value="نعم"]::before {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2348bb78"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>');
+}
+
+.comparison-table td[data-value="لا"]::before {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23f56565"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>');
+}
+
+@media (max-width: 768px) {
+    .pricing-container {
+        padding: 4rem 1rem;
+    }
+    
+    .pricing-cards {
+        flex-direction: column;
+        gap: 2rem;
+    }
+    
+    .pricing-card {
+        width: 100%;
+        padding: 2rem;
+    }
+    
+    .comparison-table {
+        overflow-x: auto;
+    }
+}
+
+/* Floating animation */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+}
+
+.pricing-card.popular {
+    animation: float 4s ease-in-out infinite;
+}

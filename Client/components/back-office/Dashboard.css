@@ -1,0 +1,838 @@
+/* Dashboard CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.dashboard-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #f9fafb;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Top Banner */
+.top-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Aligner les éléments à gauche et à droite */
+  padding: 0 2rem;
+}
+/* Conteneur gauche (titre + drapeaux) */
+.banner-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Espace entre le titre et les drapeaux */
+}
+/* Titre "Store Smart" */
+.banner-left h1 {
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  gap: 0.25rem;
+}
+.banner-left h1 span:first-child {
+  color: black;
+}
+
+.banner-left h1 span:last-child {
+  color: #007bff;
+}
+/* Groupe gauche */
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+
+}
+
+.lang_toggle {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.toggle_header {
+  display: flex;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+/* Header right */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+.lang_toggle input {
+  display: none;
+}
+.toggle_header img {
+  width: 24px;
+  height: 16px;
+  border-radius: 3px;
+}
+.toggle_header div {
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.toggle_header div:hover {
+  border-color: #007bff;
+}
+
+.toggle_header img {
+  width: 28px;
+  height: 18px;
+  object-fit: cover;
+  border-radius: 3px;
+  display: block;
+}
+
+/* Cache la checkbox */
+.lang_toggle input {
+  display: none;
+}
+
+/* Styles existants pour le titre */
+.banner-content h1 {
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.banner-content h1 span:last-child { color: black; }
+.banner-content h1 span:first-child { color: #007bff; }
+
+/* Ajustements pour le contenu */
+.sidebar {
+  position: fixed;
+  height: calc(100vh - 50px);
+  top: 50px;
+}
+
+.right-sidebar {
+  position: fixed;
+  height: calc(100vh - 50px);
+  top: 50px;
+  text-align: left;
+}
+
+.main-content {
+  margin-top: 70px;
+}
+
+.h2-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.date-range {
+  color: #00bfff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdown-icon {
+  margin-left: 2px;
+  font-size: 1.2rem;
+  color: #00bfff;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px; /* Ajuste la largeur du menu */
+  background-color: white;
+  border-right: 1px solid #e5e7eb;
+  padding: 1rem;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+}
+/* Conteneur du menu */
+.menu1 {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  margin-left: 0;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-shrink: 0;
+}
+
+.logo i {
+  color: #2563eb;
+  font-size: 1.5rem;
+}
+
+.logo h1 {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.menu-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+.menu-item {
+  display: flex;
+  justify-content: space-between; /* Aligne le texte à gauche et l'icône à droite */
+  align-items: center; /* Centre verticalement */
+  padding: 10px 15px;
+  color: #4b5563;
+  text-decoration: none;
+  border-radius: 8px;
+  margin-bottom: 5px;
+}
+
+.menu-item img.menu-icon {
+  width: 24px; /* Taille uniforme des icônes */
+  height: 24px;
+  object-fit: contain;
+  margin-right: 5px;
+}
+
+.menu-item span {
+  text-align: left; /* Force l'alignement du texte à gauche */
+  flex-grow: 1; /* Permet au texte de s'étirer uniformément */
+  white-space: nowrap; /* Empêche le texte de passer à la ligne */
+}
+
+.menu-item:hover {
+  background-color: #f3f4f6;
+}
+
+.menu-item.active {
+  background-color: #e6f7f5;
+  color: #0d9488;
+}
+
+.menu-item i {
+  font-size: 1.25rem;
+}
+
+/* Main Content */
+.main-content {
+  margin-left: 260px;
+  margin-right: 280px;
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Right Sidebar */
+.right-sidebar {
+  width: 300px;
+  background-color: white;
+  border-left: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  position: fixed;
+  height: 100vh;
+  right: 0;
+  top: 0;
+  overflow-y: auto;
+  text-align: left; /* Alignement du texte à gauche */
+}
+
+/* Quick Actions */
+.quick-actions {
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+  padding: 10px;
+}
+
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: #4b5563;
+  transition: background-color 0.2s;
+}
+
+.action-item:hover {
+  background-color: #f3f4f6;
+}
+
+.action-item .action-icon {
+  font-size: 1.25rem;
+  margin-right: 0.75rem;
+  color: #6b7280;
+}
+
+.action-item span {
+  flex: 1;
+}
+
+.shortcut {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  padding: 0.25rem 0.5rem;
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.search-box .search-icon {
+  color: #6b7280;
+  margin-right: 0.5rem;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+}
+
+.icon-button {
+  padding: 0.5rem;
+  border: none;
+  background: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background-color: #f3f4f6;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 50px;
+  position: relative;
+  padding-bottom: 10px;
+  /* Supprimez margin-left: auto; pour aligner à gauche */
+}
+
+.profile::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #ccc;
+}
+
+.profile-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.profile-role {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* support */
+.support {
+  margin-top: 20px;
+}
+
+/* Sales Summary */
+.sales-summary {
+  max-width: 100%;
+  margin-bottom: 2rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px;
+}
+
+h2 {
+  color: #1a1f36;
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.stats-container {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-right: 10px;
+}
+
+.stat-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-info h3 {
+  color: #1a1f36;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stat-info p {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    width: 100%;
+  }
+}
+
+/* Stock Report */
+.stock-report {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.chart-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px; /* Ajustez selon vos besoins */
+  width: 100%; /* Assurez-vous qu'il prend toute la largeur */
+}
+
+.legend {
+  display: flex;
+  gap: 20px; /* Espace entre les éléments de la légende */
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espace entre la couleur et le texte */
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-color.stock-in {
+  background-color: #40bfff;
+}
+
+.legend-color.stock-out {
+  background-color: #8b5cf6;
+}
+
+.y-axis {
+  position: absolute;
+  left: 0;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 35px;
+  color: #666;
+  font-size: 14px;
+}
+
+.chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 300px;
+  margin-left: 60px;
+  padding-top: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+}
+
+.bar {
+  width: 30px;
+  height: 250px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.stock-in, .stock-out {
+  width: 100%;
+  transition: height 0.3s ease;
+}
+
+.stock-in {
+  background-color: #40bfff;
+}
+
+.stock-out {
+  background-color: #8b5cf6;
+}
+
+.bar-container span {
+  margin-top: 10px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Sales Order */
+.sales-order {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+td {
+  padding: 0.75rem 0;
+}
+
+/* Fast Moving Items */
+.fast-moving {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.item img {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  text-align: left;
+  
+}
+
+.item span {
+  flex: 1;
+}
+
+/* User Management Styles */
+/* User Management Styles */
+.user-management {
+background-color: #f8f9fa; /* Light grey background for a softer look */
+padding: 2rem; /* Increased padding for more spacing */
+border-radius: 1rem; /* More rounded corners */
+box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.075); /* Softer shadow */
+margin-bottom: 3rem; /* Increased bottom margin */
+}
+
+.user-management h2 {
+font-size: 2rem; /* Larger heading */
+margin-bottom: 1.5rem;
+color: #343a40; /* Darker heading color */
+text-align: center;
+}
+/* User Management Header */
+.user-management-header {
+  display: flex;
+  justify-content: space-between; /* Aligne le titre à gauche et le bouton à droite */
+  align-items: center; /* Centre verticalement */
+  margin-bottom: 1.5rem; /* Espacement en bas */
+}
+.user-actions {
+  display: flex;
+  align-items: center;
+}
+
+.add-user-button,
+.delete-user-button,
+.assign-privileges-button {
+padding: 0.8rem 1.75rem; /* Slightly larger buttons */
+border: none;
+border-radius: 0.75rem; /* More rounded corners for buttons */
+cursor: pointer;
+font-size: 1rem; /* Slightly larger font size */
+font-weight: 500;
+transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* subtle shadow for buttons */
+}
+.add-user-button.cancel {
+  background-color: #dc3545; /* Couleur rouge pour le bouton Cancel */
+}
+.add-user-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.add-user-button:hover {
+background-color: #0056b3;
+}
+
+.delete-user-button {
+background-color: #dc3545;
+color: white;
+}
+
+.delete-user-button:hover {
+background-color: #c82333;
+}
+
+.assign-privileges-button {
+background-color: #28a745;
+color: white;
+}
+
+.assign-privileges-button:hover {
+background-color: #1e7e34;
+}
+
+.user-list table {
+width: 100%;
+border-collapse: collapse;
+box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* subtle shadow for table */
+}
+
+.user-list th,
+.user-list td {
+padding: 1rem; /* Increased padding for table cells */
+text-align: left;
+border-bottom: 1px solid #e5e7eb;
+}
+
+.user-list th {
+background-color: #f2f2f2; /* Lighter background for header */
+font-weight: 600;
+color: #495057; /* Slightly darker text for header */
+}
+
+.user-list tbody tr:nth-child(even) {
+background-color: #f9f9f9; /* Add a subtle background to even rows for better readability */
+}
+
+.edit-button,
+.delete-button {
+padding: 0.6rem 1.2rem; /* Adjusted padding for buttons */
+border: none;
+border-radius: 0.5rem;
+cursor: pointer;
+font-size: 0.9rem;
+font-weight: 500;
+transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* subtle shadow for buttons */
+margin: 0 0.25rem; /* Added some horizontal margin */
+}
+
+.edit-button {
+background-color: #ffc107;
+color: #212529;
+}
+
+.edit-button:hover {
+background-color: #e0a800;
+}
+
+.delete-button {
+background-color: #dc3545;
+color: white;
+}
+
+.delete-button:hover {
+background-color: #c82333;
+}
+
+/* Form Styles */
+.add-user-form {
+display: flex;
+flex-direction: column;
+margin-top: 20px;
+background-color: #fff;
+padding: 2rem; /* Increased padding */
+border-radius: 1rem; /* More rounded corners */
+box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.075); /* Softer shadow */
+}
+
+.form-group {
+margin-bottom: 1.5rem; /* Increased margin between form groups */
+}
+
+.form-group label {
+display: block;
+margin-bottom: 0.5rem;
+font-weight: 500;
+color: #495057;
+}
+
+.add-user-form input,
+.add-user-form select {
+padding: 0.75rem;
+margin-bottom: 1rem;
+border: 1px solid #ced4da;
+border-radius: 0.5rem;
+width: 100%; /* Make inputs full width */
+font-size: 1rem;
+transition: border-color 0.3s ease; /* Smooth transition for focus effect */
+}
+
+.add-user-form input:focus,
+.add-user-form select:focus {
+border-color: #80bdff;
+outline: 0;
+box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Add a subtle focus shadow */
+}
+
+.add-user-form button {
+padding: 0.8rem 1.75rem;
+background-color: #007BFF;
+color: white;
+border: none;
+border-radius: 0.75rem; /* More rounded corners */
+cursor: pointer;
+font-size: 1.1rem; /* Slightly larger font size */
+transition: background-color 0.3s ease;
+box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* subtle shadow for button */
+}
+
+.add-user-form button:hover {
+background-color: #0056b3;
+}
+
+/* General Layout Adjustments */
+.dashboard-container {
+display: flex;
+padding: 3rem; /* Increased padding around the container */
+background-color: #e9ecef; /* Light grey background for the whole dashboard */
+min-height: 100vh; /* Ensure the container takes up at least the full height of the viewport */
+}
+
+.main-content {
+flex: 1;
+padding: 2rem; /* Adjusted padding */
+background-color: white;
+border-radius: 1rem; /* More rounded corners */
+box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.075); /* Softer shadow */
+}
+
+
+
+.current-user-info {
+margin-bottom: 20px;
+padding: 15px;
+border: 1px solid #ddd;
+border-radius: 5px;
+background-color: #f9f9f9;
+}
+
+.current-user-info h3 {
+margin-top: 0;
+}
+
+.current-user-info p {
+margin: 5px 0;
+}

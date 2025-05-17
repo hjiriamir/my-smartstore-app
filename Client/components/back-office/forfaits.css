@@ -1,0 +1,581 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #006d77;
+    --secondary-color: #83c5be;
+    --accent-color: #ffddd2;
+    --dark-color: #2b2d42;
+}
+
+.body {
+    font-family: 'Cairo', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+/* ==================== DETAILS PAGE ==================== */
+.details-hero {
+    text-align: center;
+    padding: 8rem 2rem;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/Assets/background.jpg");
+    color: white;
+    position: relative;
+    overflow: hidden;
+    animation: heroEntrance 1s ease-out;
+}
+
+@keyframes heroEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.details-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(to bottom right, transparent 49%, white 50%);
+}
+
+.details-hero h1 {
+    font-size: 3.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    display: inline-block;
+    margin-bottom: 2rem;
+}
+
+.details-hero h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: 0;
+    width: 60%;
+    height: 3px;
+    background: var(--accent-color);
+    border-radius: 2px;
+}
+
+.details-hero .price {
+    font-size: 3rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 2rem 0;
+    display: inline-block;
+    padding: 0.5rem 2rem;
+    border-radius: 50px;
+    border: 3px solid var(--accent-color);
+}
+/* ==================== FORFAITS PAGE ==================== */
+.forfaits-hero {
+    text-align: center;
+    padding: 12rem 2rem;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/Assets/background.jpg");
+    background-size: cover;
+    background-position: center;
+    color: white;
+}
+
+.forfaits-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-align: inherit; /* Utiliser la valeur héritée */
+}
+
+.forfaits-hero p {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 1.3rem; /* Taille de police augmentée */
+    text-align: inherit; /* Utiliser la valeur héritée */
+    line-height: 1.8; /* Interligne ajusté */
+}
+
+/* ==================== PRICING SECTION ==================== */
+.pricing {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.price-card {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    width: 300px;
+    text-align: inherit; /* Utiliser la valeur héritée */
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: all 0.4s ease;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.price-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+    text-align: inherit; /* Utiliser la valeur héritée */
+}
+
+.price-card li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+    text-align: inherit; /* Utiliser la valeur héritée */
+}
+
+/* ==================== RESPONSIVE DESIGN ==================== */
+@media (max-width: 768px) {
+    .forfaits-hero {
+        padding: 6rem 1rem;
+    }
+    
+    .details-hero {
+        padding: 4rem 1rem;
+    }
+    
+    .details-hero h1 {
+        font-size: 2.2rem;
+    }
+    
+    .details-hero .price {
+        font-size: 2rem;
+    }
+    
+    .features-details ul {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+    
+    .features-details li {
+        padding: 1rem;
+    }
+
+    .contact-form .form-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .contact-form {
+        margin: 2rem 1rem;
+        padding: 1.5rem;
+    }
+}
+
+
+/* ==================== SHARED COMPONENTS ==================== */
+.pricing {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.price-card {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    width: 300px;
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: all 0.4s ease;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.price-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+.price-card:nth-child(2):hover {
+    transform: scale(1.1) translateY(-10px);
+    background-color: var(--primary-color);
+    color: white;
+    z-index: 2;
+    text-align: center;
+    
+}
+
+.price-card:nth-child(2):hover ~ .price-card,
+.price-card:nth-child(2):hover + .price-card {
+    transform: translateX(20%) rotate(5deg);
+    opacity: 0.8;
+}
+
+.price-card:nth-child(2):hover ~ .price-card:last-child {
+    transform: translateX(-20%) rotate(-5deg);
+}
+
+.price-card:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.price-card:hover .price span {
+    color: #ddd !important;
+}
+
+.price-card:hover button {
+    background-color: white;
+    color: var(--primary-color);
+}
+
+.price-card:hover li {
+    border-bottom-color: rgba(255,255,255,0.2);
+}
+
+.price span {
+    font-size: 1rem;
+    color: #666;
+}
+
+.price-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+}
+
+.price-card li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #005a61;
+}
+
+/* ==================== FEATURES SECTION ==================== */
+.features-details {
+    max-width: 1200px;
+    padding: 4rem 2rem;
+    position: relative;
+    text-align: right;
+    
+}
+
+.features-details h2 {
+    font-size: 2.5rem;
+    color: var(--dark-color);
+    position: relative;
+    margin-bottom: 3rem;
+    text-align: right;
+}
+
+.features-details h2::after {
+    color: var(--primary-color);
+    margin-left: 1rem;
+    font-size: 1.8rem;
+}
+
+.features-details ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    background: linear-gradient(145deg, #ffffff, #f8f8f8);
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+    
+}
+
+.features-details ul::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+    
+}
+
+.features-details li {
+    padding: 1.5rem;
+    margin: 0.5rem 0;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: pointer;
+    border-left: 4px solid var(--primary-color);
+    animation: itemEntrance 0.5s ease-out forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+    opacity: 0;
+    
+}
+
+@keyframes itemEntrance {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.features-details li::after {
+    color: var(--primary-color);
+    margin-left: 1rem;
+    transition: transform 0.3s ease;
+    text-align: right;
+    
+}
+
+.features-details li:hover {
+    transform: translateX(10px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.features-details li:hover::before {
+    transform: translateX(5px);
+}
+
+/* ==================== CONTACT FORM ==================== */
+.contact-form {
+    max-width: 800px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    animation: slideDown 0.3s ease-out;
+    
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.contact-form h3 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 600;
+    text-align: right;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-family: 'Cairo', sans-serif;
+    transition: border-color 0.3s ease;
+    text-align: right;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.cta-button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 1.2rem 4rem; /* Augmentation du padding pour élargir le bouton */
+    border-radius: 30px;
+    font-size: 1.2rem; /* Augmentation de la taille de la police */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 2rem;
+    display: block; /* Le rend un bloc pour mieux le centrer */
+    width: 100%; /* Le bouton prendra toute la largeur du parent */
+    max-width: 300px; /* Limite la largeur pour éviter qu'il ne soit trop grand */
+    text-align: center; /* Assure que le texte est bien centré */
+    margin-left: auto; 
+    margin-right: auto; /* Centre le bouton horizontalement */
+}
+
+.cta-button:hover {
+    background: #005a61;
+    transform: translateY(-2px);
+}
+
+
+.submit-btn {
+    background: #2a9d8f;
+    color: white;
+    padding: 1rem 3rem;
+    border: none;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: block;
+    margin: 2rem auto 0;
+    transition: background 0.3s ease;
+    max-width: 400%;
+}
+
+.submit-btn:hover {
+    background: #21867a;
+}
+
+.price-info {
+    text-align: center;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.price-info p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+/* ==================== ERROR MESSAGES ==================== */
+.error {
+    background: #ffe6e6;
+    padding: 2rem;
+    border-radius: 10px;
+    border: 2px solid #ff4444;
+    max-width: 600px;
+    margin: 4rem auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.error::before {
+    content: '!';
+    font-size: 2.5rem;
+    color: #ff4444;
+    width: 50px;
+    height: 50px;
+    border: 2px solid #ff4444;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==================== RESPONSIVE DESIGN ==================== */
+@media (max-width: 768px) {
+    .forfaits-hero {
+        padding: 6rem 1rem;
+    }
+    
+    .details-hero {
+        padding: 4rem 1rem;
+    }
+    
+    .details-hero h1 {
+        font-size: 2.2rem;
+    }
+    
+    .details-hero .price {
+        font-size: 2rem;
+    }
+    
+    .features-details ul {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        
+    }
+    
+    .features-details li {
+        padding: 1rem;
+    }
+
+    .contact-form .form-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .contact-form {
+        margin: 2rem 1rem;
+        padding: 1.5rem;
+    }
+}
+/* SweetAlert2 Custom Styles */
+.custom-swal-popup {
+    font-family: 'Cairo', sans-serif;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  
+  .custom-swal-title {
+    color: #006d77;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .custom-swal-button {
+    font-size: 1rem;
+    padding: 0.5rem 2rem;
+    border-radius: 25px;
+  }
