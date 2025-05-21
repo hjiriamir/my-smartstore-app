@@ -52,6 +52,7 @@ const topBannerRoutes = [
   '/planogram-ia',
   '/floor-plan-editor',
   '/furniture-library',
+  '/furniture-editor',
   // Ajoute ici les routes concernées
 ];
 

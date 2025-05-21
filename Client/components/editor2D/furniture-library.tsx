@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
 import { ConfirmationModal } from "./ConfirmationModal";
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 import {
   Search,
   Plus,
@@ -46,6 +48,9 @@ import type { FurnitureType, SavedFurniture } from "@/lib/furniture-store"
 
 // Furniture Card Component
 const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
   const { products } = useProductStore()
   const [showPreview, setShowPreview] = useState(false)
 
@@ -120,7 +125,7 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
         ) : (
           <div className="flex flex-col items-center justify-center">
             {getFurnitureIcon(furniture.furniture.type)}
-            <span className="text-xs text-muted-foreground mt-2">Cliquez pour prévisualiser</span>
+            <span className="text-xs text-muted-foreground mt-2">{t("furnitureEditor.visualiser")}</span>
           </div>
         )}
       </div>
@@ -130,9 +135,9 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
             <h3 className="font-medium truncate">{furniture.furniture.name}</h3>
           </div>
           <div className="text-xs text-muted-foreground">
-            {furniture.furniture.sections} sections, {furniture.furniture.slots} emplacements
+            {furniture.furniture.sections} {t("furnitureEditor.sections")}, {furniture.furniture.slots} {t("furnitureEditor.emplacement")}
           </div>
-          <div className="text-xs text-muted-foreground">{furniture.products.length} produits placés</div>
+          <div className="text-xs text-muted-foreground">{furniture.products.length} {t("productImport.produitPlacerIA")}</div>
           {furniture.description && (
             <div className="text-xs text-muted-foreground truncate">{furniture.description}</div>
           )}
@@ -141,11 +146,11 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
       <CardFooter className="p-4 pt-0 flex justify-between">
         <Button variant="outline" size="sm" onClick={() => onEdit(furniture)}>
           <Edit className="h-4 w-4 mr-2" />
-          Modifier
+          {t("modifier")}
         </Button>
         <Button variant="outline" size="sm" onClick={() => onUse(furniture)}>
           <ArrowRight className="h-4 w-4 mr-2" />
-          Utiliser
+          {t("utiliser")}
         </Button>
         <Button variant="ghost" size="sm" className="text-destructive" onClick={() => onDelete(furniture.furniture.id)}>
           <Trash2 className="h-4 w-4" />
@@ -157,21 +162,24 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
 
 // Delete Confirmation Dialog
 const DeleteConfirmationDialog = ({ isOpen, onClose, onConfirm, furnitureName }) => {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Supprimer le meuble</DialogTitle>
+          <DialogTitle>{t("productImport.floorPlan.deleteFurniture")}</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer le meuble "{furnitureName}" ? Cette action est irréversible.
+          {t("productImport.floorPlan.confirmDeleteFurniture")} "{furnitureName}" {t("productImport.floorPlan.confirmDeleteFurnitureAfter")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Annuler
+          {t("cancel")}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Supprimer
+          {t("productImport.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -181,8 +189,11 @@ const DeleteConfirmationDialog = ({ isOpen, onClose, onConfirm, furnitureName })
 
 // Main Furniture Library Component
 export function FurnitureLibrary() {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
   const { toast } = useToast()
-  const { savedFurniture, clearAllFurniture } = useFurnitureStore()
+  const { savedFurniture, clearAllFurniture, deleteFurniture  } = useFurnitureStore()
   const [isModalOpen, setIsModalOpen] = useState(false);
 
 
@@ -286,22 +297,23 @@ export function FurnitureLibrary() {
   }
 
   return (
-    <div className="container max-w-6xl mx-auto py-6">
+    <div className="container max-w-6xl mx-auto py-6 mt-12">
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Bibliothèque de Meubles</h1>
+          <h1 className="text-2xl font-bold">{t("furnitureLibrary")}</h1>
           <Button 
         variant="outline" 
         onClick={() => window.location.href = "/Editor"}
         className="flex items-center gap-2 mb-4"
       >
         <ArrowLeft className="h-4 w-4" />
-        Retour à l'éditeur
+        {t("productImport.backToEditor")}
       </Button>
           <Button asChild>
             <Link href="/furniture-editor">
               <Plus className="h-4 w-4 mr-2" />
-              Créer un nouveau meuble
+              {t("productImport.floorPlan.creerMeuble")}
+
             </Link>
           </Button>
         </div>
@@ -312,7 +324,7 @@ export function FurnitureLibrary() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un meuble..."
+                placeholder={t("productImport.rechercheFurniture")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -325,7 +337,7 @@ export function FurnitureLibrary() {
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value as FurnitureType | "all")}
               >
-                <option value="all">Tous les types</option>
+                <option value="all">{t("furnitureEditor.allTypes")}</option>
                 <option value="clothing-rack">Portants</option>
                 <option value="wall-display">Présentoirs muraux</option>
                 <option value="accessory-display">Présentoirs à accessoires</option>
@@ -338,21 +350,21 @@ export function FurnitureLibrary() {
 
           {/* Sort options */}
           <div className="flex items-center space-x-2 text-sm">
-            <span className="text-muted-foreground">Trier par:</span>
+            <span className="text-muted-foreground">{t("productImport.sortBy")}:</span>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("name")}>
-              Nom
+            {t("productImport.name")}
               {sortField === "name" && (
                 <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
               )}
             </Button>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("type")}>
-              Type
+            {t("productImport.type")}
               {sortField === "type" && (
                 <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
               )}
             </Button>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("products")}>
-              Produits
+            {t("productImport.produits")}
               {sortField === "products" && (
                 <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
               )}
@@ -360,7 +372,7 @@ export function FurnitureLibrary() {
           </div>
 
           {/* Results count */}
-          <div className="text-sm text-muted-foreground">{filteredFurniture.length} meubles trouvés</div>
+          <div className="text-sm text-muted-foreground">{filteredFurniture.length} {t("productImport.meubletrouve")}</div>
 
           {/* Furniture grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -376,7 +388,7 @@ export function FurnitureLibrary() {
               ))
             ) : (
               <div className="col-span-full text-center py-12 text-muted-foreground">
-                Aucun meuble ne correspond à votre recherche
+                {t("productImport.noFurnitureInLibrary")}
               </div>
             )}
           </div>

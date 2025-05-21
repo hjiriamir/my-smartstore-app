@@ -50,6 +50,8 @@ import {
   RefrigeratedShowcase,
   CashierDisplay,
   ShelvesDisplay,
+  ClothingWallDisplay,
+  ClothingDisplay,
 } from "@/components/editor2D/furniture-3d-components"
 
 import { Button } from "@/components/ui/button"
@@ -421,10 +423,15 @@ const DraggableFurnitureItem = ({
   floorPlan,
   toast,
   matchedPlanElements = {},
+  placedFurniture = [],
 }) => {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
+
+  // Vérifier si ce meuble est déjà placé dans la scène
+  const isPlaced = placedFurniture.some((item) => item.savedFurniture.furniture.id === furniture.furniture.id)
+
   // Check if this furniture is matched with a plan element
   const isMatched = Object.values(matchedPlanElements).some((match) => match.furnitureId === furniture.furniture.id)
 
@@ -485,12 +492,24 @@ const DraggableFurnitureItem = ({
   return (
     <div
       className={`
-        flex flex-col p-2 border rounded-md group relative w-full
-        ${isDragging ? "opacity-50" : ""}
-        ${isMatchingPlan ? "border-green-500 bg-green-50" : ""}
-        ${isMatched ? "border-blue-500 bg-blue-50" : ""}
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
-        hover:border-primary hover:bg-primary/5 transition-colors
+        flex flex-col p-4 border-2 rounded-lg group relative w-full
+        transition-all duration-300 ease-in-out
+        ${isDragging ? "opacity-50 scale-95 shadow-inner" : "opacity-100 scale-100"}
+        ${isMatchingPlan ? "border-green-500 bg-green-50 animate-pulse" : ""}
+        ${
+          isMatched
+            ? `
+          border-cyan-400 bg-gradient-to-r from-cyan-50 to-cyan-100
+          shadow-lg shadow-cyan-500/40
+          ring-1 ring-cyan-300/70
+          hover:shadow-cyan-600/60
+          hover:scale-[1.02]
+          ${!isPlaced ? "animate-[pulse_2s_ease-in-out_infinite]" : ""}
+        `
+            : ""
+        }
+        ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        hover:border-primary hover:bg-primary/10
       `}
       dir={textDirection}
     >
@@ -564,7 +583,7 @@ const DraggableFurnitureItem = ({
 
       {isMatched && (
         <Badge variant="outline" className="absolute -top-2 -right-2 bg-blue-100 text-blue-800 border-blue-500 text-xs">
-          {t("productImport.floorPlan.associated")}
+          {t("productImport.floorPlan.associer1")}
         </Badge>
       )}
 
@@ -1099,6 +1118,18 @@ const StoreDisplayArea = ({
                 return (
                   <group key={`furniture-${item.id}`} {...groupProps}>
                     <RefrigeratedShowcase {...furnitureProps} />
+                  </group>
+                )
+              case "clothing-display":
+                return (
+                  <group key={`furniture-${item.id}`} {...groupProps}>
+                    <ClothingDisplay {...furnitureProps} />
+                  </group>
+                )
+              case "clothing-wall":
+                return (
+                  <group key={`furniture-${item.id}`} {...groupProps}>
+                    <ClothingWallDisplay {...furnitureProps} />
                   </group>
                 )
               case "cashier":
@@ -1658,7 +1689,7 @@ export function StoreDisplayEditor() {
 
       toast({
         title: "Meuble placé",
-        description: `Le meuble "${furniture.furniture.name}" a été placé à l'emplacement sélectionné.`,
+        description: `Le meuble "${furniture.furniture.name}" a ét�� placé à l'emplacement sélectionné.`,
       })
     }
   }
@@ -2302,6 +2333,7 @@ export function StoreDisplayEditor() {
                                     floorPlan={floorPlan}
                                     toast={toast}
                                     matchedPlanElements={matchedPlanElements}
+                                    placedFurniture={placedFurniture}
                                   />
 
                                   {/* Séparateur visuel */}
@@ -2322,6 +2354,7 @@ export function StoreDisplayEditor() {
                                           floorPlan={floorPlan}
                                           toast={toast}
                                           matchedPlanElements={matchedPlanElements}
+                                          placedFurniture={placedFurniture}
                                         />
                                       )
                                     })

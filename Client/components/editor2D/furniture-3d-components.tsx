@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import * as THREE from "three"
 import { useProductTexture } from "@/lib/use-product-texture"
-
+import { useTranslation } from "react-i18next"
+import { Group, Mesh } from 'three'
 // Utilitaire pour créer des matériaux réutilisables
 const createMaterials = () => {
   return {
@@ -34,23 +35,38 @@ const createMaterials = () => {
     woodDark: new THREE.MeshStandardMaterial({ color: "#5D4037" }),
     woodMedium: new THREE.MeshStandardMaterial({ color: "#795548" }),
     plastic: new THREE.MeshStandardMaterial({ color: "#f0f0f0" }),
+    wallWhite: new THREE.MeshStandardMaterial({ color: "#f5f5f5", roughness: 0.9, metalness: 0.1 }),
+    wallGray: new THREE.MeshStandardMaterial({ color: "#e0e0e0", roughness: 0.9, metalness: 0.1 }),
+    woodLight: new THREE.MeshStandardMaterial({ color: "#d7ccc8", roughness: 0.7, metalness: 0.1 }),
+    woodFloor: new THREE.MeshStandardMaterial({ color: "#a1887f", roughness: 0.8, metalness: 0.1 }),
+    railMetal: new THREE.MeshStandardMaterial({ color: "#9e9e9e", roughness: 0.3, metalness: 0.7 }),
   }
 }
 
 // Fonction utilitaire pour grouper les éléments par section
 const groupItemsBySection = (displayItems) => {
   const itemsBySection = {}
+
+  if (!displayItems || !Array.isArray(displayItems)) {
+    console.warn("displayItems is not an array:", displayItems)
+    return {}
+  }
+
   displayItems.forEach((item) => {
     if (!itemsBySection[item.section]) {
       itemsBySection[item.section] = []
     }
     itemsBySection[item.section].push(item)
   })
+
+  // Log pour déboguer
+  console.log("Grouped items by section:", itemsBySection)
+
   return itemsBySection
 }
 
 // Fonction pour ajuster les couleurs
-const adjustColor = (color, amount) => {
+const adjustColorFn = (color, amount) => {
   // Convertir la couleur hex en RGB
   let r = Number.parseInt(color.substring(1, 3), 16)
   let g = Number.parseInt(color.substring(3, 5), 16)
@@ -78,9 +94,21 @@ const ProductDisplayComponent = ({
   isRefrigerated = false,
   isSuit = false,
   isShirt = false,
+  isHat = false,
+  isShoe = false,
   quantity = 1, // Add quantity parameter with default value
 }) => {
   const { texture: productTexture, textureLoaded } = useProductTexture(product?.image)
+
+  // Log pour déboguer
+  console.log("ProductDisplayComponent - Rendering product:", {
+    name: product?.name,
+    image: product?.image,
+    textureLoaded,
+    quantity,
+    position: product?.position,
+    section: product?.section,
+  })
 
   // Déterminer la couleur de secours en fonction du type de produit
   const getFallbackColor = () => {
@@ -90,20 +118,20 @@ const ProductDisplayComponent = ({
     if (isFolded) return product?.color || "#000066"
     if (isSuit) return product?.color || "#333333"
     if (isShirt) return product?.color || "#FFFFFF"
+    if (isHat) return product?.color || "#222222"
+    if (isShoe) return product?.color || "#111111"
     return product?.color || "#333333"
   }
 
-  // If quantity is greater than 1 and we're not already handling a single product instance,
-  // render multiple products with slight offsets side by side
+  // If quantity is greater than 1, render multiple products with slight offsets
   if (quantity > 1) {
     // Calculate spacing between products - use smaller spacing for better side-by-side display
-    const spacing = width * 0.8
+    const spacing = width * 0.5
 
     return (
       <group>
         {Array.from({ length: quantity }).map((_, index) => {
-          // Position products side by side (primarily on X axis)
-          // For odd quantities, center the middle product
+          // Position products side by side with proper spacing
           const offsetX = (index - (quantity - 1) / 2) * spacing
 
           return (
@@ -120,6 +148,8 @@ const ProductDisplayComponent = ({
                 isRefrigerated={isRefrigerated}
                 isSuit={isSuit}
                 isShirt={isShirt}
+                isHat={isHat}
+                isShoe={isShoe}
                 quantity={1} // Important: set to 1 to avoid infinite recursion
               />
             </group>
@@ -143,6 +173,56 @@ const ProductDisplayComponent = ({
             <boxGeometry args={[width, height, 0.05]} />
             <meshStandardMaterial color={getFallbackColor()} transparent opacity={0.9} />
           </mesh>
+        )}
+      </group>
+    )
+  } else if (isHat) {
+    // Rendu pour les chapeaux/casquettes
+    return (
+      <group>
+        {textureLoaded && productTexture ? (
+          <mesh castShadow receiveShadow>
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial map={productTexture} transparent side={THREE.DoubleSide} />
+          </mesh>
+        ) : (
+          <group>
+            {/* Base du chapeau */}
+            <mesh castShadow receiveShadow position={[0, 0, 0]}>
+              <cylinderGeometry args={[width * 0.4, width * 0.5, height * 0.3, 16]} />
+              <meshStandardMaterial color={getFallbackColor()} />
+            </mesh>
+            {/* Visière (pour les casquettes) */}
+            <mesh castShadow receiveShadow position={[0, 0, width * 0.3]}>
+              <boxGeometry args={[width * 0.8, height * 0.1, width * 0.4]} />
+              <meshStandardMaterial color={getFallbackColor()} />
+            </mesh>
+          </group>
+        )}
+      </group>
+    )
+  } else if (isShoe) {
+    // Rendu pour les chaussures
+    return (
+      <group>
+        {textureLoaded && productTexture ? (
+          <mesh castShadow receiveShadow>
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial map={productTexture} transparent side={THREE.DoubleSide} />
+          </mesh>
+        ) : (
+          <group>
+            {/* Corps de la chaussure */}
+            <mesh castShadow receiveShadow position={[0, 0, 0]}>
+              <boxGeometry args={[width, height * 0.4, depth * 1.5]} />
+              <meshStandardMaterial color={getFallbackColor()} />
+            </mesh>
+            {/* Semelle */}
+            <mesh castShadow receiveShadow position={[0, -height * 0.25, 0]}>
+              <boxGeometry args={[width * 1.1, height * 0.1, depth * 1.6]} />
+              <meshStandardMaterial color="#ffffff" />
+            </mesh>
+          </group>
         )}
       </group>
     )
@@ -195,38 +275,42 @@ const ProductDisplayComponent = ({
       </group>
     )
   } else if (isShirt) {
-    // Rendu amélioré pour les chemises pliées
+    // Rendu amélioré pour les chemises
     return (
       <group>
         {textureLoaded && productTexture ? (
           <mesh castShadow receiveShadow>
-            <boxGeometry args={[width, height, depth]} />
-            <meshBasicMaterial map={productTexture} />
+            <planeGeometry args={[width, height]} />
+            <meshBasicMaterial map={productTexture} transparent side={THREE.DoubleSide} />
           </mesh>
         ) : (
           <group>
-            {/* Corps de la chemise pliée */}
+            {/* Corps de la chemise */}
             <mesh castShadow receiveShadow>
-              <boxGeometry args={[width, height, depth]} />
+              <boxGeometry args={[width, height * 0.6, depth]} />
               <meshStandardMaterial color={getFallbackColor()} />
             </mesh>
-            {/* Détails du col */}
-            <mesh castShadow receiveShadow position={[0, height / 2 + 0.01, depth / 2 - 0.01]}>
-              <boxGeometry args={[width * 0.8, 0.03, 0.01]} />
-              <meshStandardMaterial color={adjustColor(getFallbackColor(), 20)} />
+            {/* Col de la chemise */}
+            <mesh castShadow receiveShadow position={[0, height * 0.35, 0]}>
+              <boxGeometry args={[width * 0.7, height * 0.1, depth * 1.1]} />
+              <meshStandardMaterial color={adjustColorFn(getFallbackColor(), 20)} />
             </mesh>
-            {/* Plis de la chemise */}
-            {[-width * 0.25, 0, width * 0.25].map((x, i) => (
-              <mesh key={`fold-${i}`} castShadow receiveShadow position={[x, 0, depth / 2 + 0.001]}>
-                <boxGeometry args={[0.01, height * 0.8, 0.01]} />
-                <meshStandardMaterial color={adjustColor(getFallbackColor(), -10)} />
+            {/* Manches */}
+            <mesh castShadow receiveShadow position={[-width * 0.4, height * 0.25, 0]}>
+              <boxGeometry args={[width * 0.2, height * 0.1, depth]} />
+              <meshStandardMaterial color={getFallbackColor()} />
+            </mesh>
+            <mesh castShadow receiveShadow position={[width * 0.4, height * 0.25, 0]}>
+              <boxGeometry args={[width * 0.2, height * 0.1, depth]} />
+              <meshStandardMaterial color={getFallbackColor()} />
+            </mesh>
+            {/* Boutons */}
+            {[0.2, 0.1, 0, -0.1].map((y, i) => (
+              <mesh key={`button-${i}`} castShadow receiveShadow position={[0, y, depth / 2 + 0.01]}>
+                <cylinderGeometry args={[0.01, 0.01, 0.01, 8]} rotation={[Math.PI / 2, 0, 0]} />
+                <meshStandardMaterial color="#FFFFFF" />
               </mesh>
             ))}
-            {/* Étiquette de prix */}
-            <mesh castShadow receiveShadow position={[width * 0.3, height / 2, depth / 2 + 0.01]}>
-              <boxGeometry args={[0.1, 0.05, 0.01]} />
-              <meshStandardMaterial color="#FFFFFF" />
-            </mesh>
           </group>
         )}
       </group>
@@ -308,7 +392,7 @@ const ProductDisplayComponent = ({
             {/* Ceinture */}
             <mesh castShadow receiveShadow position={[0, height / 2 - 0.2, 0]}>
               <boxGeometry args={[width * 0.6, 0.05, depth * 0.6]} />
-              <meshStandardMaterial color={adjustColor(getFallbackColor(), -20)} />
+              <meshStandardMaterial color={adjustColorFn(getFallbackColor(), -20)} />
             </mesh>
             {/* Étiquette de prix */}
             <mesh castShadow receiveShadow position={[width * 0.3, height * 0.3, depth / 2 + 0.01]}>
@@ -320,6 +404,7 @@ const ProductDisplayComponent = ({
       </group>
     )
   } else {
+    // Rendu par défaut pour les autres types de produits
     return (
       <group>
         {textureLoaded && productTexture ? (
@@ -336,6 +421,43 @@ const ProductDisplayComponent = ({
       </group>
     )
   }
+}
+
+// Composant pour un mannequin simple
+const MannequinComponent = ({ height = 1.8, color = "#f0f0f0" }) => {
+  return (
+    <group>
+      {/* Tête */}
+      <mesh position={[0, height - 0.15, 0]} castShadow>
+        <sphereGeometry args={[0.1, 16, 16]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      {/* Cou */}
+      <mesh position={[0, height - 0.25, 0]} castShadow>
+        <cylinderGeometry args={[0.03, 0.05, 0.1, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      {/* Torse */}
+      <mesh position={[0, height - 0.55, 0]} castShadow>
+        <cylinderGeometry args={[0.15, 0.2, 0.5, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      {/* Support */}
+      <mesh position={[0, height / 2 - 0.2, 0]} castShadow>
+        <cylinderGeometry args={[0.03, 0.03, height - 0.6, 8]} />
+        <meshStandardMaterial color="#888888" />
+      </mesh>
+
+      {/* Base */}
+      <mesh position={[0, 0.025, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.2, 0.2, 0.05, 16]} />
+        <meshStandardMaterial color="#888888" />
+      </mesh>
+    </group>
+  )
 }
 
 // Composant amélioré pour afficher les produits dans le frigo-présentoir
@@ -468,11 +590,140 @@ const EnhancedRefrigeratedProductDisplay = ({ product, width, height }) => {
   )
 }
 
+// Modify the Product3D component to better handle side-facing products
+const Product3D = ({
+  position,
+  size,
+  product,
+  quantity = 1,
+  displayMode = "compact",
+  cellIndex,
+  rotation = [0, 0, 0],
+}) => {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (!product || !product.image) {
+      setIsLoading(false)
+      return
+    }
+
+    // Charger la texture de l'image du produit
+    const loadTexture = async () => {
+      try {
+        // Créer un texture loader
+        const textureLoader = new THREE.TextureLoader()
+        textureLoader.crossOrigin = "anonymous"
+
+        // Charger la texture normale
+        const texturePromise = new Promise<THREE.Texture>((resolve, reject) => {
+          textureLoader.load(
+            product.image,
+            (loadedTexture) => {
+              // Configurer la texture pour une meilleure apparence
+              loadedTexture.encoding = THREE.sRGBEncoding
+              loadedTexture.needsUpdate = true
+              resolve(loadedTexture)
+            },
+            undefined,
+            reject,
+          )
+        })
+
+        const loadedTexture = await texturePromise
+        setTexture(loadedTexture)
+        setIsLoading(false)
+      } catch (err) {
+        console.error("Error loading texture:", err)
+        setError(true)
+        setIsLoading(false)
+      }
+    }
+
+    loadTexture()
+
+    return () => {
+      if (texture) {
+        texture.dispose()
+      }
+    }
+  }, [product])
+
+  if (isLoading || !product) {
+    return null
+  }
+
+  // Extraire les coordonnées de position
+  const [baseX, baseY, baseZ] = position
+  const [totalWidth, height, depth] = size
+
+  // Déterminer si c'est une rotation latérale (pour les côtés gauche/droit)
+  const isLateralRotation = Math.abs(rotation[1]) === Math.PI / 2
+
+  // Réduire davantage la largeur individuelle pour éviter les chevauchements
+  // Utiliser un facteur de réduction plus important quand la quantité augmente
+  const scaleFactor = quantity > 1 ? 0.7 : 0.85 // Réduction plus importante pour les quantités multiples
+
+  // Pour les produits sur les côtés, nous devons ajuster la dimension qui représente la "largeur"
+  const productWidth = isLateralRotation ? (depth / quantity) * scaleFactor : (totalWidth / quantity) * scaleFactor
+
+  // Calculer l'espacement entre les produits - réduire considérablement l'espacement
+  const spacing = ((totalWidth - productWidth * quantity) / (quantity + 1)) * 0.15
+
+  const productInstances = []
+
+  for (let i = 0; i < quantity; i++) {
+    // Nouvelle méthode de positionnement avec espacement uniforme
+    // Positionner les produits avec un espacement égal entre eux
+    const x = baseX - totalWidth / 2 + spacing + i * (productWidth + spacing) + productWidth / 2
+
+    // Ajouter une légère variation aléatoire pour plus de réalisme
+    const jitterX = (Math.random() - 0.5) * 0.002
+    const jitterY = (Math.random() - 0.5) * 0.002
+    const jitterZ = (Math.random() - 0.5) * 0.002
+
+    // Ajuster la taille pour les produits latéraux
+    const adjustedWidth = isLateralRotation ? height * 1.2 : productWidth
+    const adjustedHeight = isLateralRotation ? productWidth * 1.5 : height * 0.9
+
+    productInstances.push(
+      <group
+        key={`product-${cellIndex}-${i}`}
+        position={[x + jitterX, baseY + jitterY, baseZ + jitterZ]}
+        rotation={rotation}
+        castShadow
+        receiveShadow
+      >
+        {texture ? (
+          // Utiliser un plan avec la texture du produit
+          <mesh castShadow receiveShadow position={[0, height * 0.5, 0]}>
+            {/* Ajuster la géométrie pour les produits sur les côtés */}
+            <planeGeometry args={[adjustedWidth, adjustedHeight]} />
+            <meshBasicMaterial map={texture} transparent={true} side={THREE.DoubleSide} />
+          </mesh>
+        ) : (
+          // Fallback si pas de texture
+          <mesh castShadow receiveShadow position={[0, height * 0.5, 0]}>
+            <planeGeometry args={[adjustedWidth, adjustedHeight]} />
+            <meshBasicMaterial color={product.color || "#f3f4f6"} />
+          </mesh>
+        )}
+      </group>,
+    )
+  }
+
+  return <>{productInstances}</>
+}
+
 // 3D Wall Display Component
 export const WallDisplay = ({ furniture, displayItems, products, onRemove }) => {
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
 
   // Calculate dimensions
   const sectionHeight = height / sections
@@ -488,11 +739,6 @@ export const WallDisplay = ({ furniture, displayItems, products, onRemove }) => 
 
       {/* Side panels */}
       <mesh position={[-width / 2 - 0.025, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.05, height, depth]} />
-        <meshStandardMaterial color="#e0e0e0" />
-      </mesh>
-
-      <mesh position={[width / 2 + 0.025, height / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.05, height, depth]} />
         <meshStandardMaterial color="#e0e0e0" />
       </mesh>
@@ -513,7 +759,10 @@ export const WallDisplay = ({ furniture, displayItems, products, onRemove }) => 
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
 
-          const itemX = (item.position - slots / 2 + 0.5) * slotWidth
+          // Calculate position based on slot, adjusting for RTL if needed
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth
 
           // Determine item type
           const name = product.name?.toLowerCase() || ""
@@ -523,10 +772,13 @@ export const WallDisplay = ({ furniture, displayItems, products, onRemove }) => 
           // Get quantity if available
           const quantity = item.quantity || 1
 
+          // Adjust position based on section
+          const adjustedY = sectionY - sectionHeight * 0.2
+
           if (isBottom) {
             // Pants/trousers
             return (
-              <group key={item.id} position={[itemX, sectionY - sectionHeight * 0.2, depth / 4]}>
+              <group key={item.id} position={[itemX, adjustedY, depth / 4]}>
                 <ProductDisplayComponent
                   product={product}
                   width={slotWidth * 0.8}
@@ -541,7 +793,7 @@ export const WallDisplay = ({ furniture, displayItems, products, onRemove }) => 
           } else {
             // Tops/jackets
             return (
-              <group key={item.id} position={[itemX, sectionY - sectionHeight * 0.2, depth / 4]}>
+              <group key={item.id} position={[itemX, adjustedY, depth / 4]}>
                 <ProductDisplayComponent
                   product={product}
                   width={slotWidth * 0.8}
@@ -565,6 +817,8 @@ export const ClothingRack = ({ furniture, displayItems, products, onRemove }) =>
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
 
   // Calculate dimensions
   const sectionSpacing = height / sections
@@ -611,7 +865,10 @@ export const ClothingRack = ({ furniture, displayItems, products, onRemove }) =>
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
 
-          const itemX = (item.position - slots / 2 + 0.5) * slotWidth
+          // Calculate position based on slot, adjusting for RTL if needed
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth
 
           // Determine item type
           const name = product.name?.toLowerCase() || ""
@@ -663,6 +920,8 @@ export const AccessoryDisplay = ({ furniture, displayItems, products, onRemove }
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
 
   // Calculate dimensions
   const sectionHeight = height / sections
@@ -698,7 +957,10 @@ export const AccessoryDisplay = ({ furniture, displayItems, products, onRemove }
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
 
-          const itemX = (item.position - slots / 2 + 0.5) * slotWidth
+          // Calculate position based on slot, adjusting for RTL if needed
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth
 
           // Get quantity if available
           const quantity = item.quantity || 1
@@ -728,6 +990,8 @@ export const ModularCube = ({ furniture, displayItems, products, onRemove }) => 
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
 
   // Calculate dimensions
   const cubeSize = Math.min(width, height) / sections
@@ -772,7 +1036,10 @@ export const ModularCube = ({ furniture, displayItems, products, onRemove }) => 
           const row = Math.floor(item.position / slots)
           const col = item.position % slots
 
-          const itemX = (col - slots / 2 + 0.5) * slotSize
+          // Adjust column position for RTL
+          const adjustedCol = isRTL ? slots - 1 - col : col
+
+          const itemX = (adjustedCol - slots / 2 + 0.5) * slotSize
           const itemZ = (row - slots / 2 + 0.5) * slotSize
 
           // Get quantity if available
@@ -796,11 +1063,14 @@ export const ModularCube = ({ furniture, displayItems, products, onRemove }) => 
     </group>
   )
 }
+
 // Modification du composant GondolaDisplay pour améliorer la synchronisation des positions des produits
 export const GondolaDisplay = ({ furniture, displayItems, products, onRemove }) => {
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
 
   // Calculate dimensions
   const sectionHeight = height / sections
@@ -885,10 +1155,15 @@ export const GondolaDisplay = ({ furniture, displayItems, products, onRemove }) 
           // Face B: positions (slots/2) à (slots - 1)
           const isFaceA = item.position < slotsPerFace
 
-          // Calculer la position X relative à chaque face
+          // Calculer la position relative à chaque face
           // Pour la face A: positions 0 à (slots/2 - 1) mappées sur toute la largeur
           // Pour la face B: positions (slots/2) à (slots - 1) mappées sur toute la largeur
-          const relativePosition = isFaceA ? item.position : item.position - slotsPerFace
+          let relativePosition = isFaceA ? item.position : item.position - slotsPerFace
+
+          // Adjust for RTL if needed
+          if (isRTL) {
+            relativePosition = isFaceA ? slotsPerFace - 1 - relativePosition : slotsPerFace - 1 - relativePosition
+          }
 
           // Calculer la position X en fonction de la position relative
           const itemX = (relativePosition / slotsPerFace - 0.5) * width + width / slotsPerFace / 2
@@ -920,161 +1195,863 @@ export const GondolaDisplay = ({ furniture, displayItems, products, onRemove }) 
   )
 }
 
-// Modification du composant PlanogramDisplay pour supprimer les colonnes verticales
-export const PlanogramDisplay = ({ furniture, displayItems, products, onRemove, cellWidth, cellHeight }) => {
+// TableDisplay Component
+export const TableDisplay = ({ furniture, displayItems, products, onRemove }) => {
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
 
-  // Calculate dimensions if not provided
-  const actualCellWidth = cellWidth || width / slots
-  const actualCellHeight = cellHeight || height / sections
+  // Calculate dimensions
+  const slotWidth = width / slots
+  const tableTopHeight = 0.05
+  const legRadius = 0.04
+  const tableColor = color || "#8B4513"
+  const legColor = "#5D4037"
 
   return (
     <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
-      {/* Back panel */}
-      <mesh position={[0, height / 2, -depth / 2]} castShadow receiveShadow>
-        <boxGeometry args={[width, height, 0.05]} />
-        <meshStandardMaterial color={color || "#f0f0f0"} />
+      {/* Table top */}
+      <mesh position={[0, height - tableTopHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, tableTopHeight, depth]} />
+        <meshStandardMaterial color={tableColor} roughness={0.7} metalness={0.1} />
       </mesh>
 
-      {/* Side panels */}
-      <mesh position={[-width / 2 - 0.025, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.05, height, depth]} />
-        <meshStandardMaterial color="#e0e0e0" />
-      </mesh>
-
-      <mesh position={[width / 2 + 0.025, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.05, height, depth]} />
-        <meshStandardMaterial color="#e0e0e0" />
-      </mesh>
-
-      {/* Horizontal shelves - Gardons uniquement les étagères horizontales */}
-      {Array.from({ length: sections + 1 }).map((_, i) => (
-        <mesh key={`shelf-${i}`} position={[0, i * actualCellHeight, 0]} castShadow receiveShadow>
-          <boxGeometry args={[width, 0.03, depth]} />
-          <meshStandardMaterial color="#e0e0e0" />
+      {/* Table legs */}
+      {[
+        [-width / 2 + legRadius, height / 2, -depth / 2 + legRadius],
+        [width / 2 - legRadius, height / 2, -depth / 2 + legRadius],
+        [-width / 2 + legRadius, height / 2, depth / 2 - legRadius],
+        [width / 2 - legRadius, height / 2, depth / 2 - legRadius],
+      ].map((position, index) => (
+        <mesh key={`leg-${index}`} position={position} castShadow receiveShadow>
+          <cylinderGeometry args={[legRadius, legRadius, height, 8]} />
+          <meshStandardMaterial color={legColor} roughness={0.8} metalness={0.1} />
         </mesh>
       ))}
 
-      {/* Display items in a grid layout */}
+      {/* Optional: Cross supports for stability */}
+      <mesh position={[0, height / 4, 0]} rotation={[0, Math.PI / 4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[Math.sqrt(width * width + depth * depth) * 0.7, 0.02, 0.02]} />
+        <meshStandardMaterial color={legColor} />
+      </mesh>
+
+      <mesh position={[0, height / 4, 0]} rotation={[0, -Math.PI / 4, 0]} castShadow receiveShadow>
+        <boxGeometry args={[Math.sqrt(width * width + depth * depth) * 0.7, 0.02, 0.02]} />
+        <meshStandardMaterial color={legColor} />
+      </mesh>
+
+      {/* Display items on the table */}
       {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
-        const sectionY = Number.parseInt(sectionIndex) * actualCellHeight + actualCellHeight / 2
+        return items.map((item) => {
+          const product = products.find((p) => p.primary_Id === item.productId)
+          if (!product) return null
+
+          // Calculate position on the table
+          const row = Math.floor(item.position / slots)
+          const col = item.position % slots
+
+          // Adjust column position for RTL
+          const adjustedCol = isRTL ? slots - 1 - col : col
+
+          // Distribute items evenly on the table surface
+          const rowCount = Math.ceil(displayItems.length / slots)
+          const rowSpacing = depth / (rowCount + 1)
+          const colSpacing = width / (slots + 1)
+
+          const itemX = (adjustedCol + 1) * colSpacing - width / 2
+          const itemZ = (row + 1) * rowSpacing - depth / 2
+          const itemY = height + 0.05 // Just above the table surface
+
+          // Get quantity if available
+          const quantity = item.quantity || 1
+
+          // Determine if product is folded (like clothing) or displayed normally
+          const name = product.name?.toLowerCase() || ""
+          const isClothing =
+            name.includes("shirt") || name.includes("pant") || name.includes("dress") || name.includes("jacket")
+
+          return (
+            <group key={item.id} position={[itemX, itemY, itemZ]}>
+              <ProductDisplayComponent
+                product={product}
+                width={slotWidth * 0.7}
+                height={0.1}
+                depth={0.2}
+                isHanging={false}
+                isFolded={isClothing}
+                isShirt={name.includes("shirt")}
+                quantity={quantity}
+              />
+            </group>
+          )
+        })
+      })}
+    </group>
+  )
+}
+
+// RefrigeratorDisplay Component
+export const RefrigeratorDisplay = ({ furniture, displayItems, products, onRemove }) => {
+  const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
+  const materials = useMemo(() => createMaterials(), [])
+  const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Calculate dimensions
+  const sectionHeight = height / sections
+  const slotWidth = width / slots
+  const doorThickness = 0.05
+  const handleWidth = 0.03
+  const handleHeight = 0.15
+  const handleDepth = 0.05
+
+  // Colors
+  const fridgeColor = color || "#f0f0f0"
+  const handleColor = "#cccccc"
+  const interiorColor = "#ffffff"
+  const shelfColor = "#e0e0e0"
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Main refrigerator body */}
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial color={fridgeColor} roughness={0.2} metalness={0.3} />
+      </mesh>
+
+      {/* Door (slightly inset from the main body) */}
+      <mesh position={[0, height / 2, depth / 2 + doorThickness / 2 - 0.01]} castShadow receiveShadow>
+        <boxGeometry args={[width - 0.1, height - 0.1, doorThickness]} />
+        <meshStandardMaterial color={fridgeColor} roughness={0.1} metalness={0.4} />
+      </mesh>
+
+      {/* Door handle */}
+      <mesh
+        position={[width / 2 - 0.2, height / 2, depth / 2 + doorThickness + handleDepth / 2]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[handleWidth, handleHeight, handleDepth]} />
+        <meshStandardMaterial color={handleColor} roughness={0.3} metalness={0.7} />
+      </mesh>
+
+      {/* Interior (visible when looking through the glass) */}
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width - 0.2, height - 0.2, depth - 0.2]} />
+        <meshStandardMaterial color={interiorColor} roughness={0.9} metalness={0.1} />
+      </mesh>
+
+      {/* Shelves */}
+      {Array.from({ length: sections }).map((_, i) => {
+        const shelfY = (i + 1) * sectionHeight
+
+        return (
+          <mesh key={`shelf-${i}`} position={[0, shelfY, 0]} castShadow receiveShadow>
+            <boxGeometry args={[width - 0.3, 0.02, depth - 0.3]} />
+            <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.2} />
+          </mesh>
+        )
+      })}
+
+      {/* Display items on shelves */}
+      {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
+        const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
 
         return items.map((item) => {
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
 
-          const position = item.position || 0
-          const itemX = -width / 2 + (position + 0.5) * actualCellWidth
-
-          // Determine product type for display
-          const name = product.name?.toLowerCase() || ""
-          const isFood =
-            name.includes("food") || name.includes("snack") || name.includes("drink") || name.includes("beverage")
-
-          const isBox = name.includes("box") || name.includes("package") || name.includes("pack")
-
-          // Calculate product size to fit in cell
-          const productWidth = actualCellWidth * 0.9
-          const productHeight = actualCellHeight * 0.9
-          const productDepth = depth * 0.7
+          // Calculate position based on slot, adjusting for RTL if needed
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth
 
           // Get quantity if available
           const quantity = item.quantity || 1
 
-          // Get the texture for this product outside the map function
-          const { texture: productTexture, textureLoaded } = useProductTexture(product?.image)
-
-          // Si la quantité est supérieure à 1, afficher plusieurs produits côte à côte
-          if (quantity > 1) {
-            return (
-              <group key={item.id} position={[itemX, sectionY, depth / 4]}>
-                {Array.from({ length: quantity }).map((_, index) => {
-                  // Calculer le décalage pour centrer les produits
-                  const offsetX = (index - (quantity - 1) / 2) * (productWidth * 0.8)
-
-                  return (
-                    <group key={`product-${index}`} position={[offsetX, 0, 0]}>
-                      {isBox ? (
-                        <mesh castShadow receiveShadow>
-                          <boxGeometry args={[productWidth / Math.sqrt(quantity), productHeight, productDepth]} />
-                          <meshStandardMaterial color={product.color || "#CD853F"} />
-                        </mesh>
-                      ) : (
-                        <mesh castShadow receiveShadow>
-                          {product && product.image && textureLoaded ? (
-                            <>
-                              <planeGeometry args={[productWidth / Math.sqrt(quantity), productHeight]} />
-                              <meshBasicMaterial map={productTexture} transparent side={THREE.DoubleSide} />
-                            </>
-                          ) : (
-                            <>
-                              <boxGeometry args={[productWidth / Math.sqrt(quantity), productHeight, productDepth]} />
-                              <meshStandardMaterial color={product?.color || "#333333"} />
-                            </>
-                          )}
-                        </mesh>
-                      )}
-                    </group>
-                  )
-                })}
-              </group>
-            )
-          }
-
-          // Pour un seul produit, affichage normal
           return (
-            <group key={item.id} position={[itemX, sectionY, depth / 4]}>
-              {isBox ? (
-                <mesh castShadow receiveShadow>
-                  <boxGeometry args={[productWidth, productHeight, productDepth]} />
-                  <meshStandardMaterial color={product.color || "#CD853F"} />
-                </mesh>
-              ) : (
-                <mesh castShadow receiveShadow>
-                  {product && product.image && textureLoaded ? (
-                    <>
-                      <planeGeometry args={[productWidth, productHeight]} />
-                      <meshBasicMaterial map={productTexture} transparent side={THREE.DoubleSide} />
-                    </>
-                  ) : (
-                    <>
-                      <boxGeometry args={[productWidth, productHeight, productDepth]} />
-                      <meshStandardMaterial color={product?.color || "#333333"} />
-                    </>
-                  )}
-                </mesh>
-              )}
+            <group key={item.id} position={[itemX, sectionY, 0]}>
+              <ProductDisplayComponent
+                product={product}
+                width={slotWidth * 0.7}
+                height={sectionHeight * 0.7}
+                depth={depth * 0.5}
+                isRefrigerated={true}
+                quantity={quantity}
+              />
             </group>
           )
         })
       })}
 
-      {/* Price tags on shelf edges */}
+      {/* Interior light */}
+      <pointLight position={[0, height - 0.2, 0]} intensity={0.3} distance={depth} color="#ffffff" />
+    </group>
+  )
+}
+
+// RefrigeratedShowcase Component (open-front refrigerated display)
+export const RefrigeratedShowcase = ({ furniture, displayItems, products, onRemove }) => {
+  const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
+  const materials = useMemo(() => createMaterials(), [])
+  const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Calculate dimensions
+  const sectionHeight = height / sections
+  const slotWidth = width / slots
+
+  // Colors
+  const showcaseColor = color || "#e0e0e0"
+  const interiorColor = "#f8f8f8"
+  const shelfColor = "#d0d0d0"
+  const accentColor = "#a0d8ef" // Light blue for refrigeration accent
+
+  // Glass material for the sides and top
+  const glassMaterial = useMemo(() => {
+    return new THREE.MeshPhysicalMaterial({
+      color: "#ffffff",
+      transparent: true,
+      opacity: 0.3,
+      roughness: 0.1,
+      metalness: 0.1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.1,
+      reflectivity: 1,
+    })
+  }, [])
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Base */}
+      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.2, depth]} />
+        <meshStandardMaterial color={showcaseColor} roughness={0.5} metalness={0.3} />
+      </mesh>
+
+      {/* Back panel */}
+      <mesh position={[0, height / 2, -depth / 2 + 0.05]} castShadow receiveShadow>
+        <boxGeometry args={[width, height, 0.1]} />
+        <meshStandardMaterial color={showcaseColor} roughness={0.5} metalness={0.3} />
+      </mesh>
+
+      {/* Side panels (glass) */}
+      <mesh position={[-width / 2 + 0.05, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.1, height, depth]} />
+        <primitive object={glassMaterial} />
+      </mesh>
+
+      <mesh position={[width / 2 - 0.05, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.1, height, depth]} />
+        <primitive object={glassMaterial} />
+      </mesh>
+
+      {/* Top panel (glass) */}
+      <mesh position={[0, height - 0.05, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.1, depth]} />
+        <primitive object={glassMaterial} />
+      </mesh>
+
+      {/* Interior back panel */}
+      <mesh position={[0, height / 2, -depth / 2 + 0.15]} castShadow receiveShadow>
+        <boxGeometry args={[width - 0.2, height - 0.2, 0.01]} />
+        <meshStandardMaterial color={interiorColor} roughness={0.9} metalness={0.1} />
+      </mesh>
+
+      {/* Refrigeration accent (blue strip at the bottom) */}
+      <mesh position={[0, 0.25, depth / 2 - 0.05]} castShadow receiveShadow>
+        <boxGeometry args={[width - 0.1, 0.05, 0.01]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.2} />
+      </mesh>
+
+      {/* Shelves */}
+      {Array.from({ length: sections }).map((_, i) => {
+        const shelfY = (i + 1) * sectionHeight
+
+        return (
+          <mesh key={`shelf-${i}`} position={[0, shelfY, 0]} castShadow receiveShadow>
+            <boxGeometry args={[width - 0.3, 0.02, depth - 0.2]} />
+            <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.2} />
+          </mesh>
+        )
+      })}
+
+      {/* Display items on shelves with enhanced refrigerated display */}
       {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
-        const sectionY = Number.parseInt(sectionIndex) * actualCellHeight
+        const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
 
         return items.map((item) => {
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
 
-          const position = item.position || 0
-          const itemX = -width / 2 + (position + 0.5) * actualCellWidth
+          // Calculate position based on slot, adjusting for RTL if needed
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth
 
+          const itemZ = depth / 4 // Position items toward the front for better visibility
+
+          // Get quantity if available
+          const quantity = item.quantity || 1
+
+          // Use the enhanced refrigerated product display for better visuals
           return (
-            <mesh
-              key={`tag-${item.id}`}
-              position={[itemX, sectionY + 0.015, depth / 2 - 0.01]}
-              castShadow
-              receiveShadow
-            >
-              <planeGeometry args={[actualCellWidth * 0.8, 0.03]} />
-              <meshBasicMaterial color="#FFFFFF" />
-            </mesh>
+            <group key={item.id} position={[itemX, sectionY, itemZ]}>
+              <EnhancedRefrigeratedProductDisplay
+                product={product}
+                width={slotWidth * 0.7}
+                height={sectionHeight * 0.7}
+              />
+            </group>
           )
         })
       })}
+
+      {/* Cool mist effect at the bottom (subtle particle-like geometry) */}
+      <group position={[0, 0.3, depth / 2 - 0.1]}>
+        {Array.from({ length: 5 }).map((_, i) => {
+          const mistX = (Math.random() - 0.5) * width * 0.8
+          const mistY = Math.random() * 0.1
+          const mistZ = (Math.random() - 0.5) * 0.2
+          const mistScale = 0.05 + Math.random() * 0.1
+
+          return (
+            <mesh key={`mist-${i}`} position={[mistX, mistY, mistZ]} scale={[mistScale, mistScale, mistScale]}>
+              <sphereGeometry args={[1, 8, 8]} />
+              <meshBasicMaterial color="#a0d8ef" transparent opacity={0.2 + Math.random() * 0.1} depthWrite={false} />
+            </mesh>
+          )
+        })}
+      </group>
+
+      {/* Interior lighting */}
+      <pointLight position={[0, height - 0.2, 0]} intensity={0.4} distance={depth} color="#ffffff" />
+      <pointLight position={[0, height / 2, -depth / 3]} intensity={0.3} distance={depth} color="#a0d8ef" />
+    </group>
+  )
+}
+
+// ClothingDisplay Component - Based on the first image (modular clothing display wall)
+export const ClothingDisplay = ({ furniture, displayItems, products, onRemove }) => {
+  const { width, height, depth, sections = 3, slots = 6, color, x, y, z, rotation } = furniture
+  const materials = useMemo(() => createMaterials(), [])
+  const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Calculate dimensions
+  const sectionHeight = height / sections
+  const slotWidth = width / slots
+
+  // Colors
+  const frameColor = "#333333"
+  const wallColor = "#f5f5f5"
+  const shelfColor = "#e0e0e0"
+  const railColor = "#9e9e9e"
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Back wall panel */}
+      <mesh position={[0, height / 2, -depth / 2 + 0.01]} castShadow receive Shadow>
+        <boxGeometry args={[width, height, 0.05]} />
+        <meshStandardMaterial color={wallColor} roughness={0.9} metalness={0.1} />
+      </mesh>
+
+      {/* Frame structure */}
+      {/* Vertical frames */}
+      {[-width / 2, width / 2].map((xPos, i) => (
+        <mesh key={`vertical-frame-${i}`} position={[xPos, height / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.05, height, depth]} />
+          <meshStandardMaterial color={frameColor} roughness={0.5} metalness={0.3} />
+        </mesh>
+      ))}
+
+      {/* Horizontal dividers for sections */}
+      {Array.from({ length: sections + 1 }).map((_, i) => (
+        <mesh key={`horizontal-divider-${i}`} position={[0, i * sectionHeight, 0]} castShadow receiveShadow>
+          <boxGeometry args={[width, 0.05, depth]} />
+          <meshStandardMaterial color={frameColor} roughness={0.5} metalness={0.3} />
+        </mesh>
+      ))}
+
+      {/* Vertical dividers for slots */}
+      {Array.from({ length: slots - 1 }).map((_, i) => {
+        const xPos = -width / 2 + (i + 1) * (width / slots)
+        return (
+          <mesh key={`vertical-divider-${i}`} position={[xPos, height / 2, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.03, height, 0.03]} />
+            <meshStandardMaterial color={frameColor} roughness={0.5} metalness={0.3} />
+          </mesh>
+        )
+      })}
+
+      {/* Section-specific elements */}
+      {Array.from({ length: sections }).map((_, sectionIndex) => {
+        const sectionY = sectionIndex * sectionHeight + sectionHeight / 2
+        const sectionType = sectionIndex % 3 // Cycle through different section types
+
+        // Different section types based on the reference image
+        if (sectionType === 0) {
+          // Top section - hanging clothes and accessories
+          return (
+            <group key={`section-${sectionIndex}`}>
+              {/* Hanging rail */}
+              <mesh
+                position={[0, sectionY + sectionHeight * 0.3, depth / 4]}
+                rotation={[0, 0, Math.PI / 2]}
+                castShadow
+                receiveShadow
+              >
+                <cylinderGeometry args={[0.015, 0.015, width - 0.1, 8]} />
+                <meshStandardMaterial color={railColor} roughness={0.3} metalness={0.7} />
+              </mesh>
+
+              {/* Display items */}
+              {itemsBySection[sectionIndex]?.map((item) => {
+                const product = products.find((p) => p.primary_Id === item.productId)
+                if (!product) return null
+
+                // Calculate position based on slot, adjusting for RTL if needed
+                const itemX = isRTL
+                  ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+                  : (item.position - slots / 2 + 0.5) * slotWidth
+
+                const quantity = item.quantity || 1
+
+                // Determine if it's a top or accessory
+                const name = product.name?.toLowerCase() || ""
+                const isTop = name.includes("shirt") || name.includes("jacket") || name.includes("sweater")
+
+                return (
+                  <group key={item.id} position={[itemX, sectionY + sectionHeight * 0.2, depth / 4]}>
+                    <ProductDisplayComponent
+                      product={product}
+                      width={slotWidth * 0.8}
+                      height={sectionHeight * 0.6}
+                      depth={0.1}
+                      isHanging={true}
+                      quantity={quantity}
+                    />
+                  </group>
+                )
+              })}
+            </group>
+          )
+        } else if (sectionType === 1) {
+          // Middle section - jackets and pants
+          return (
+            <group key={`section-${sectionIndex}`}>
+              {/* Hanging rail for jackets */}
+              <mesh
+                position={[0, sectionY + sectionHeight * 0.3, depth / 4]}
+                rotation={[0, 0, Math.PI / 2]}
+                castShadow
+                receiveShadow
+              >
+                <cylinderGeometry args={[0.015, 0.015, width - 0.1, 8]} />
+                <meshStandardMaterial color={railColor} roughness={0.3} metalness={0.7} />
+              </mesh>
+
+              {/* Display items */}
+              {itemsBySection[sectionIndex]?.map((item) => {
+                const product = products.find((p) => p.primary_Id === item.productId)
+                if (!product) return null
+
+                // Calculate position based on slot, adjusting for RTL if needed
+                const itemX = isRTL
+                  ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+                  : (item.position - slots / 2 + 0.5) * slotWidth
+
+                const quantity = item.quantity || 1
+
+                // Determine if it's a jacket or pants
+                const name = product.name?.toLowerCase() || ""
+                const isBottom = name.includes("pant") || name.includes("jean") || name.includes("trouser")
+                const isJacket = name.includes("jacket") || name.includes("coat")
+
+                if (isBottom) {
+                  return (
+                    <group key={item.id} position={[itemX, sectionY - sectionHeight * 0.1, depth / 4]}>
+                      <ProductDisplayComponent
+                        product={product}
+                        width={slotWidth * 0.7}
+                        height={sectionHeight * 0.6}
+                        depth={0.05}
+                        isHanging={true}
+                        isBottom={true}
+                        quantity={quantity}
+                      />
+                    </group>
+                  )
+                } else {
+                  return (
+                    <group key={item.id} position={[itemX, sectionY + sectionHeight * 0.2, depth / 4]}>
+                      <ProductDisplayComponent
+                        product={product}
+                        width={slotWidth * 0.8}
+                        height={sectionHeight * 0.6}
+                        depth={0.1}
+                        isHanging={true}
+                        isSuit={isJacket}
+                        quantity={quantity}
+                      />
+                    </group>
+                  )
+                }
+              })}
+            </group>
+          )
+        } else {
+          // Bottom section - accessories, shoes, etc.
+          return (
+            <group key={`section-${sectionIndex}`}>
+              {/* Shelves for accessories */}
+              <mesh position={[0, sectionY, depth / 4]} castShadow receiveShadow>
+                <boxGeometry args={[width - 0.1, 0.03, depth / 2]} />
+                <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.2} />
+              </mesh>
+
+              {/* Display items */}
+              {itemsBySection[sectionIndex]?.map((item) => {
+                const product = products.find((p) => p.primary_Id === item.productId)
+                if (!product) return null
+
+                // Calculate position based on slot, adjusting for RTL if needed
+                const itemX = isRTL
+                  ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+                  : (item.position - slots / 2 + 0.5) * slotWidth
+
+                const quantity = item.quantity || 1
+
+                // Determine if it's a shoe, hat, or other accessory
+                const name = product.name?.toLowerCase() || ""
+                const isShoe = name.includes("shoe") || name.includes("sneaker") || name.includes("boot")
+                const isHat = name.includes("hat") || name.includes("cap")
+
+                return (
+                  <group key={item.id} position={[itemX, sectionY + 0.1, depth / 4]}>
+                    <ProductDisplayComponent
+                      product={product}
+                      width={slotWidth * 0.7}
+                      height={sectionHeight * 0.4}
+                      depth={0.2}
+                      isHanging={false}
+                      isAccessory={!isShoe && !isHat}
+                      isShoe={isShoe}
+                      isHat={isHat}
+                      quantity={quantity}
+                    />
+                  </group>
+                )
+              })}
+
+              {/* Add a mannequin in one slot if no products are there */}
+              {!itemsBySection[sectionIndex] && (
+                <group position={[width / 4, sectionY + 0.1, depth / 4]}>
+                  <MannequinComponent height={sectionHeight * 0.8} />
+                </group>
+              )}
+            </group>
+          )
+        }
+      })}
+
+      {/* Add some decorative elements */}
+      {/* Picture frame in the middle section */}
+      <group position={[0, height * 0.6, depth / 4]}>
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[width / 6, height / 8, 0.02]} />
+          <meshStandardMaterial color="#222222" />
+        </mesh>
+        <mesh position={[0, 0, 0.015]}>
+          <planeGeometry args={[width / 6 - 0.02, height / 8 - 0.02]} />
+          <meshBasicMaterial color="#f8f8f8" />
+        </mesh>
+      </group>
+
+      {/* Small decorative plants */}
+      <group position={[width / 3, height * 0.6, depth / 4]}>
+        <mesh castShadow receiveShadow>
+          <cylinderGeometry args={[0.05, 0.07, 0.1, 8]} />
+          <meshStandardMaterial color="#d7ccc8" />
+        </mesh>
+        <mesh position={[0, 0.1, 0]} castShadow>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshStandardMaterial color="#4caf50" />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
+// ClothingWallDisplay Component - Based on the second image (retail store wall display)
+export const ClothingWallDisplay = ({ furniture, displayItems, products, onRemove }) => {
+  const { width, height, depth, sections = 4, slots = 6, color, x, y, z, rotation } = furniture
+  const materials = useMemo(() => createMaterials(), [])
+  const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Calculate dimensions
+  const sectionHeight = height / sections
+  const slotWidth = width / slots
+
+  // Colors
+  const wallColor = "#f5f5f5"
+  const shelfColor = "#5D4037" // Wood tone color matching the 2D view
+  const railColor = "#9e9e9e"
+  const accentColor = "#303f9f" // Dark blue accent color from the image
+
+  // Log pour déboguer
+  console.log("ClothingWallDisplay - Rendering with:", {
+    furniture,
+    displayItems,
+    itemsBySection,
+    sections,
+    slots,
+    width,
+    height,
+    depth,
+  })
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Back wall panel */}
+      <mesh position={[0, height / 2, -depth / 2 + 0.01]} castShadow receiveShadow>
+        <boxGeometry args={[width, height, 0.05]} />
+        <meshStandardMaterial color={wallColor} roughness={0.9} metalness={0.1} />
+      </mesh>
+
+      {/* Accent wall on left side - matches the 2D view */}
+      <mesh position={[-width / 2 + width / 8, height / 2, -depth / 2 + 0.02]} castShadow receiveShadow>
+        <boxGeometry args={[width / 4, height, 0.03]} />
+        <meshStandardMaterial color={accentColor} roughness={0.8} metalness={0.2} />
+      </mesh>
+
+      {/* Vertical supports - matching the 2D view */}
+      {[-1, 1 / 3, 2 / 3, 1].map((pos, i) => (
+        <mesh key={`support-${i}`} position={[pos * width - width / 2, height / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.05, height, depth / 2]} />
+          <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.1} />
+        </mesh>
+      ))}
+
+      {/* Horizontal shelves - matching the 2D view */}
+      {Array.from({ length: sections + 1 }).map((_, i) => (
+        <mesh key={`shelf-${i}`} position={[0, i * sectionHeight, 0]} castShadow receiveShadow>
+          <boxGeometry args={[width, 0.04, depth / 2]} />
+          <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.1} />
+        </mesh>
+      ))}
+
+      {/* Base of the furniture */}
+      <mesh position={[0, -0.025, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.08, depth]} />
+        <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.1} />
+      </mesh>
+
+      {/* Display items by section */}
+      {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
+        const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
+
+        return items.map((item) => {
+          const product = products.find((p) => p.primary_Id === item.productId)
+          if (!product) {
+            console.warn("Product not found:", item.productId)
+            return null
+          }
+
+          // Calculate position based on slot, adjusting for RTL if needed
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth
+
+          // Get quantity if available
+          const quantity = item.quantity || 1
+
+          // Determine product type
+          const name = product.name?.toLowerCase() || ""
+          const isShirt = name.includes("shirt") || name.includes("tee") || name.includes("top")
+          const isPants = name.includes("pant") || name.includes("jean") || name.includes("trouser")
+          const isJacket = name.includes("jacket") || name.includes("coat")
+          const isHanging = isPants || isJacket || isShirt
+
+          // Log pour déboguer
+          console.log("Rendering product in ClothingWallDisplay:", {
+            name: product.name,
+            position: item.position,
+            section: sectionIndex,
+            itemX,
+            sectionY,
+            isHanging,
+            isPants,
+            isShirt,
+            quantity,
+          })
+
+          return (
+            <group key={item.id} position={[itemX, sectionY, depth / 4]}>
+              <ProductDisplayComponent
+                product={product}
+                width={slotWidth * 0.8}
+                height={sectionHeight * 0.7}
+                depth={0.1}
+                isHanging={isHanging}
+                isBottom={isPants}
+                isShirt={isShirt}
+                quantity={quantity}
+              />
+            </group>
+          )
+        })
+      })}
+
+      {/* Floor */}
+      <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[width * 1.5, depth * 1.5]} />
+        <meshStandardMaterial color="#a1887f" roughness={0.8} metalness={0.1} />
+      </mesh>
+
+      {/* Ceiling lights */}
+      {[-width / 3, width / 3].map((lightX, i) => (
+        <group key={`light-${i}`} position={[lightX, height + 0.1, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.1, 0.1, 0.05, 16]} />
+            <meshStandardMaterial color="#e0e0e0" />
+          </mesh>
+          <pointLight intensity={0.8} distance={3} decay={2} color="#ffffff" />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+// Ajout des composants CashierDisplay et ShelvesDisplay dans wall-display.tsx
+
+// CashierDisplay Component
+export const CashierDisplay = ({ furniture, displayItems, products, onRemove }) => {
+  const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Calculate dimensions
+  const counterHeight = height * 0.8
+  const registerHeight = height * 0.2
+  const counterDepth = depth * 0.8
+
+  // Colors
+  const counterColor = color || "#D2691E"
+  const registerColor = "#444444"
+  const screenColor = "#222222"
+  const keypadColor = "#666666"
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Counter base */}
+      <mesh position={[0, counterHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, counterHeight, counterDepth]} />
+        <meshStandardMaterial color={counterColor} roughness={0.7} metalness={0.2} />
+      </mesh>
+
+      {/* Counter top with slight overhang */}
+      <mesh position={[0, counterHeight + 0.02, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width + 0.1, 0.04, counterDepth + 0.1]} />
+        <meshStandardMaterial color={adjustColorFn(counterColor, 20)} roughness={0.5} metalness={0.3} />
+      </mesh>
+
+      {/* Cash register */}
+      <mesh
+        position={[width / 4, counterHeight + registerHeight / 2 + 0.04, -counterDepth / 4]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[width / 2, registerHeight, depth / 2]} />
+        <meshStandardMaterial color={registerColor} roughness={0.5} metalness={0.5} />
+      </mesh>
+
+      {/* Register screen */}
+      <mesh
+        position={[width / 4, counterHeight + registerHeight + 0.04, -counterDepth / 4]}
+        rotation={[Math.PI / 6, 0, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[width / 3, 0.02, depth / 4]} />
+        <meshStandardMaterial
+          color={screenColor}
+          roughness={0.3}
+          metalness={0.7}
+          emissive="#003366"
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+
+      {/* Keypad */}
+      <mesh position={[width / 4, counterHeight + 0.06, -counterDepth / 3]} castShadow receiveShadow>
+        <boxGeometry args={[width / 4, 0.02, depth / 5]} />
+        <meshStandardMaterial color={keypadColor} roughness={0.4} metalness={0.6} />
+      </mesh>
+
+      {/* Drawer */}
+      <mesh position={[width / 4, counterHeight - 0.15, -counterDepth / 2 + 0.05]} castShadow receiveShadow>
+        <boxGeometry args={[width / 2, 0.1, 0.05]} />
+        <meshStandardMaterial color={adjustColorFn(registerColor, 20)} roughness={0.5} metalness={0.5} />
+      </mesh>
+
+      {/* Decorative elements - receipt roll */}
+      <mesh
+        position={[width / 4 + width / 6, counterHeight + registerHeight / 2 + 0.04, -counterDepth / 4]}
+        castShadow
+        receiveShadow
+      >
+        <cylinderGeometry args={[0.05, 0.05, 0.1, 16]} rotation={[Math.PI / 2, 0, 0]} />
+        <meshStandardMaterial color="#FFFFFF" roughness={0.9} metalness={0.1} />
+      </mesh>
+
+      {/* Customer side counter area */}
+      <mesh position={[-width / 3, counterHeight / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width / 3, counterHeight, counterDepth]} />
+        <meshStandardMaterial color={counterColor} roughness={0.7} metalness={0.2} />
+      </mesh>
+
+      {/* Customer side counter top */}
+      <mesh position={[-width / 3, counterHeight + 0.02, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width / 3 + 0.05, 0.04, counterDepth + 0.05]} />
+        <meshStandardMaterial color={adjustColorFn(counterColor, 20)} roughness={0.5} metalness={0.3} />
+      </mesh>
+
+      {/* Optional: Add some products on display near the cashier */}
+      <group position={[width / 3, counterHeight + 0.1, counterDepth / 3]}>
+        {/* Small display items like candy, magazines, etc. */}
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[0.3, 0.1, 0.2]} />
+          <meshStandardMaterial color="#FF6B6B" roughness={0.7} metalness={0.2} />
+        </mesh>
+      </group>
+
+      {/* Display items from the furniture configuration */}
+      {displayItems &&
+        displayItems.map((item, index) => {
+          const product = products.find((p) => p.primary_Id === item.productId)
+          if (!product) return null
+
+          // Position items on the counter
+          const xPos = ((index % 3) - 1) * 0.2
+          const zPos = Math.floor(index / 3) * 0.2 - 0.1
+
+          return (
+            <group key={`product-${item.id}`} position={[xPos, counterHeight + 0.1, zPos]}>
+              <mesh castShadow receiveShadow>
+                <boxGeometry args={[0.1, 0.05, 0.1]} />
+                <meshStandardMaterial color={product.color || "#CCCCCC"} />
+              </mesh>
+            </group>
+          )
+        })}
     </group>
   )
 }
@@ -1084,90 +2061,108 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Configuration identique à planogram-editor
+  const shelvesConfig = {
+    rows: sections,
+    frontBackColumns: 6,  // 6 colonnes pour avant/arrière comme dans planogram-editor
+    leftRightColumns: 1   // 1 colonne pour gauche/droite
+  }
 
   // Calculate dimensions
-  const sectionHeight = height / sections
-  const slotWidth = width / slots
-  const baseHeight = 0.3
+  const shelfSpacing = height / sections
   const shelfThickness = 0.05
+  const baseHeight = 0.3
 
-  // Colors for the shelves display
+  // Colors
   const baseColor = "#f5f5f5"
   const shelfColor = "#ffffff"
   const metalColor = "#e0e0e0"
-  const structureColor = "#f0f0f0"
   const backPanelColor = "#f8f8f8"
   const leftSideColor = "#f0f0f0"
   const rightSideColor = "#e8e8e8"
 
-  // Calculate column quarters for the 4 sides
-  const columnQuarter = slots / 4
+  // Calculate slot widths
+  const slotWidthFrontBack = width / shelvesConfig.frontBackColumns
+  const slotWidthSides = depth / shelvesConfig.leftRightColumns
 
   return (
     <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
-      {/* Base of the furniture */}
-      <mesh position={[0, baseHeight / 2, 0]} receiveShadow castShadow>
+      {/* Base */}
+      <mesh position={[0, baseHeight / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[width, baseHeight, depth]} />
         <meshStandardMaterial color={baseColor} roughness={0.7} metalness={0.2} />
       </mesh>
 
       {/* Main structure */}
       <group>
-        {/* Central back panel */}
-        <mesh position={[0, height / 2, 0]} receiveShadow castShadow>
+        {/* Back panel */}
+        <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
           <boxGeometry args={[width, height, 0.05]} />
           <meshStandardMaterial color={backPanelColor} roughness={0.6} metalness={0.1} />
         </mesh>
 
         {/* Side panels */}
-        <mesh position={[-width / 2 + 0.025, height / 2, 0]} receiveShadow castShadow>
+        <mesh position={[-width / 2 + 0.025, height / 2, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.05, height, depth]} />
           <meshStandardMaterial color={leftSideColor} roughness={0.6} metalness={0.1} />
         </mesh>
 
-        <mesh position={[width / 2 - 0.025, height / 2, 0]} receiveShadow castShadow>
+        <mesh position={[width / 2 - 0.025, height / 2, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.05, height, depth]} />
           <meshStandardMaterial color={rightSideColor} roughness={0.6} metalness={0.1} />
         </mesh>
 
-        {/* Shelves - for all four sides */}
-        {Array.from({ length: sections }).map((_, rowIndex) => {
-          const shelfY = (rowIndex + 1) * sectionHeight
+        {/* Shelves for all four sides */}
+        {Array.from({ length: shelvesConfig.rows }).map((_, rowIndex) => {
+          const shelfY = (rowIndex + 1) * shelfSpacing
 
           return (
-            <group key={`shelf-group-${rowIndex}`}>
-              {/* Front side */}
-              <mesh position={[0, shelfY, depth / 2 - 0.05]} receiveShadow castShadow>
+            <group key={`shelf-${rowIndex}`}>
+              {/* Front shelf - full width for 6 columns */}
+              <mesh position={[0, shelfY, depth / 2 - 0.05]} castShadow receiveShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness, 0.6]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Back side */}
-              <mesh position={[0, shelfY, -depth / 2 + 0.05]} receiveShadow castShadow>
+              {/* Back shelf - full width for 6 columns */}
+              <mesh position={[0, shelfY, -depth / 2 + 0.05]} castShadow receiveShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness, 0.6]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Left side - outward facing shelf */}
-              <mesh position={[-width / 2, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
-                <boxGeometry args={[depth - 0.1, shelfThickness, 1.2]} />
+              {/* Left shelf */}
+              <mesh position={[-width / 2 - 0.1, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <boxGeometry args={[depth - 0.1, shelfThickness, 0.8]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Right side - outward facing shelf */}
-              <mesh position={[width / 2, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
+              {/* Right shelf */}
+              <mesh position={[width / 2, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
                 <boxGeometry args={[depth - 0.1, shelfThickness, 1.2]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
               {/* Metal edges */}
-              <mesh position={[0, shelfY + 0.02, depth / 2]} receiveShadow castShadow>
+              <mesh position={[0, shelfY + 0.02, depth / 2]} castShadow receiveShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness + 0.04, 0.05]} />
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
 
-              <mesh position={[0, shelfY + 0.02, -depth / 2]} receiveShadow castShadow>
+              <mesh position={[0, shelfY + 0.02, -depth / 2]} castShadow receiveShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness + 0.04, 0.05]} />
+                <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
+              </mesh>
+
+              <mesh position={[-width / 2 - 0.1, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
+                <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
+              </mesh>
+
+              <mesh position={[width / 2, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
             </group>
@@ -1175,151 +2170,265 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
         })}
       </group>
 
-      {/* Display items organized by side */}
+      {/* Products placement */}
       {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
-        const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
+        const sectionY = Number(sectionIndex) * shelfSpacing + shelfSpacing / 2 + shelfThickness / 2
 
         return items.map((item) => {
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
 
-          let itemX, itemZ, itemRotation
+          const quantity = Math.max(1, item.quantity || 1)
+          
+          // Determine position and side
+          let side, relativePosition, itemX, itemZ, itemRotation
+          
+          // Total columns calculation
+          const totalColumns = shelvesConfig.leftRightColumns * 2 + shelvesConfig.frontBackColumns * 2
+          
+          // Calculate boundaries for each section
+          const leftLimit = shelvesConfig.leftRightColumns
+          const frontLimit = leftLimit + shelvesConfig.frontBackColumns
+          const backLimit = frontLimit + shelvesConfig.frontBackColumns
 
-          // First, check if the item has a side property (from saved planogram)
-          if (item.side) {
-            // Position based on the saved side information
-            switch (item.side) {
-              case "left":
-                itemX = -width / 2 - 0.1
-                itemZ = 0
-                itemRotation = [0, -Math.PI / 2, 0] // 90° to the left
-                break
-              case "front":
-                // Calculate position within the front section
-                const frontPosition = item.position % columnQuarter
-                itemX = -width / 4 + (frontPosition / columnQuarter) * (width / 2)
-                itemZ = depth / 2 - 0.05
-                itemRotation = [0, 0, 0] // No rotation
-                break
-              case "back":
-                // Calculate position within the back section
-                const backPosition = item.position % columnQuarter
-                itemX = -width / 4 + (backPosition / columnQuarter) * (width / 2)
-                itemZ = -depth / 2 + 0.05
-                itemRotation = [0, Math.PI, 0] // 180° rotation
-                break
-              case "right":
-                itemX = width / 2 + 0.1
-                itemZ = 0
-                itemRotation = [0, Math.PI / 2, 0] // 90° to the right
-                break
-              default:
-                // Fallback to position-based calculation
-                if (item.position < columnQuarter) {
-                  // Left side
-                  itemX = -width / 2 - 0.1
-                  itemZ = 0
-                  itemRotation = [0, -Math.PI / 2, 0] // 90° to the left
-                } else if (item.position < columnQuarter * 2) {
-                  // Front side
-                  itemX = -width / 4 + ((item.position - columnQuarter) / columnQuarter) * (width / 2)
-                  itemZ = depth / 2 - 0.05
-                  itemRotation = [0, 0, 0] // No rotation
-                } else if (item.position < columnQuarter * 3) {
-                  // Back side
-                  itemX = -width / 4 + ((item.position - columnQuarter * 2) / columnQuarter) * (width / 2)
-                  itemZ = -depth / 2 + 0.05
-                  itemRotation = [0, Math.PI, 0] // 180° rotation
-                } else {
-                  // Right side
-                  itemX = width / 2 + 0.1
-                  itemZ = 0
-                  itemRotation = [0, Math.PI / 2, 0] // 90° to the right
-                }
-            }
-          } else {
-            // Fallback to position-based calculation if no side information is available
-            if (item.position < columnQuarter) {
-              // Left side
-              itemX = -width / 2 - 0.1
-              itemZ = 0
-              itemRotation = [0, -Math.PI / 2, 0] // 90° to the left
-            } else if (item.position < columnQuarter * 2) {
-              // Front side
-              itemX = -width / 4 + ((item.position - columnQuarter) / columnQuarter) * (width / 2)
-              itemZ = depth / 2 - 0.05
-              itemRotation = [0, 0, 0] // No rotation
-            } else if (item.position < columnQuarter * 3) {
-              // Back side
-              itemX = -width / 4 + ((item.position - columnQuarter * 2) / columnQuarter) * (width / 2)
-              itemZ = -depth / 2 + 0.05
-              itemRotation = [0, Math.PI, 0] // 180° rotation
-            } else {
-              // Right side
-              itemX = width / 2 + 0.1
-              itemZ = 0
-              itemRotation = [0, Math.PI / 2, 0] // 90° to the right
-            }
+          if (item.position < leftLimit) {
+            // Left side
+            side = "left"
+            relativePosition = item.position
+            itemX = -width / 2 - 0.1
+            itemZ = -depth / 4 + (relativePosition * depth) / (shelvesConfig.leftRightColumns * 2)
+            itemRotation = [0, Math.PI / 2, 0]
+          } 
+          else if (item.position < frontLimit) {
+            // Front side - 6 columns
+            side = "front"
+            relativePosition = item.position - leftLimit
+            itemX = -width / 2 + (relativePosition + 0.5) * slotWidthFrontBack
+            itemZ = depth / 2 - 0.2
+            itemRotation = [0, 0, 0]
+          }
+          else if (item.position < backLimit) {
+            // Back side - 6 columns
+            side = "back"
+            relativePosition = item.position - frontLimit
+            itemX = -width / 2 + (relativePosition + 0.5) * slotWidthFrontBack
+            itemZ = -depth / 2 + 0.2
+            itemRotation = [0, Math.PI, 0]
+          }
+          else {
+            // Right side
+            side = "right"
+            relativePosition = item.position - backLimit
+            itemX = width / 2
+            itemZ = depth / 4 - (relativePosition * depth) / (shelvesConfig.leftRightColumns * 2)
+            itemRotation = [0, Math.PI / 2, 0]
           }
 
-          // Get quantity if available
-          const quantity = item.quantity || 1
+          // Product dimensions
+          const productWidth = side === "front" || side === "back" 
+            ? slotWidthFrontBack * 0.8 
+            : shelfSpacing * 0.7
+          const productHeight = shelfSpacing * 0.7
+          const productDepth = 0.05
 
-          // For multiple products, create a group with proper spacing
-          if (quantity > 1) {
-            // Get the texture for this product outside the map function
-            const { texture: productTexture, textureLoaded } = useProductTexture(product?.image)
-
-            return (
-              <group key={item.id} position={[itemX, sectionY, itemZ]} rotation={itemRotation}>
-                {Array.from({ length: quantity }).map((_, index) => {
-                  // Calculate offset for each product - position them side by side
-                  const offsetX = (index - (quantity - 1) / 2) * (slotWidth * 0.6)
-
-                  return (
-                    <group key={`${item.id}-${index}`} position={[offsetX, 0, 0]}>
-                      <mesh castShadow receiveShadow>
-                        {product && product.image && textureLoaded ? (
-                          <>
-                            <planeGeometry args={[slotWidth * 0.7, sectionHeight * 0.8]} />
-                            <meshBasicMaterial map={productTexture} transparent side={THREE.DoubleSide} />
-                          </>
-                        ) : (
-                          <>
-                            <boxGeometry args={[slotWidth * 0.7, sectionHeight * 0.8, 0.05]} />
-                            <meshStandardMaterial color={product?.color || "#333333"} />
-                          </>
-                        )}
-                      </mesh>
-                    </group>
-                  )
-                })}
-
-                {/* Remove quantity indicator */}
-              </group>
-            )
-          }
-
-          // For single products, use the standard display
           return (
             <group key={item.id} position={[itemX, sectionY, itemZ]} rotation={itemRotation}>
               <ProductDisplayComponent
                 product={product}
-                width={slotWidth * 0.8}
-                height={sectionHeight * 0.8}
-                depth={0.05}
-                isHanging={false}
-                quantity={1}
+                width={productWidth}
+                height={productHeight}
+                depth={productDepth}
+                quantity={quantity}
               />
             </group>
           )
         })
       })}
 
-      {/* Lighting */}
-      <pointLight position={[0, height + 0.5, 0]} intensity={0.5} distance={5} decay={2} />
+      {/* Enhanced lighting */}
+      <group>
+        <spotLight
+          position={[-width / 2 - 1.5, height / 2, 0]}
+          intensity={1.2}
+          angle={0.6}
+          penumbra={0.5}
+          distance={5}
+          decay={1.5}
+          target-position={[-width / 2 - 0.1, height / 2, 0]}
+          castShadow
+        />
+        <spotLight
+          position={[width / 2 + 1.5, height / 2, 0]}
+          intensity={1.2}
+          angle={0.6}
+          penumbra={0.5}
+          distance={5}
+          decay={1.5}
+          target-position={[width / 2 + 0.1, height / 2, 0]}
+          castShadow
+        />
+        <pointLight position={[0, height + 0.5, 0]} intensity={0.5} distance={5} decay={2} />
+      </group>
     </group>
   )
 }
 
+// PlanogramDisplay Component
+export const PlanogramDisplay = ({ furniture, displayItems, products, onRemove, cellWidth, cellHeight }) => {
+  const { width, height, depth, sections = 4, slots, color, x, y, z, rotation } = furniture
+  const materials = useMemo(() => createMaterials(), [])
+  const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
+  const { i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+
+  // Calculate dimensions
+  const shelfThickness = 0.03
+  const sideThickness = 0.05
+  const backThickness = 0.02
+
+  // Colors based on the reference image
+  const frameColor = color || "#a0a0a0" // Gris moyen pour la structure
+  const shelfColor = "#d0d0d0" // Gris clair pour les étagères
+  const backColor = "#c0c0c0" // Gris pour le panneau arrière
+
+  // Calculate shelf spacing
+  const shelfSpacing = height / sections
+
+  // Log pour déboguer
+  console.log("PlanogramDisplay - Rendering with:", {
+    furniture,
+    displayItems,
+    itemsBySection,
+    sections,
+    slots,
+    width,
+    height,
+    depth,
+  })
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Back panel */}
+      <mesh position={[0, height / 2, -depth / 2 + backThickness / 2]} castShadow receiveShadow>
+        <boxGeometry args={[width, height, backThickness]} />
+        <meshStandardMaterial color={backColor} roughness={0.8} metalness={0.1} />
+      </mesh>
+
+      {/* Side panels */}
+      <mesh position={[-width / 2 + sideThickness / 2, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[sideThickness, height, depth]} />
+        <meshStandardMaterial color={frameColor} roughness={0.6} metalness={0.2} />
+      </mesh>
+
+      <mesh position={[width / 2 - sideThickness / 2, height / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[sideThickness, height, depth]} />
+        <meshStandardMaterial color={frameColor} roughness={0.6} metalness={0.2} />
+      </mesh>
+
+      {/* Top panel */}
+      <mesh position={[0, height - shelfThickness / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, shelfThickness, depth]} />
+        <meshStandardMaterial color={frameColor} roughness={0.6} metalness={0.2} />
+      </mesh>
+
+      {/* Shelves */}
+      {Array.from({ length: sections - 1 }).map((_, i) => {
+        const shelfY = (i + 1) * shelfSpacing
+
+        return (
+          <mesh key={`shelf-${i}`} position={[0, shelfY, 0]} castShadow receiveShadow>
+            <boxGeometry args={[width - sideThickness * 0.5, shelfThickness, depth]} />
+            <meshStandardMaterial color={shelfColor} roughness={0.4} metalness={0.3} />
+          </mesh>
+        )
+      })}
+
+      {/* Bottom shelf/base */}
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width, shelfThickness, depth]} />
+        <meshStandardMaterial color={shelfColor} roughness={0.4} metalness={0.3} />
+      </mesh>
+
+      {/* Display products on shelves */}
+      {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
+        const sectionY = Number(sectionIndex) * shelfSpacing + shelfSpacing / 2 + shelfThickness / 2 + 0.15
+
+        return items.map((item) => {
+          const product = products.find((p) => p.primary_Id === item.productId)
+          if (!product) return null
+
+          // Calculate position based on slot, adjusting for RTL if needed
+          const totalSlots = slots || 10
+          const slotPosition = isRTL ? totalSlots - 1 - item.position : item.position
+          const itemX = (slotPosition + 0.5) * (width / totalSlots) - width / 2
+
+          // Get quantity if available
+          const quantity = item.quantity || 1
+
+          // Product dimensions - make them more compact to match the planogram-editor style
+          const productWidth = (width / totalSlots) * 0.9
+          const productHeight = shelfSpacing * 0.7
+
+          // Si la quantité est supérieure à 1, afficher plusieurs produits côte à côte
+          if (quantity > 1) {
+            // Calculer l'espacement entre les produits
+            const spacing = productWidth * 0.8
+
+            return (
+              <group key={item.id} position={[itemX, sectionY, depth / 4]}>
+                {Array.from({ length: quantity }).map((_, index) => {
+                  // Calculer le décalage pour chaque produit
+                  const offsetX = (index - (quantity - 1) / 2) * spacing
+
+                  return (
+                    <group key={`product-${index}`} position={[offsetX, 0, 0]}>
+                      <ProductDisplayComponent
+                        product={product}
+                        width={productWidth * 0.8}
+                        height={productHeight}
+                        depth={0.05}
+                        quantity={1}
+                      />
+                    </group>
+                  )
+                })}
+              </group>
+            )
+          } else {
+            // Pour les produits avec quantité = 1, afficher normalement
+            return (
+              <group key={item.id} position={[itemX, sectionY, depth / 4]}>
+                <ProductDisplayComponent
+                  product={product}
+                  width={productWidth}
+                  height={productHeight}
+                  depth={0.05}
+                  quantity={1}
+                />
+              </group>
+            )
+          }
+        })
+      })}
+    </group>
+  )
+}
+
+// Helper function to adjust colors
+function adjustColor(color, amount) {
+  // Convert hex to RGB
+  let r = Number.parseInt(color.substring(1, 3), 16)
+  let g = Number.parseInt(color.substring(3, 5), 16)
+  let b = Number.parseInt(color.substring(5, 7), 16)
+
+  // Adjust values
+  r = Math.max(0, Math.min(255, r + amount))
+  g = Math.max(0, Math.min(255, g + amount))
+  b = Math.max(0, Math.min(255, b + amount))
+
+  // Convert back to hex
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`
+}
+
 // Export all components
+export { adjustColorFn as adjustColor }

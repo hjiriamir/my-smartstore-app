@@ -237,30 +237,6 @@ export const useProductStore = create<ProductStore>()(
 );
 
 // Exemple de produits (optionnel)
-const exampleProducts: Product[] = [
-  {
-    primary_Id: "PROD001",
-    name: "Boîte de céréales",
-    supplier: "Céréales Inc.",
-    category1_id: "ALIM",
-    width_cm: 20,
-    height_cm: 30,
-    depth_cm: 8,
-    color: "#E74C3C",
-  },
-  {
-    primary_Id: "PROD002",
-    name: "Bouteille de lait",
-    supplier: "Laiterie Bio",
-    category1_id: "ALIM",
-    width_cm: 10,
-    height_cm: 25,
-    depth_cm: 10,
-    color: "#3498DB",
-  },
-];
+
 
 // Fonction d'initialisation (optionnelle)
-export const initializeExampleProducts = () => {
-  return exampleProducts;
-};

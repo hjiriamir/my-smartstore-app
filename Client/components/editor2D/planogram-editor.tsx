@@ -6,46 +6,44 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
-import { useThree } from "@react-three/fiber"
+import { useThree, Canvas } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
 import "@/components/multilingue/i18n.js"
 import { useTranslation } from "react-i18next"
 import {
-  Plus,
-  Minus,
-  Save,
   Trash2,
   Package,
-  Settings,
   ChevronLeft,
   ChevronRight,
-  MoveHorizontal,
-  MoveVertical,
   Download,
   CuboidIcon as Cube,
   Grid,
   ImageIcon,
   FileText,
   Layers,
+  Save,
+  Settings,
+  Minus,
+  MoveHorizontal,
+  MoveVertical,
 } from "lucide-react"
 import html2canvas from "html2canvas"
 import { jsPDF } from "jspdf"
 import * as THREE from "three"
-import { Canvas } from "@react-three/fiber"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Slider } from "@/components/ui/slider"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { useProductStore } from "@/lib/product-store"
 import type { Product, ProductInstance } from "@/lib/product-store"
-import { initializeExampleProducts } from "@/lib/product-store"
-import { SavePlanogramDialog } from "@/components/save-planogram-dialog"
+//import { initializeExampleProducts } from "@/lib/product-store"
 import { useFurnitureStore } from "@/lib/furniture-store"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Slider } from "@/components/ui/slider"
+import { SavePlanogramDialog } from "@/components/save-planogram-dialog"
 
 // Types
 interface PlanogramCell {
@@ -77,11 +75,10 @@ interface PlanogramConfig {
     shelfThickness: number
   }
   // Add these new properties for separate side controls
-  shelvesConfig?: {
-    frontBackRows: number
-    frontBackColumns: number
-    leftRightRows: number
-    leftRightColumns: number
+  shelvesConfig: {
+    rows: number // Nombre d'étagères global pour toutes les faces
+    frontBackColumns: number // Nombre de colonnes pour les faces avant/arrière
+    leftRightColumns: number // Nombre de colonnes pour les faces gauche/droite
   }
 }
 
@@ -245,12 +242,19 @@ const PlanogramCell = ({
     }
 
     if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
-      const columnQuarter = planogramConfig.columns / 4
-      if (cellX < columnQuarter) {
+      const leftRightColumns = planogramConfig.shelvesConfig?.leftRightColumns || 1
+      const frontBackColumns = planogramConfig.shelvesConfig?.frontBackColumns || 3
+
+      // Calculer les limites de chaque section
+      const leftLimit = leftRightColumns
+      const frontLimit = leftLimit + frontBackColumns
+      const backLimit = frontLimit + frontBackColumns
+
+      if (cellX < leftLimit) {
         return t("productImport.leftSide")
-      } else if (cellX >= columnQuarter && cellX < planogramConfig.columns / 2) {
+      } else if (cellX >= leftLimit && cellX < frontLimit) {
         return t("productImport.frontSide")
-      } else if (cellX >= planogramConfig.columns / 2 && cellX < (planogramConfig.columns * 3) / 4) {
+      } else if (cellX >= frontLimit && cellX < backLimit) {
         return t("productImport.backSide")
       } else {
         return t("productImport.rightSide")
@@ -277,12 +281,12 @@ const PlanogramCell = ({
         ${
           planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY
             ? cell.x < planogramConfig.columns / 4
-              ? "bg-blue-50/30" // Left side (white shelves)
+              ? "bg-blue-100/30 border-blue-300" // Left side - plus visible
               : cell.x >= planogramConfig.columns / 4 && cell.x < planogramConfig.columns / 2
-                ? "bg-gray-700/10" // Center gondola - left side
+                ? "bg-gray-700/10"
                 : cell.x >= planogramConfig.columns / 2 && cell.x < (planogramConfig.columns * 3) / 4
-                  ? "bg-gray-700/20" // Center gondola - right side
-                  : "bg-gray-800/10" // Right side (dark shelves)
+                  ? "bg-gray-700/20"
+                  : "bg-gray-800/10"
             : ""
         }
     `}
@@ -481,11 +485,16 @@ const Gondola = ({ position, dimensions, rows, columns }) => {
   )
 }
 
-// Remplacer le composant ShelvesDisplay existant par cette version améliorée
-const ShelvesDisplay = ({ position, dimensions, rows, columns }) => {
+// Composant ShelvesDisplay amélioré
+const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }) => {
   const { width, height, depth, baseHeight, shelfThickness } = dimensions
 
-  const shelfSpacing = height / rows
+  // Récupérer les configurations spécifiques
+  const shelvesRows = planogramConfig?.shelvesConfig?.rows || rows
+  const frontBackColumns = planogramConfig?.shelvesConfig?.frontBackColumns || 3
+  const leftRightColumns = planogramConfig?.shelvesConfig?.leftRightColumns || 1
+
+  const shelfSpacing = height / shelvesRows
 
   // Colors for the shelves display - matching the image
   const baseColor = "#f5f5f5"
@@ -523,8 +532,8 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns }) => {
           <meshStandardMaterial color={rightSideColor} roughness={0.6} metalness={0.1} />
         </mesh>
 
-        {/* Shelves - for all four sides */}
-        {Array.from({ length: rows }).map((_, rowIndex) => {
+        {/* Shelves - for all four sides with unified row configuration */}
+        {Array.from({ length: shelvesRows }).map((_, rowIndex) => {
           const shelfY = (rowIndex + 1) * shelfSpacing
 
           return (
@@ -542,8 +551,8 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns }) => {
               </mesh>
 
               {/* Côté gauche - Étagère plus visible orientée vers l'extérieur */}
-              <mesh position={[-width / 2, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
-                <boxGeometry args={[depth - 0.1, shelfThickness, 1.2]} />
+              <mesh position={[-width / 2 - 0.1, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
+                <boxGeometry args={[depth - 0.1, shelfThickness, 0.8]} /> {/* Réduire la profondeur */}
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
@@ -551,6 +560,12 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns }) => {
               <mesh position={[width / 2, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
                 <boxGeometry args={[depth - 0.1, shelfThickness, 1.2]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
+              </mesh>
+              
+              {/* Metal edge pour le côté gauche */}
+              <mesh position={[-width / 2 - 0.1, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
+                <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
+                <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
 
               {/* Metal edges for shelves */}
@@ -592,7 +607,7 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns }) => {
   )
 }
 
-// Remplacer la fonction createTransparentTexture par cette version améliorée
+//  la fonction createTransparentTexture 
 const createTransparentTexture = (imageUrl) => {
   return new Promise((resolve, reject) => {
     // Créer un canvas temporaire
@@ -720,51 +735,76 @@ const Product3D = ({
   const [baseX, baseY, baseZ] = position
   const [totalWidth, height, depth] = size
 
-  // Réduire davantage la largeur individuelle pour éviter les chevauchements
-  // Utiliser un facteur de réduction plus important quand la quantité augmente
-  const scaleFactor = quantity > 1 ? 0.7 : 0.85 // Réduction plus importante pour les quantités multiples
-  const productWidth = (totalWidth / quantity) * scaleFactor
+  // Déterminer si c'est une rotation latérale (pour les côtés gauche/droit)
+  const isLateralRotation = Math.abs(rotation[1]) === Math.PI / 2
 
-  // Calculer l'espacement entre les produits
-  const spacing = (totalWidth - productWidth * quantity) / (quantity + 1)
+  // Dans le composant Product3D, modifions la logique de distribution des produits pour réduire l'espacement
+
+  // Remplacer la section de calcul de l'espacement et de positionnement des produits dans le composant Product3D par:
+  // Réduire la largeur individuelle pour éviter les chevauchements
+  // Utiliser un facteur de réduction plus important quand la quantité augmente
+  const scaleFactor = quantity > 1 ? 0.8 : 0.9 // Augmenter le facteur d'échelle pour réduire l'espace entre produits
+
+  // Pour les produits sur les côtés, nous devons ajuster la dimension qui représente la "largeur"
+  const productWidth = isLateralRotation ? (depth / quantity) * scaleFactor : (totalWidth / quantity) * scaleFactor
+
+  // Calculer l'espacement entre les produits - réduire considérablement l'espacement
+  const spacing = isLateralRotation
+    ? ((depth - productWidth * quantity) / (quantity + 1)) * 0.15 // Réduire l'espacement à 30% de sa valeur originale
+    : ((totalWidth - productWidth * quantity) / (quantity + 1)) * 0.15 // Réduire l'espacement à 30% de sa valeur originale
 
   const productInstances = []
 
   for (let i = 0; i < quantity; i++) {
-    // Nouvelle méthode de positionnement avec espacement uniforme
-    // Positionner les produits avec un espacement égal entre eux
-    const x = baseX - totalWidth / 2 + spacing + i * (productWidth + spacing) + productWidth / 2
+    // Positionner différemment selon l'orientation
+    let x = baseX
+    let z = baseZ
 
-    // Ajouter une légère variation aléatoire pour plus de réalisme
-    const jitterX = (Math.random() - 0.5) * 0.002
-    const jitterY = (Math.random() - 0.5) * 0.002
-    const jitterZ = (Math.random() - 0.5) * 0.002
+    if (isLateralRotation) {
+      // Pour les côtés (gauche/droite), nous distribuons les produits le long de l'axe Z
+      // Réduire la zone de distribution pour garder les produits à l'intérieur
+      const effectiveDepth = depth * 0.8 // Utiliser seulement 70% de la profondeur
+      // Calculer la position de départ pour centrer le groupe de produits
+      const startZ = baseZ - effectiveDepth / 4
+      // Distribuer les produits avec un espacement réduit
+      z = startZ + i * (productWidth + spacing)
+    } else {
+      // Pour les faces avant/arrière, nous distribuons les produits le long de l'axe X
+      // Réduire la zone de distribution pour garder les produits à l'intérieur
+      const effectiveWidth = totalWidth * 0.9 // Utiliser seulement 80% de la largeur
+      // Calculer la position de départ pour centrer le groupe de produits
+      const startX = baseX - (productWidth * quantity + spacing * (quantity - 1)) / 2
+      // Distribuer les produits avec un espacement réduit
+      x = startX + i * (productWidth + spacing)
+    }
 
-    // Vérifier si c'est une rotation latérale (pour les côtés gauche/droit)
-    const isLateralRotation = rotation[1] === Math.PI / 2 || rotation[1] === -Math.PI / 2
+    // Ajouter une légère variation aléatoire pour plus de réalisme (réduite)
+    const jitterX = (Math.random() - 0.5) * 0.0005
+    const jitterY = (Math.random() - 0.5) * 0.0005
+    const jitterZ = (Math.random() - 0.5) * 0.0005
 
-    // Ajuster la taille pour les produits latéraux
-    const adjustedWidth = isLateralRotation ? height * 1.2 : productWidth
-    const adjustedHeight = isLateralRotation ? productWidth * 1.5 : height * 0.9
+    // Ajuster la taille pour les produits selon leur orientation
+    const adjustedWidth = isLateralRotation ? height * 0.7 : productWidth
+    const adjustedHeight = isLateralRotation ? productWidth * 1.1 : height * 0.8
+    const standardProductHeight = 0.5 // Réduire légèrement la hauteur
 
     productInstances.push(
       <group
         key={`product-${cellIndex}-${i}`}
-        position={[x + jitterX, baseY + jitterY, baseZ + jitterZ]}
+        position={[x + jitterX, baseY + jitterY, z + jitterZ]}
         rotation={rotation}
         castShadow
         receiveShadow
       >
         {texture ? (
           // Utiliser un plan avec la texture du produit
-          <mesh castShadow receiveShadow position={[0, height * 0.45, 0]}>
-            {/* Ajuster la géométrie pour les produits sur les côtés */}
+          <mesh castShadow receiveShadow position={[0, standardProductHeight / 2, 0]}>
             <planeGeometry args={[adjustedWidth, adjustedHeight]} />
             <meshBasicMaterial map={texture} transparent={true} side={THREE.DoubleSide} />
           </mesh>
         ) : (
           // Fallback si pas de texture
-          <mesh castShadow receiveShadow position={[0, height * 0.45, 0]}>
+          <mesh castShadow receiveShadow position={[0, standardProductHeight / 2, 0]}>
             <planeGeometry args={[adjustedWidth, adjustedHeight]} />
             <meshBasicMaterial color={product.color || "#f3f4f6"} />
           </mesh>
@@ -913,7 +953,6 @@ const PlanogramScene = ({
           </>
         )}
 
-        {/* Ajoutons également un éclairage spécifique pour les produits sur les côtés */}
         {/* Éclairage supplémentaire pour les côtés */}
         {planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY && (
           <>
@@ -994,6 +1033,7 @@ const PlanogramScene = ({
           dimensions={planogramConfig.furnitureDimensions}
           rows={planogramConfig.rows}
           columns={planogramConfig.columns}
+          planogramConfig={planogramConfig}
         />
       ) : null}
       {/* Products - Filtrer les cellules pour ce type de meuble */}
@@ -1009,10 +1049,10 @@ const PlanogramScene = ({
           // Calculate position based on furniture type
           let x = -width / 2 + cellWidth / 2 + cell.x * cellWidth
 
-          // Improved Y position calculation to place products on the shelf
+          // Calcul précis de la position Y pour que le produit soit exactement sur l'étagère
           const shelfY = (cell.y + 1) * shelfSpacing
-          // Add half the product height to raise the product so it sits on the shelf
-          const y = shelfY
+          // Positionner le produit exactement sur l'étagère
+          const y = shelfY + shelfThickness / 2
 
           let z = -depth / 2 + standardProductDepth / 2 // Positionner près du bord avant
 
@@ -1028,28 +1068,60 @@ const PlanogramScene = ({
           // Modifier la partie du code qui gère le positionnement des produits pour le ShelvesDisplay
           // Dans la fonction PlanogramScene, remplacer la section concernant le positionnement des produits pour le ShelvesDisplay par:
           else if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
-            const columnQuarter = planogramConfig.columns / 4
-            if (cell.x < columnQuarter) {
-              // Left side - products facing outward (left)
-              // Positionner les produits directement sur l'étagère latérale gauche
-              z = 0 // Au centre de l'étagère en profondeur
-              x = -width / 2 - 0.1 // Positionner à l'extérieur de l'étagère
-              // Rotation pour que les produits soient orientés vers l'extérieur
-              productInstance.rotation = [0, -Math.PI / 2, 0] // 90° rotation to the left
-            } else if (cell.x >= columnQuarter && cell.x < columnQuarter * 2) {
+            const leftRightColumns = planogramConfig.shelvesConfig?.leftRightColumns || 1
+            const frontBackColumns = planogramConfig.shelvesConfig?.frontBackColumns || 3
+
+            // Calculer les limites de chaque section
+            const leftLimit = leftRightColumns
+            const frontLimit = leftLimit + frontBackColumns
+            const backLimit = frontLimit + frontBackColumns
+
+            if (cell.x < leftLimit) {
+              // Left side - products facing inward (left)
+              z = -depth / 2 + 0.7 // Au centre de l'étagère en profondeur
+              x = -width / 2 - 0.1 // Positionner à l'intérieur de l'étagère
+
+              // Répartir les produits sur la largeur disponible pour le côté gauche
+              if (leftRightColumns > 1) {
+                const positionRatio = cell.x / (leftRightColumns - 1)
+                z = (depth / 2 - 0.2) * positionRatio - depth / 4
+              }
+
+              productInstance.rotation = [0, Math.PI / 2, 0] // 90° rotation to the left
+            } else if (cell.x >= leftLimit && cell.x < frontLimit) {
               // Front side
-              z = depth / 2 - 0.05
-              x = -width / 4 + ((cell.x - columnQuarter) / columnQuarter) * (width / 2)
+              z = depth / 2 - 0.2 // Reculer de 20cm par rapport au bord
+
+              // Répartir les produits sur la largeur disponible pour la face avant
+              // Utiliser une distribution plus compacte
+              const relativeX = cell.x - leftLimit
+              const columnWidth = width / frontBackColumns
+              x = -width / 2 + 0.2 + columnWidth * (relativeX + 0.5) // Centrer dans chaque colonne
+
               productInstance.rotation = [0, 0, 0] // No rotation
-            } else if (cell.x >= columnQuarter * 2 && cell.x < columnQuarter * 3) {
+            } else if (cell.x >= frontLimit && cell.x < backLimit) {
               // Back side
-              z = -depth / 2 + 0.05
-              x = -width / 4 + ((cell.x - columnQuarter * 2) / columnQuarter) * (width / 2)
+              z = -depth / 2 + 0.2 // Avancer de 20cm par rapport au bord
+
+              // Répartir les produits sur la largeur disponible pour la face arrière
+              // Utiliser une distribution plus compacte
+              const relativeX = cell.x - frontLimit
+              const columnWidth = width / frontBackColumns
+              x = -width / 2 + 0.2 + columnWidth * (relativeX + 0.5) // Centrer dans chaque colonne
+
               productInstance.rotation = [0, Math.PI, 0] // 180° rotation
             } else {
-              // Right side - products facing outward (right)
+              // Right side - products facing inward (right)
               z = 0 // Au centre de l'étagère en profondeur
-              x = width / 2 + 0.1 // Positionner à l'extérieur de l'étagère
+              x = width / 2 - 0.15 // Positionner à l'intérieur de l'étagère
+
+              // Répartir les produits sur la largeur disponible pour le côté droit
+              if (leftRightColumns > 1) {
+                const relativeX = cell.x - backLimit
+                const positionRatio = relativeX / (leftRightColumns - 1)
+                z = depth / 4 - (depth / 2 - 0.2) * positionRatio
+              }
+
               productInstance.rotation = [0, Math.PI / 2, 0] // 90° rotation to the right
             }
           }
@@ -1116,10 +1188,9 @@ export function PlanogramEditor() {
       shelfThickness: 0.05,
     },
     shelvesConfig: {
-      frontBackRows: 4,
+      rows: 4,
       frontBackColumns: 3,
-      leftRightRows: 4,
-      leftRightColumns: 3,
+      leftRightColumns: 1,
     },
   })
 
@@ -1127,13 +1198,14 @@ export function PlanogramEditor() {
   const [productInstances, setProductInstances] = useState<ProductInstance[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("products")
   const [zoom, setZoom] = useState(100)
   const [viewMode, setViewMode] = useState<"2D" | "3D">("2D")
   const [isExporting, setIsExporting] = useState(false)
   const [forceRender, setForceRender] = useState(0)
-  const [productSizeScale, setProductSizeScale] = useState(180) // Augmenter la taille par défaut pour un rendu plus compact\
+  const [productSizeScale, setProductSizeScale] = useState(180) // Augmenter la taille par défaut pour un rendu plus compact
   const [defaultQuantity, setDefaultQuantity] = useState(3)
 
   // Get unique suppliers
@@ -1144,19 +1216,16 @@ export function PlanogramEditor() {
     const newCells: PlanogramCell[] = []
 
     if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
-      // Utiliser des configurations séparées pour les différents côtés
-      const frontBackRows = planogramConfig.shelvesConfig?.frontBackRows || planogramConfig.rows
-      const frontBackColumns =
-        planogramConfig.shelvesConfig?.frontBackColumns || Math.floor(planogramConfig.columns / 2)
-      const leftRightRows = planogramConfig.shelvesConfig?.leftRightRows || planogramConfig.rows
-      const leftRightColumns =
-        planogramConfig.shelvesConfig?.leftRightColumns || Math.floor(planogramConfig.columns / 4)
+      // Utiliser la configuration unifiée pour les étagères et séparée pour les colonnes
+      const rows = planogramConfig.shelvesConfig?.rows || planogramConfig.rows
+      const frontBackColumns = planogramConfig.shelvesConfig?.frontBackColumns || 3
+      const leftRightColumns = planogramConfig.shelvesConfig?.leftRightColumns || 1
 
       // Calculer le nombre total de colonnes nécessaires
       const totalColumns = leftRightColumns * 2 + frontBackColumns * 2
 
       // Côté gauche
-      for (let y = 0; y < leftRightRows; y++) {
+      for (let y = 0; y < rows; y++) {
         for (let x = 0; x < leftRightColumns; x++) {
           newCells.push({
             id: `cell-${x}-${y}-${planogramConfig.furnitureType}-left`,
@@ -1167,12 +1236,13 @@ export function PlanogramEditor() {
             furnitureType: planogramConfig.furnitureType,
             quantity: defaultQuantity,
             side: "left",
+            position: "external" 
           })
         }
       }
 
       // Face avant
-      for (let y = 0; y < frontBackRows; y++) {
+      for (let y = 0; y < rows; y++) {
         for (let x = 0; x < frontBackColumns; x++) {
           newCells.push({
             id: `cell-${x + leftRightColumns}-${y}-${planogramConfig.furnitureType}-front`,
@@ -1188,7 +1258,7 @@ export function PlanogramEditor() {
       }
 
       // Face arrière
-      for (let y = 0; y < frontBackRows; y++) {
+      for (let y = 0; y < rows; y++) {
         for (let x = 0; x < frontBackColumns; x++) {
           newCells.push({
             id: `cell-${x + leftRightColumns + frontBackColumns}-${y}-${planogramConfig.furnitureType}-back`,
@@ -1204,7 +1274,7 @@ export function PlanogramEditor() {
       }
 
       // Côté droit
-      for (let y = 0; y < leftRightRows; y++) {
+      for (let y = 0; y < rows; y++) {
         for (let x = 0; x < leftRightColumns; x++) {
           newCells.push({
             id: `cell-${x + leftRightColumns + frontBackColumns * 2}-${y}-${planogramConfig.furnitureType}-right`,
@@ -1290,12 +1360,12 @@ export function PlanogramEditor() {
 
   // Initialiser les produits d'exemple
   useEffect(() => {
-    const exampleProducts = initializeExampleProducts()
+    //const exampleProducts = initializeExampleProducts()
     // Vérifier si les produits existent déjà pour éviter les doublons
     const existingIds = products.map((p) => p.primary_Id)
-    const newProducts = exampleProducts.filter((p) => !existingIds.includes(p.primary_Id))
+    //const newProducts = exampleProducts.filter((p) => !existingIds.includes(p.primary_Id))
 
-    if (newProducts.length > 0) {
+    /* if (newProducts.length > 0) {
       newProducts.forEach((product) => {
         addProduct(product)
       })
@@ -1303,7 +1373,7 @@ export function PlanogramEditor() {
         title: t("productImport.exampleProductsAdded"),
         description: t("productImport.exampleProductsAddedDesc", { count: newProducts.length }),
       })
-    }
+    }*/
   }, [])
 
   // Handle drop on cell
@@ -1876,7 +1946,7 @@ export function PlanogramEditor() {
                                   size="icon"
                                   onClick={() => updatePlanogramConfig("rows", planogramConfig.rows + 1)}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Minus className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -1908,7 +1978,7 @@ export function PlanogramEditor() {
                                   size="icon"
                                   onClick={() => updatePlanogramConfig("columns", planogramConfig.columns + 1)}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Minus className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -1940,7 +2010,7 @@ export function PlanogramEditor() {
                                   onClick={() => setDefaultQuantity(Math.min(20, defaultQuantity + 1))}
                                   disabled={defaultQuantity >= 20}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Minus className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -2001,7 +2071,7 @@ export function PlanogramEditor() {
                                   onClick={() => setZoom(Math.min(150, zoom + 10))}
                                   disabled={zoom >= 150}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Minus className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -2146,8 +2216,15 @@ export function PlanogramEditor() {
                               <div className="space-y-4 mt-4 p-4 border rounded-md bg-blue-50/20">
                                 <h3 className="font-medium">{t("productImport.meuble2Configuration")}</h3>
 
+                                <div className="p-3 bg-green-50 rounded-md mb-4">
+                                  <p className="text-sm text-green-700 font-medium mb-1">Configuration unifiée</p>
+                                  <p className="text-xs text-green-600">
+                                    Les étagères sont synchronisées sur les 4 faces du meuble
+                                  </p>
+                                </div>
+
                                 <div className="space-y-2">
-                                  <label className="text-sm font-medium">{t("productImport.frontBackRows")}</label>
+                                  <label className="text-sm font-medium">Nombre d'étagères (toutes faces)</label>
                                   <div
                                     className={`flex items-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}
                                   >
@@ -2156,26 +2233,34 @@ export function PlanogramEditor() {
                                       size="icon"
                                       onClick={() => {
                                         const newConfig = { ...planogramConfig }
-                                        newConfig.shelvesConfig.frontBackRows = Math.max(
-                                          1,
-                                          newConfig.shelvesConfig.frontBackRows - 1,
-                                        )
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
+                                        newConfig.shelvesConfig.rows = Math.max(1, newConfig.shelvesConfig.rows - 1)
                                         setPlanogramConfig(newConfig)
                                       }}
-                                      disabled={planogramConfig.shelvesConfig?.frontBackRows <= 1}
+                                      disabled={planogramConfig.shelvesConfig?.rows <= 1}
                                     >
                                       <Minus className="h-4 w-4" />
                                     </Button>
                                     <Input
                                       type="number"
                                       min="1"
-                                      value={planogramConfig.shelvesConfig?.frontBackRows || planogramConfig.rows}
+                                      value={planogramConfig.shelvesConfig?.rows || planogramConfig.rows}
                                       onChange={(e) => {
                                         const newConfig = { ...planogramConfig }
-                                        newConfig.shelvesConfig.frontBackRows = Math.max(
-                                          1,
-                                          Number.parseInt(e.target.value) || 1,
-                                        )
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
+                                        newConfig.shelvesConfig.rows = Math.max(1, Number.parseInt(e.target.value) || 1)
                                         setPlanogramConfig(newConfig)
                                       }}
                                       className="text-center"
@@ -2185,18 +2270,31 @@ export function PlanogramEditor() {
                                       size="icon"
                                       onClick={() => {
                                         const newConfig = { ...planogramConfig }
-                                        newConfig.shelvesConfig.frontBackRows =
-                                          newConfig.shelvesConfig.frontBackRows + 1
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
+                                        newConfig.shelvesConfig.rows = newConfig.shelvesConfig.rows + 1
                                         setPlanogramConfig(newConfig)
                                       }}
                                     >
-                                      <Plus className="h-4 w-4" />
+                                      <Minus className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </div>
 
+                                <div className="border-t my-4 pt-4">
+                                  <p className="text-sm text-amber-700 font-medium mb-1">Configuration séparée</p>
+                                  <p className="text-xs text-amber-600 mb-3">
+                                    Les colonnes peuvent être configurées différemment selon les faces
+                                  </p>
+                                </div>
+
                                 <div className="space-y-2">
-                                  <label className="text-sm font-medium">{t("productImport.frontBackColumns")}</label>
+                                  <label className="text-sm font-medium">Colonnes (faces avant/arrière)</label>
                                   <div
                                     className={`flex items-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}
                                   >
@@ -2205,6 +2303,13 @@ export function PlanogramEditor() {
                                       size="icon"
                                       onClick={() => {
                                         const newConfig = { ...planogramConfig }
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
                                         newConfig.shelvesConfig.frontBackColumns = Math.max(
                                           1,
                                           newConfig.shelvesConfig.frontBackColumns - 1,
@@ -2218,12 +2323,16 @@ export function PlanogramEditor() {
                                     <Input
                                       type="number"
                                       min="1"
-                                      value={
-                                        planogramConfig.shelvesConfig?.frontBackColumns ||
-                                        Math.floor(planogramConfig.columns / 2)
-                                      }
+                                      value={planogramConfig.shelvesConfig?.frontBackColumns || 3}
                                       onChange={(e) => {
                                         const newConfig = { ...planogramConfig }
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
                                         newConfig.shelvesConfig.frontBackColumns = Math.max(
                                           1,
                                           Number.parseInt(e.target.value) || 1,
@@ -2237,67 +2346,25 @@ export function PlanogramEditor() {
                                       size="icon"
                                       onClick={() => {
                                         const newConfig = { ...planogramConfig }
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
                                         newConfig.shelvesConfig.frontBackColumns =
                                           newConfig.shelvesConfig.frontBackColumns + 1
                                         setPlanogramConfig(newConfig)
                                       }}
                                     >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">{t("productImport.leftRightRows")}</label>
-                                  <div
-                                    className={`flex items-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}
-                                  >
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={() => {
-                                        const newConfig = { ...planogramConfig }
-                                        newConfig.shelvesConfig.leftRightRows = Math.max(
-                                          1,
-                                          newConfig.shelvesConfig.leftRightRows - 1,
-                                        )
-                                        setPlanogramConfig(newConfig)
-                                      }}
-                                      disabled={planogramConfig.shelvesConfig?.leftRightRows <= 1}
-                                    >
                                       <Minus className="h-4 w-4" />
                                     </Button>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      value={planogramConfig.shelvesConfig?.leftRightRows || planogramConfig.rows}
-                                      onChange={(e) => {
-                                        const newConfig = { ...planogramConfig }
-                                        newConfig.shelvesConfig.leftRightRows = Math.max(
-                                          1,
-                                          Number.parseInt(e.target.value) || 1,
-                                        )
-                                        setPlanogramConfig(newConfig)
-                                      }}
-                                      className="text-center"
-                                    />
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={() => {
-                                        const newConfig = { ...planogramConfig }
-                                        newConfig.shelvesConfig.leftRightRows =
-                                          newConfig.shelvesConfig.leftRightRows + 1
-                                        setPlanogramConfig(newConfig)
-                                      }}
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
                                   </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                  <label className="text-sm font-medium">{t("productImport.leftRightColumns")}</label>
+                                  <label className="text-sm font-medium">Colonnes (faces gauche/droite)</label>
                                   <div
                                     className={`flex items-center ${isRTL ? "space-x-reverse space-x-2" : "space-x-2"}`}
                                   >
@@ -2306,6 +2373,13 @@ export function PlanogramEditor() {
                                       size="icon"
                                       onClick={() => {
                                         const newConfig = { ...planogramConfig }
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
                                         newConfig.shelvesConfig.leftRightColumns = Math.max(
                                           1,
                                           newConfig.shelvesConfig.leftRightColumns - 1,
@@ -2319,12 +2393,16 @@ export function PlanogramEditor() {
                                     <Input
                                       type="number"
                                       min="1"
-                                      value={
-                                        planogramConfig.shelvesConfig?.leftRightColumns ||
-                                        Math.floor(planogramConfig.columns / 2)
-                                      }
+                                      value={planogramConfig.shelvesConfig?.leftRightColumns || 1}
                                       onChange={(e) => {
                                         const newConfig = { ...planogramConfig }
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
                                         newConfig.shelvesConfig.leftRightColumns = Math.max(
                                           1,
                                           Number.parseInt(e.target.value) || 1,
@@ -2338,13 +2416,40 @@ export function PlanogramEditor() {
                                       size="icon"
                                       onClick={() => {
                                         const newConfig = { ...planogramConfig }
+                                        if (!newConfig.shelvesConfig) {
+                                          newConfig.shelvesConfig = {
+                                            rows: 4,
+                                            frontBackColumns: 3,
+                                            leftRightColumns: 1,
+                                          }
+                                        }
                                         newConfig.shelvesConfig.leftRightColumns =
                                           newConfig.shelvesConfig.leftRightColumns + 1
                                         setPlanogramConfig(newConfig)
                                       }}
                                     >
-                                      <Plus className="h-4 w-4" />
+                                      <Minus className="h-4 w-4" />
                                     </Button>
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-blue-700">
+                                      Aperçu de la configuration
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="bg-white p-2 rounded border">
+                                      <p className="font-medium text-blue-600 mb-1">Faces avant/arrière</p>
+                                      <p>Étagères: {planogramConfig.shelvesConfig?.rows || planogramConfig.rows}</p>
+                                      <p>Colonnes: {planogramConfig.shelvesConfig?.frontBackColumns || 3}</p>
+                                    </div>
+                                    <div className="bg-white p-2 rounded border">
+                                      <p className="font-medium text-blue-600 mb-1">Faces gauche/droite</p>
+                                      <p>Étagères: {planogramConfig.shelvesConfig?.rows || planogramConfig.rows}</p>
+                                      <p>Colonnes: {planogramConfig.shelvesConfig?.leftRightColumns || 1}</p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -2569,37 +2674,52 @@ export function PlanogramEditor() {
                             )}
                             {viewMode === "2D" && planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY && (
                               <>
-                                {/* Vertical dividers */}
-                                <div
-                                  className="absolute top-0 bottom-0 border-r-2 border-dashed border-primary/50 z-10 pointer-events-none"
-                                  style={{
-                                    left: `${(planogramConfig.columns / 4) * effectiveCellWidth}px`,
-                                  }}
-                                >
-                                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium text-primary border border-primary/50">
-                                    {t("productImport.leftFront")}
-                                  </div>
-                                </div>
-                                <div
-                                  className="absolute top-0 bottom-0 border-r-2 border-dashed border-primary/50 z-10 pointer-events-none"
-                                  style={{
-                                    left: `${(planogramConfig.columns / 2) * effectiveCellWidth}px`,
-                                  }}
-                                >
-                                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium text-primary border border-primary/50">
-                                    {t("productImport.frontBack")}
-                                  </div>
-                                </div>
-                                <div
-                                  className="absolute top-0 bottom-0 border-r-2 border-dashed border-primary/50 z-10 pointer-events-none"
-                                  style={{
-                                    left: `${((planogramConfig.columns * 3) / 4) * effectiveCellWidth}px`,
-                                  }}
-                                >
-                                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium text-primary border border-primary/50">
-                                    {t("productImport.backRight")}
-                                  </div>
-                                </div>
+                                {/* Vertical dividers with dynamic positioning based on configuration */}
+                                {(() => {
+                                  const leftRightColumns = planogramConfig.shelvesConfig?.leftRightColumns || 1
+                                  const frontBackColumns = planogramConfig.shelvesConfig?.frontBackColumns || 3
+
+                                  // Calculer les positions des séparateurs
+                                  const leftFrontPosition = leftRightColumns * effectiveCellWidth
+                                  const frontBackPosition = (leftRightColumns + frontBackColumns) * effectiveCellWidth
+                                  const backRightPosition =
+                                    (leftRightColumns + frontBackColumns * 2) * effectiveCellWidth
+
+                                  return (
+                                    <>
+                                      <div
+                                        className="absolute top-0 bottom-0 border-r-2 border-dashed border-primary/50 z-10 pointer-events-none"
+                                        style={{
+                                          left: `${leftFrontPosition}px`,
+                                        }}
+                                      >
+                                        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium text-primary border border-primary/50">
+                                          {t("productImport.leftFront")}
+                                        </div>
+                                      </div>
+                                      <div
+                                        className="absolute top-0 bottom-0 border-r-2 border-dashed border-primary/50 z-10 pointer-events-none"
+                                        style={{
+                                          left: `${frontBackPosition}px`,
+                                        }}
+                                      >
+                                        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium text-primary border border-primary/50">
+                                          {t("productImport.frontBack")}
+                                        </div>
+                                      </div>
+                                      <div
+                                        className="absolute top-0 bottom-0 border-r-2 border-dashed border-primary/50 z-10 pointer-events-none"
+                                        style={{
+                                          left: `${backRightPosition}px`,
+                                        }}
+                                      >
+                                        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium text-primary border border-primary/50">
+                                          {t("productImport.backRight")}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )
+                                })()}
                               </>
                             )}
                           </div>

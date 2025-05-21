@@ -210,6 +210,18 @@ export default function Home() {
               href="/planogram-ia"
               isFeatured={true}
             />
+
+            {/* furniture Library Card */}
+            <FeatureCard
+              icon={Package}
+              type="library"
+              title={t("furnitureLibrary")}
+              description={t("manageFurniture")}
+              content={t("furnitureUpdate")}
+              buttonText={t("openLibrary")}
+              href="/furniture-library"
+            />
+
           </motion.div>
         </div>
       </div>

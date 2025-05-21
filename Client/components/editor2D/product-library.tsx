@@ -168,9 +168,9 @@ export function ProductLibrary() {
               </AlertDialogTrigger>
               <AlertDialogContent className={isRTL ? 'text-right' : 'text-left'}>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>{t('areYouSure')}</AlertDialogTitle>
+                  <AlertDialogTitle>{t('productImport.areYouSure')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('clearLibraryWarning')}
+                    {t('productImport.clearLibraryWarning')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
@@ -184,7 +184,7 @@ export function ProductLibrary() {
                       })
                     }}
                   >
-                    {t('confirm')}
+                    {t('productImport.confirm')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
