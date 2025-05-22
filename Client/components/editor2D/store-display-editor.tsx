@@ -52,6 +52,7 @@ import {
   ShelvesDisplay,
   ClothingWallDisplay,
   ClothingDisplay,
+  SupermarketFridge,
 } from "@/components/editor2D/furniture-3d-components"
 import { Wall, Window } from "@/components/editor2D/structural-3d-components"
 
@@ -1187,7 +1188,7 @@ const StoreDisplayArea = ({
               case "refrigerator":
                 return (
                   <group key={`furniture-${item.id}`} {...groupProps}>
-                    <RefrigeratorDisplay {...furnitureProps} />
+                    <SupermarketFridge {...furnitureProps} />
                   </group>
                 )
               case "refrigerated-showcase":

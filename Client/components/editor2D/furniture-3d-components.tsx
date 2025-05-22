@@ -5,6 +5,7 @@ import * as THREE from "three"
 import { useProductTexture } from "@/lib/use-product-texture"
 import { useTranslation } from "react-i18next"
 // Utilitaire pour créer des matériaux réutilisables
+
 const createMaterials = () => {
   return {
     glass: new THREE.MeshPhysicalMaterial({
@@ -1301,99 +1302,479 @@ export const RefrigeratorDisplay = ({ furniture, displayItems, products, onRemov
   const { i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
 
-  // Calculate dimensions
-  const sectionHeight = height / sections
-  const slotWidth = width / slots
-  const doorThickness = 0.05
-  const handleWidth = 0.03
-  const handleHeight = 0.15
-  const handleDepth = 0.05
-
-  // Colors
-  const fridgeColor = color || "#f0f0f0"
-  const handleColor = "#cccccc"
-  const interiorColor = "#ffffff"
-  const shelfColor = "#e0e0e0"
+  // Paramètres de l'armoire
+  const numberOfDoors = 3
+  const doorHeight = height / numberOfDoors
+  const glassThickness = 0.1
+  const frameColor = "#181818"
+  const glassColor = "#a0d0f0"
+  const interiorColor = "#404040"
 
   return (
     <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
-      {/* Main refrigerator body */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+      {/* Structure principale */}
+      <mesh position={[0, height/2, 0]} castShadow receiveShadow>
         <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={fridgeColor} roughness={0.2} metalness={0.3} />
+        <meshStandardMaterial color={frameColor} roughness={0.8} metalness={0.2} />
       </mesh>
 
-      {/* Door (slightly inset from the main body) */}
-      <mesh position={[0, height / 2, depth / 2 + doorThickness / 2 - 0.01]} castShadow receiveShadow>
-        <boxGeometry args={[width - 0.1, height - 0.1, doorThickness]} />
-        <meshStandardMaterial color={fridgeColor} roughness={0.1} metalness={0.4} />
-      </mesh>
+      {/* Portes vitrées */}
+      {Array.from({ length: numberOfDoors }).map((_, i) => {
+        const doorY = height - (i * doorHeight) - doorHeight/2
+        
+        return (
+          <group key={`door-${i}`} position={[0, doorY, depth/2 - glassThickness/2]}>
+            {/* Cadre de la porte */}
+            <mesh receiveShadow>
+              <boxGeometry args={[width, doorHeight, glassThickness]} />
+              <meshStandardMaterial 
+                color={frameColor} 
+                roughness={0.8} 
+                metalness={0.2}
+              />
+            </mesh>
 
-      {/* Door handle */}
-      <mesh
-        position={[width / 2 - 0.2, height / 2, depth / 2 + doorThickness + handleDepth / 2]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[handleWidth, handleHeight, handleDepth]} />
-        <meshStandardMaterial color={handleColor} roughness={0.3} metalness={0.7} />
-      </mesh>
+            {/* Partie vitrée */}
+            <mesh position={[0, 0, glassThickness/2]}>
+  <boxGeometry args={[width * 0.95, doorHeight * 0.95, 0.01]} />
+  <meshPhysicalMaterial
+    color="#ffffff"
+    transparent={true}
+    opacity={0.3}
+    roughness={0.05}
+    metalness={0.1}
+    transmission={1} // pour simuler le verre
+    thickness={0.02}  // épaisseur physique du verre
+    ior={1.5}         // indice de réfraction typique du verre
+    reflectivity={1}
+    clearcoat={1}
+    clearcoatRoughness={0}
+  />
+</mesh>
+          </group>
+        )
+      })}
 
-      {/* Interior (visible when looking through the glass) */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width - 0.2, height - 0.2, depth - 0.2]} />
+      {/* Intérieur visible */}
+      <mesh position={[0, height/2, -depth/4]}>
+        <boxGeometry args={[width * 0.9, height * 0.98, depth * 0.5]} />
         <meshStandardMaterial color={interiorColor} roughness={0.9} metalness={0.1} />
       </mesh>
 
-      {/* Shelves */}
+      {/* Étagères intérieures */}
       {Array.from({ length: sections }).map((_, i) => {
-        const shelfY = (i + 1) * sectionHeight
-
+        const shelfY = (i + 1) * (height / (sections + 1))
+        
         return (
-          <mesh key={`shelf-${i}`} position={[0, shelfY, 0]} castShadow receiveShadow>
-            <boxGeometry args={[width - 0.3, 0.02, depth - 0.3]} />
-            <meshStandardMaterial color={shelfColor} roughness={0.7} metalness={0.2} />
+          <mesh key={`shelf-${i}`} position={[0, shelfY, -depth/4]} castShadow>
+            <boxGeometry args={[width * 0.85, 0.02, depth * 0.4]} />
+            <meshStandardMaterial color="#505050" roughness={0.7} metalness={0.3} />
           </mesh>
         )
       })}
 
-      {/* Display items on shelves */}
+      {/* Produits visibles à travers le verre */}
       {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
-        const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
-
+        const sectionY = (Number.parseInt(sectionIndex) + 1) * (height / (sections + 1))
+        
         return items.map((item) => {
           const product = products.find((p) => p.primary_Id === item.productId)
           if (!product) return null
-
-          // Calculate position based on slot, adjusting for RTL if needed
-          const itemX = isRTL
-            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
-            : (item.position - slots / 2 + 0.5) * slotWidth
-
-          // Get quantity if available
-          const quantity = item.quantity || 1
-
+          
+          const itemX = (item.position - slots/2 + 0.5) * (width / slots)
+          
           return (
-            <group key={item.id} position={[itemX, sectionY, 0]}>
+            <group 
+              key={item.id} 
+              position={[itemX, sectionY, -depth/4 + 0.1]}
+              rotation={[0, Math.PI, 0]}
+            >
               <ProductDisplayComponent
                 product={product}
-                width={slotWidth * 0.7}
-                height={sectionHeight * 0.7}
-                depth={depth * 0.5}
+                width={width/slots * 0.8}
+                height={height/(sections + 2) * 0.8}
+                depth={depth * 0.3}
                 isRefrigerated={true}
-                quantity={quantity}
               />
             </group>
           )
         })
       })}
 
-      {/* Interior light */}
-      <pointLight position={[0, height - 0.2, 0]} intensity={0.3} distance={depth} color="#ffffff" />
+      {/* Éclairage intérieur */}
+      <pointLight 
+        position={[0, height * 0.9, -depth/4]} 
+        intensity={2} 
+        distance={depth} 
+        color="#ffffff"
+      />
+      <pointLight 
+        position={[0, height * 0.5, -depth/4]} 
+        intensity={1} 
+        distance={depth} 
+        color="#ffffff"
+      />
     </group>
   )
 }
+export const Fridge3D = ({ furniture, displayItems, products, onRemove }) => {
+  const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture;
+  const { i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
 
+  const sectionHeight = height / sections;
+  const slotWidth = width / slots;
+
+  const colors = {
+    frame: '#4a4a4a',
+    base: '#1a1a1a',
+    stripe: '#fefefe',
+    glass: '#e0f7fa',
+    interior: '#fefefe',
+    shelf: '#dcdcdc',
+    accent: '#b3e5fc',
+  };
+
+  const materials = useMemo(() => ({
+    glass: new THREE.MeshPhysicalMaterial({
+      color: colors.glass,
+      transparent: true,
+      opacity: 0.15,
+      roughness: 0.05,
+      metalness: 0.25,
+      reflectivity: 0.9,
+      transmission: 1,
+      thickness: 0.05,
+      clearcoat: 1,
+      clearcoatRoughness: 0.05,
+      side: THREE.DoubleSide,
+    }),
+    frame: new THREE.MeshStandardMaterial({
+      color: colors.frame,
+      roughness: 0.3,
+      metalness: 0.8,
+    }),
+    base: new THREE.MeshStandardMaterial({
+      color: colors.base,
+      roughness: 0.4,
+      metalness: 0.7,
+    }),
+    stripe: new THREE.MeshStandardMaterial({
+      color: colors.stripe,
+      roughness: 0.2,
+      metalness: 0.1,
+    }),
+    interior: new THREE.MeshStandardMaterial({
+      color: colors.interior,
+      roughness: 0.7,
+      metalness: 0.1,
+    }),
+    shelf: new THREE.MeshStandardMaterial({
+      color: colors.shelf,
+      roughness: 0.6,
+      metalness: 0.1,
+    }),
+    accent: new THREE.MeshStandardMaterial({
+      color: colors.accent,
+      emissive: colors.accent,
+      emissiveIntensity: 0.8,
+    }),
+  }), []);
+
+  const itemsBySection = useMemo(() => {
+    const grouped = {};
+    displayItems.forEach((item) => {
+      if (!grouped[item.section]) grouped[item.section] = [];
+      grouped[item.section].push(item);
+    });
+    return grouped;
+  }, [displayItems]);
+
+  return (
+    <group position={[x, y, z]} rotation={[0, rotation, 0]}>
+      {/* Base */}
+      <mesh position={[0, -height / 2, 0]} material={materials.base} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.1, depth]} />
+      </mesh>
+
+      {/* Stripe */}
+      <mesh position={[0, -height / 2 + 0.06, depth / 2 - 0.01]} material={materials.stripe}>
+        <boxGeometry args={[width * 0.9, 0.02, 0.02]} />
+      </mesh>
+
+      {/* Frame structure */}
+      {[ -width / 2, 0, width / 2 ].map((xPos, i) => (
+        <mesh key={`vertical-frame-${i}`} position={[xPos, 0, 0]} material={materials.frame}>
+          <boxGeometry args={[0.03, height, 0.05]} />
+        </mesh>
+      ))}
+      <mesh position={[0, height / 2, 0]} material={materials.frame}>
+        <boxGeometry args={[width, 0.05, 0.05]} />
+      </mesh>
+
+      {/* Side Glass Panels */}
+      {[ -width / 2, width / 2 ].map((xPos, i) => (
+        <mesh key={`side-glass-${i}`} position={[xPos, 0, depth / 2 - 0.01]} material={materials.glass}>
+          <boxGeometry args={[0.01, height - 0.1, depth]} />
+        </mesh>
+      ))}
+
+      {/* Sliding Doors */}
+      {[-width / 3, 0, width / 3].map((xPos, i) => (
+        <mesh key={`door-${i}`} position={[xPos, 0, depth / 2 - 0.01]} material={materials.glass}>
+          <boxGeometry args={[width / 3 - 0.03, height - 0.1, 0.01]} />
+        </mesh>
+      ))}
+
+      {/* Interior back wall */}
+      <mesh position={[0, 0, depth / 2 - depth / 4]} material={materials.interior}>
+        <boxGeometry args={[width - 0.1, height - 0.1, 0.1]} />
+      </mesh>
+
+      {/* Lighting */}
+      {[height / 2 - 0.05, -height / 2 + 0.1].map((yPos, i) => (
+        <mesh key={`accent-${i}`} position={[0, yPos, depth / 2 - 0.05]} material={materials.accent}>
+          <boxGeometry args={[width * 0.9, 0.01, 0.01]} />
+        </mesh>
+      ))}
+
+      {/* Shelves */}
+      {Array.from({ length: sections }).map((_, i) => {
+        const y = (i + 1) * sectionHeight - height / 2;
+        return (
+          <mesh key={`shelf-${i}`} position={[0, y, depth / 2 - depth / 4]} material={materials.shelf}>
+            <boxGeometry args={[width - 0.1, 0.02, depth / 2 - 0.1]} />
+          </mesh>
+        );
+      })}
+
+      {/* Display Products */}
+      {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
+        const sectionY = parseInt(sectionIndex) * sectionHeight - height / 2 + sectionHeight / 2;
+        return items.map((item) => {
+          const product = products.find((p) => p.primary_Id === item.productId);
+          if (!product) return null;
+
+          const itemX = isRTL
+            ? (slots - 1 - item.position - slots / 2 + 0.5) * slotWidth
+            : (item.position - slots / 2 + 0.5) * slotWidth;
+
+          const itemZ = depth / 2 - depth / 4 + 0.05;
+
+          return (
+            <group key={`item-${item.id}`} position={[itemX, sectionY, itemZ]} onClick={(e) => {
+              e.stopPropagation();
+              onRemove(item);
+            }}>
+              <EnhancedRefrigeratedProductDisplay
+                product={product}
+                width={slotWidth * 0.8}
+                height={sectionHeight * 0.7}
+              />
+            </group>
+          );
+        });
+      })}
+
+      {/* Lighting setup */}
+      <pointLight position={[0, height / 4, depth / 2 - 0.1]} intensity={1} distance={height / 2} castShadow />
+      <pointLight position={[0, -height / 4, depth / 2 - 0.1]} intensity={1} distance={height / 2} castShadow />
+      <ambientLight intensity={0.4} />
+    </group>
+  );
+};
+
+export const SupermarketFridge = ({ 
+  furniture, 
+  displayItems = [], 
+  products = [], 
+  onRemove 
+}: {
+  furniture: any;
+  displayItems?: any[];
+  products?: any[];
+  onRemove: (id: string) => void;
+}) => {
+  // Destructure furniture props with defaults
+  const {
+    width = 1.5,
+    height = 2,
+    depth = 0.8,
+    sections = 3, // Correspond à furniture.sections
+    slots = 6,    // Correspond à furniture.slots
+    color = "#3a3a3a",
+    x = 0,
+    y = 0,
+    z = 0,
+    rotation = 0
+  } = furniture || {};
+
+  // Materials and colors
+  const frameColor = color;
+  const glassOpacity = 0.2;
+  const shelfColor = "#f0f0f0";
+  const backPanelColor = "#333333";
+  const interiorColor = "#333333";
+  const accentColor = "#a0d8ef";
+
+  // Calculate dimensions based on furniture configuration
+  const sectionHeight = height / sections;
+  const slotWidth = width / slots;
+
+  const glassMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+    color: "#ffffff",
+    transparent: true,
+    opacity: glassOpacity,
+    roughness: 0.05,
+    metalness: 0,
+    clearcoat: 1,
+    reflectivity: 0.8,
+    transmission: 1,
+    ior: 1.5,
+  }), [glassOpacity]);
+
+  // Group items by section and position
+  const itemsBySection = useMemo(() => {
+    const sectionsMap = Array(sections).fill(null).map(() => Array(slots).fill(null));
+    
+    displayItems.forEach(item => {
+      const sectionIndex = Math.min(Math.max(0, item.section || 0), sections - 1);
+      const slotIndex = Math.min(Math.max(0, item.position || 0), slots - 1);
+      
+      if (!sectionsMap[sectionIndex]) {
+        sectionsMap[sectionIndex] = [];
+      }
+      sectionsMap[sectionIndex][slotIndex] = item;
+    });
+
+    return sectionsMap;
+  }, [displayItems, sections, slots]);
+
+  return (
+    <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
+      {/* Base structure */}
+      <mesh position={[0, 0.1, 0]}>
+        <boxGeometry args={[width, 0.2, depth]} />
+        <meshStandardMaterial color={frameColor} metalness={0.6} roughness={0.2} />
+      </mesh>
+
+      {/* Back panel */}
+      <mesh position={[0, height / 2, -depth / 2 + 0.05]}>
+        <boxGeometry args={[width, height, 0.1]} />
+        <meshStandardMaterial color={backPanelColor} />
+      </mesh>
+
+      {/* Side panels */}
+      <mesh position={[-width / 2 + 0.05, height / 2, 0]}>
+        <boxGeometry args={[0.1, height, depth]} />
+        <meshStandardMaterial color={frameColor} />
+      </mesh>
+      <mesh position={[width / 2 - 0.05, height / 2, 0]}>
+        <boxGeometry args={[0.1, height, depth]} />
+        <meshStandardMaterial color={frameColor} />
+      </mesh>
+
+      {/* Top panel */}
+      <mesh position={[0, height, 0]}>
+        <boxGeometry args={[width, 0.1, depth]} />
+        <meshStandardMaterial color={frameColor} />
+      </mesh>
+
+      {/* Interior */}
+      <mesh position={[0, height / 2, -depth / 2 + 0.15]}>
+        <boxGeometry args={[width - 0.2, height - 0.2, 0.01]} />
+        <meshStandardMaterial color={interiorColor} roughness={0.9} metalness={0.1} />
+      </mesh>
+
+      {/* Door accent */}
+      <mesh position={[0, 0.25, depth / 2 - 0.05]}>
+        <boxGeometry args={[width - 0.1, 0.05, 0.01]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.2} />
+      </mesh>
+
+      {/* Shelves - one per section */}
+      {Array.from({ length: sections - 1 }).map((_, i) => {
+        const yPos = ((i + 1) * sectionHeight);
+        return (
+          <mesh key={`shelf-${i}`} position={[0, yPos, 0]}>
+            <boxGeometry args={[width - 0.2, 0.02, depth - 0.2]} />
+            <meshStandardMaterial color={shelfColor} roughness={0.8} metalness={0.1} />
+          </mesh>
+        );
+      })}
+
+      {/* Glass doors - one per section */}
+      {Array.from({ length: sections }).map((_, i) => {
+        const yPos = (i * sectionHeight) + (sectionHeight / 2);
+        return (
+          <mesh key={`door-${i}`} position={[0, yPos, depth / 2 - 0.01]}>
+            <boxGeometry args={[width - 0.1, sectionHeight - 0.1, 0.02]} />
+            <meshStandardMaterial {...glassMaterial} />
+          </mesh>
+        );
+      })}
+
+      {/* Products - organized by sections and slots */}
+      {itemsBySection.map((sectionItems, sectionIndex) => {
+        return sectionItems.map((item, slotIndex) => {
+          if (!item) return null;
+          
+          const product = products.find((p) => p.primary_Id === item.productId);
+          if (!product) return null;
+
+          // Calculate position based on slot and section
+          const sectionY = (sectionIndex * sectionHeight) + (sectionHeight / 2);
+          const slotX = (slotIndex - (slots / 2) + 0.5) * slotWidth;
+          const itemZ = depth / 4;
+
+          return (
+            <group key={item.id} position={[slotX, sectionY, itemZ]}>
+              <EnhancedRefrigeratedProductDisplay
+                product={product}
+                width={slotWidth * 0.8}
+                height={sectionHeight * 0.7}
+                depth={depth * 0.3}
+                onClick={() => onRemove(item.id)}
+              />
+            </group>
+          );
+        });
+      })}
+
+      {/* Refrigeration effects */}
+      <group position={[0, 0.3, depth / 2 - 0.1]}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <mesh 
+            key={`mist-${i}`} 
+            position={[
+              (Math.random() - 0.5) * width * 0.8,
+              Math.random() * height * 0.9,
+              (Math.random() - 0.5) * 0.2
+            ]} 
+            scale={[0.05 + Math.random() * 0.1, 0.05 + Math.random() * 0.1, 0.05 + Math.random() * 0.1]}
+          >
+            <sphereGeometry args={[1, 8, 8]} />
+            <meshBasicMaterial color="#a0d8ef" transparent opacity={0.2 + Math.random() * 0.1} depthWrite={false} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Lighting */}
+      <pointLight 
+        position={[0, height - 0.1, 0]} 
+        intensity={1} 
+        color="#ffffff" 
+        distance={depth * 2} 
+      />
+      <pointLight 
+        position={[0, height / 2, -depth / 3]} 
+        intensity={0.5} 
+        color="#a0d8ef" 
+        distance={depth * 1.5} 
+      />
+    </group>
+  );
+};
 // RefrigeratedShowcase Component (open-front refrigerated display)
 export const RefrigeratedShowcase = ({ furniture, displayItems, products, onRemove }) => {
   const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture

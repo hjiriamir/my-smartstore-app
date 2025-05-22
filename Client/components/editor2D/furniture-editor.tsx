@@ -56,6 +56,8 @@ import {
   RefrigeratedShowcase,
   ClothingDisplay,
   ClothingWallDisplay,
+  Fridge3D,
+  SupermarketFridge,
 } from "@/components/editor2D/furniture-3d-components"
 
 // Drag item types
@@ -865,7 +867,7 @@ export function FurnitureEditor() {
       case "table":
         return <TableDisplay {...props} />
       case "refrigerator":
-        return <RefrigeratorDisplay {...props} />
+        return <SupermarketFridge {...props} />
       case "refrigerated-showcase":
         return (
           <>
