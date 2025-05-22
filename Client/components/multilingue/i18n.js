@@ -11,6 +11,104 @@ i18n
     resources: {
       en: {
         translation: {
+          new:"New",
+          retail:"Retail Platform",
+          retailDescription: "Transform your merchandising with our smart tools for layout and product management",
+          retailDemo: "Ready to transform your retail?",
+          retailDemoDescription: "Découvrez comment SmartStore peut augmenter vos ventes et optimiser votre espace de vente",
+          retailDemoBoutton: "Request a demo",
+          feature :{
+            editor :{
+              title:"Planogram Editor",
+              description: "Create and manage accurate planograms (single, double, and quadruple facings) with optimal product placement to maximize shelf efficiency.",
+              buttonText: "Open Editor",
+              statsTitle: "Sales Increase",
+              features: [
+                "Accurate planograms with single, double, and quadruple facings",
+                "Optimized product placement",
+                "Shelf optimization to maximize efficiency"
+              ]
+            },
+            display: {
+            title: "Store Presentation",
+            description: "Optimize your store layout including furniture and planogram placement to maximize customer experience and create an immersive 3D representation of your shop.",
+            buttonText: "View Presentation",
+            statsTitle: "Overstock Resolution",
+            features: [
+              "Import 2D store plans",
+              "Match furniture with plan objects",
+              "Optimized furniture placement",
+              "Planogram integration",
+              "3D store generation"
+            ]
+          },
+            floor: {
+            title: "Floor Plan Editor",
+            description: "Design the optimal layout of your store in 2D (architectural plan) and enjoy an immersive 3D visualization.",
+            button: "Open the editor",
+            stats: "Operational time saving",
+            features: [
+              "Accurate creation of 2D architectural plan",
+              "Immersive 3D visualization",
+              "Easy layout adjustments"
+            ]
+          },
+          library: {
+          title: "Product Library",
+          description: "Manage your complete product catalog",
+          button: "Open the library",
+          features: [
+            "Quick add and edit",
+            "Smart categorization",
+            "Stock-based view"
+          ]
+        },
+        import: {
+          title: "Product Import",
+          description: "Easily import your products in bulk from an Excel or CSV file, including their images.",
+          button: "Import Products",
+          features: [
+            "Bulk import from CSV/Excel",
+            "Smart duplicate management",
+            "Fast import with images"
+          ]
+        },
+        ai: {
+          title: "Automated AI Planograms",
+          description: "Optimize your planograms with our advanced artificial intelligence",
+          button: "Discover AI",
+          stats: {
+            value: "Automated",
+            title: "Smart Planograms"
+          },
+          features: [
+            "Predictive sales analysis",
+            "Automated layout recommendations",
+            "Continuous data-driven optimization"
+          ]
+        },
+        furniture_library: {
+          title: "Furniture Library",
+          description: "Manage pre-filled furniture with ready-to-use products and equipment for your store.",
+          button: "Open Library",
+          features: [
+            "Manage pre-filled furniture with integrated products",
+            "Add new models",
+            "3D visualization",
+            "Custom storage"
+          ]
+        },
+        furniture_editor: {
+          title: "Furniture Editor",
+          description: "Create configurable furniture, fill them with products, and enjoy an immersive 2D and 3D experience",
+          button: "Edit furniture",
+          features: [
+            "Create and configure custom furniture",
+            "Fill furniture with products",
+            "2D and 3D visualization and interaction"
+          ]
+        }
+          },
           modifier: "Edit",
           utiliser: "Use",
           notHaveAccount:"Don't have an account?",
@@ -155,6 +253,10 @@ i18n
           arrangeProducts: "Arrange products on store shelves with drag-and-drop functionality",
           openEditor: "Open Editor",
           shopDisplay: "Shop Display",
+          editorTitle:"Furniture Builder",
+          editorDescription:"Design custom furniture to showcase your products.",
+          editorContent:"Fill each unit with products to simulate in-store presentation.",
+          editorBoutton:"Open Furniture Editor",
           enhanceLayout: "Enhance store layout visually",
           designCustomize: "Design and customize your store layout using display tools and fixtures",
           openShopDisplay: "Open Shop Display",
@@ -525,7 +627,14 @@ i18n
             associer1:"already associated",
             deleteFurniture: "Delete furniture",
             confirmDeleteFurniture: "Are you sure you want to delete the furniture",
-            confirmDeleteFurnitureAfter: "? This action is irreversible."
+            confirmDeleteFurnitureAfter: "? This action is irreversible.",
+            structural:"Structural",
+            structuralElements: "Structural elements",
+            window:"Window",
+            wall:"Wall",
+            conseil:"Click on an element to add it to the scene. You can then position and configure it.",
+
+            
             
 
           },
@@ -608,6 +717,104 @@ i18n
       },
       fr: {
         translation: {
+          new:"Nouveau",
+          retail:"Plateforme de vente au détail",
+          retailDescription:"Transformez votre merchandising avec nos outils intelligents d'agencement et de gestion de produits",
+          retailDemo: "Prêt à transformer votre retail ?",
+          retailDemoDescription: "Découvrez comment SmartStore peut augmenter vos ventes et optimiser votre espace de vente",
+          retailDemoBoutton: "Demander une démo",
+          feature :{
+            editor :{
+              title:"Éditeur de planogramme",
+              description: "Créez et gérez des planogrammes précis (faces simples, doubles et quadruples) avec un placement optimal des produits pour maximiser l'efficacité de vos linéaires.",
+              buttonText: "Ouvrir l'éditeur",
+              statsTitle: "Augmentation des ventes",
+              features: [
+                "Planogrammes précis sur faces simples, doubles et quadruples",
+                "Placement optimisé des produits",
+                "Optimisation des linéaires pour maximiser l'efficacité"
+              ]
+            },
+            display: {
+              title: "Présentation du magasin",
+              description: "Optimisez la disposition de votre magasin, incluant le placement des meubles et planogrammes, pour maximiser l'expérience client et créer une représentation 3D immersive de votre boutique.",
+              buttonText: "Voir la présentation",
+              statsTitle: "Résolution des surstocks",
+              features: [
+                "Importation de plans 2D du magasin",
+                "Appariement des meubles avec les objets du plan",
+                "Placement optimisé des meubles",
+                "Intégration des planogrammes",
+                "Génération du magasin en 3D"
+              ]
+            },
+            floor: {
+            title: "Éditeur de plan d'étage",
+            description: "Concevez la disposition optimale de votre magasin en 2D (plan architectural) et bénéficiez d'une visualisation immersive en 3D.",
+            button: "Ouvrir l'éditeur",
+            stats: "Gain de temps opératoire",
+            features: [
+              "Création précise du plan 2D architectural",
+              "Visualisation immersive en 3D",
+              "Ajustements faciles de la disposition"
+            ]
+          },
+          library: {
+          title: "Bibliothèque de produits",
+          description: "Gérez le catalogue complet de vos produits",
+          button: "Ouvrir la bibliothèque",
+          features: [
+            "Ajout et modification rapide",
+            "Catégorisation intelligente",
+            "Vue par stock"
+          ]
+        },
+        import : {
+        title: "Importation de produits",
+        description: "Importez facilement vos produits en masse depuis un fichier Excel ou CSV, y compris leurs images.",
+        button: "Importer les produits",
+        features: [
+          "Import en masse depuis CSV/Excel",
+          "Gestion intelligente des doublons",
+          "Importation rapide avec images"
+        ]
+      },
+      ai: {
+        title: "Planogrammes IA automatisés",
+        description: "Optimisez vos planogrammes avec notre intelligence artificielle avancée",
+        button: "Découvrir l'IA",
+        stats: {
+          value: "Automatisés",
+          title: "Planogrammes intelligents"
+        },
+        features: [
+          "Analyse prédictive des ventes",
+          "Recommandations d'agencement automatisées",
+          "Optimisation continue basée sur les données"
+        ]
+      },
+      furniture_library: {
+          title: "Bibliothèque de meubles",
+          description: "Gérez les meubles pré-remplis avec produits et équipements prêts à l'emploi pour votre magasin.",
+          button: "Ouvrir la bibliothèque",
+          features: [
+            "Gestion des meubles pré-remplis avec produits intégrés",
+            "Ajout de nouveaux modèles",
+            "Visualisation 3D",
+            "Stockage personnalisé"
+          ]
+        },
+        furniture_editor: {
+          title: "Éditeur de meubles",
+          description: "Créez des meubles configurables, remplissez-les avec des produits, et bénéficiez d'une expérience immersive en 2D et 3D",
+          button: "Modifier un meuble",
+          features: [
+            "Création et configuration de meubles personnalisés",
+            "Remplissage des meubles avec des produits",
+            "Visualisation et interaction en 2D et 3D"
+          ]
+        }
+                  },
           modifier :"Modifier",
           utiliser:"Utiliser",
           notHaveAccount:"Vous n'avez pas de compte ?",
@@ -756,6 +963,10 @@ i18n
           arrangeProducts: "Disposer les produits sur les étagères avec fonction glisser-déposer",
           openEditor: "Ouvrir l'éditeur",
           shopDisplay: "Présentation du magasin",
+          editorTitle:"Création de mobilier",
+          editorDescription:"Concevez vos meubles sur mesure pour mettre en valeur vos produits.",
+          editorContent:"Ajoutez des produits dans chaque meuble pour simuler leur agencement en magasin.",
+          editorBoutton:"Ouvrir l'éditeur de meubles",
           enhanceLayout: "Améliorer visuellement la disposition du magasin",
           designCustomize: "Concevoir et personnaliser la disposition du magasin",
           openShopDisplay: "Ouvrir l'affichage",
@@ -1128,6 +1339,12 @@ i18n
               deleteFurniture:"Supprimer le meuble",
               confirmDeleteFurniture:"Êtes-vous sûr de vouloir supprimer le meuble",
               confirmDeleteFurnitureAfter:"? Cette action est irréversible.",
+              structural:"Structurel",
+              structuralElements: "Éléments structurels",
+              window:"Fenêtre",
+              wall:"Mur",
+              conseil:"Cliquez sur un élément pour l'ajouter à la scène. Vous pourrez ensuite le positionner et le configurer.",
+
 
 
             },
@@ -1211,6 +1428,104 @@ i18n
       },
       ar: {
         translation: {
+          new:"جديد",
+          retail:"منصة البيع بالتجزئة",
+          retailDescription: "حوّل إدارة عرض منتجاتك باستخدام أدواتنا الذكية للتخطيط وإدارة المنتجات",
+          retailDemo: "هل أنت مستعد لتحويل تجربة البيع بالتجزئة الخاصة بك؟",
+          retailDemoDescription: "اكتشف كيف يمكن لـ SmartStore زيادة مبيعاتك وتحسين مساحة البيع بالتجزئة الخاصة بك",
+          retailDemoBoutton: "اطلب عرضًا تجريبيًا",
+          feature :{
+            editor :{
+              title:"محرر المخطط التخطيطي",
+              description: "قم بإنشاء وإدارة مخططات دقيقة (وجوه مفردة، مزدوجة وأربعة أضعاف) مع وضع المنتجات بشكل أمثل لتعظيم كفاءة الأرفف.",
+              buttonText: "افتح المحرر",
+              statsTitle: "زيادة المبيعات",
+              features: [
+                "مخططات دقيقة مع وجوه مفردة ومزدوجة وأربعة أضعاف",
+                "وضع المنتجات بشكل أمثل",
+                "تحسين الأرفف لتعظيم الكفاءة"
+              ]
+            },
+            display: {
+            title: "عرض المتجر",
+            description: "قم بتحسين تخطيط متجرك، بما في ذلك وضع الأثاث والمخططات، لتعظيم تجربة العميل وإنشاء تمثيل ثلاثي الأبعاد غامر لمتجرك.",
+            buttonText: "عرض العرض التقديمي",
+            statsTitle: "حل مشكلة المخزون الزائد",
+            features: [
+              "استيراد مخططات المتجر ثنائية الأبعاد",
+              "مطابقة الأثاث مع عناصر المخطط",
+              "وضع الأثاث بشكل مثالي",
+              "دمج المخططات التخطيطية",
+              "توليد المتجر ثلاثي الأبعاد"
+            ]
+          },
+          floor: {
+          title: "محرر مخطط الأرضية",
+          description: "صمّم التخطيط الأمثل لمتجرك بصيغة ثنائية الأبعاد (مخطط معماري) واستمتع بعرض ثلاثي الأبعاد غامر.",
+          button: "افتح المحرر",
+          stats: "توفير في الوقت التشغيلي",
+          features: [
+            "إنشاء دقيق لمخطط معماري ثنائي الأبعاد",
+            "عرض ثلاثي الأبعاد غامر",
+            "تعديلات سهلة على التخطيط"
+          ]
+        },
+        library: {
+          title: "مكتبة المنتجات",
+          description: "قم بإدارة الكتالوج الكامل لمنتجاتك",
+          button: "افتح المكتبة",
+          features: [
+            "إضافة وتعديل سريع",
+            "تصنيف ذكي",
+            "عرض حسب المخزون"
+          ]
+        },
+        import: {
+          title: "استيراد المنتجات",
+          description: "قم باستيراد منتجاتك بسهولة دفعة واحدة من ملف Excel أو CSV، بما في ذلك الصور.",
+          button: "استيراد المنتجات",
+          features: [
+            "استيراد جماعي من CSV/Excel",
+            "إدارة ذكية للتكرارات",
+            "استيراد سريع مع الصور"
+          ]
+        },
+        ai: {
+          title: "مخططات تخطيط آلية بالذكاء الاصطناعي",
+          description: "قم بتحسين مخططاتك التخطيطية باستخدام الذكاء الاصطناعي المتقدم",
+          button: "اكتشف الذكاء الاصطناعي",
+          stats: {
+            value: "آلية",
+            title: "مخططات ذكية"
+          },
+          features: [
+            "تحليل تنبؤي للمبيعات",
+            "توصيات تخطيط آلية",
+            "تحسين مستمر قائم على البيانات"
+          ]
+        },
+        furniture_library: {
+          title: "مكتبة الأثاث",
+          description: "إدارة الأثاث المملوء مسبقًا بالمنتجات والمعدات الجاهزة لمتجرك.",
+          button: "فتح المكتبة",
+          features: [
+            "إدارة الأثاث المملوء مسبقًا بالمنتجات المدمجة",
+            "إضافة نماذج جديدة",
+            "عرض ثلاثي الأبعاد",
+            "تخزين مخصص"
+          ]
+        },
+        furniture_editor: {
+          title: "محرر الأثاث",
+          description: "أنشئ أثاثًا قابلاً للتكوين واملأه بالمنتجات واستمتع بتجربة غامرة في العرض ثنائي وثلاثي الأبعاد",
+          button: "تعديل الأثاث",
+          features: [
+            "إنشاء وتكوين أثاث مخصص",
+            "ملء الأثاث بالمنتجات",
+            "عرض وتفاعل ثنائي وثلاثي الأبعاد"
+          ]
+        }
+          },
           modifier: "تعديل",
           utiliser: "استخدام",
           notHaveAccount:"ليس لديك حساب؟",
@@ -1355,6 +1670,10 @@ i18n
           arrangeProducts: "ترتيب المنتجات على أرفف المتجر بالسحب والإفلات",
           openEditor: "فتح المحرر",
           shopDisplay: "عرض المتجر",
+          editorTitle:"منشئ الأثاث",
+          editorDescription:"صمّم أثاثاً مخصصاً لعرض منتجاتك في المتجر.",
+          editorContent:"أضف المنتجات داخل كل قطعة لتجربة العرض داخل المتجر.",
+          editorBoutton:"فتح محرر الأثاث",
           enhanceLayout: "تحسين تخطيط المتجر بصريًا",
           designCustomize: "تصميم وتخصيص تخطيط المتجر",
           openShopDisplay: "فتح العرض",
@@ -1721,6 +2040,11 @@ i18n
               deleteFurniture: "حذف الأثاث",
               confirmDeleteFurniture: "هل أنت متأكد أنك تريد حذف الأثاث",
               confirmDeleteFurnitureAfter: "؟ هذا الإجراء لا يمكن التراجع عنه.",
+              structural:"عناصر البناء",
+              structuralElements: "عناصر هيكلية",
+              window:"نافذة",
+              wall:"جدار",
+              conseil:"انقر على عنصر لإضافته إلى المشهد. يمكنك بعد ذلك وضعه وتكوينه.",
             },
             chargerJSONvalide: "تم تحميل إعدادات JSON بنجاح",
             generateurEmplacement: "الموقع:",

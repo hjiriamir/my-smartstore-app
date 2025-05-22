@@ -2617,7 +2617,7 @@ export function StoreDisplayEditor() {
                                       onClick={() => handleAddWall(0, 0)}
                                     >
                                       <div className="w-12 h-6 bg-gray-400 rounded-sm mb-2"></div>
-                                      <span className="text-xs">Mur</span>
+                                      <span className="text-xs">{t("productImport.floorPlan.wall")}</span>
                                     </Button>
 
                                     <Button
@@ -2626,14 +2626,13 @@ export function StoreDisplayEditor() {
                                       onClick={() => handleAddWindow(0, 0)}
                                     >
                                       <div className="w-12 h-6 bg-blue-200 border-2 border-gray-400 rounded-sm mb-2"></div>
-                                      <span className="text-xs">Fenêtre</span>
+                                      <span className="text-xs">{t("productImport.floorPlan.window")}</span>
                                     </Button>
                                   </div>
 
                                   <div className="text-sm text-muted-foreground mt-4">
                                     <p>
-                                      Cliquez sur un élément pour l'ajouter à la scène. Vous pourrez ensuite le
-                                      positionner et le configurer.
+                                    {t("productImport.floorPlan.conseil")}
                                     </p>
                                   </div>
                                 </div>
