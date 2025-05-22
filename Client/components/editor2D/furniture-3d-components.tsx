@@ -4,7 +4,6 @@ import { useMemo, useState, useEffect } from "react"
 import * as THREE from "three"
 import { useProductTexture } from "@/lib/use-product-texture"
 import { useTranslation } from "react-i18next"
-import { Group, Mesh } from 'three'
 // Utilitaire pour créer des matériaux réutilisables
 const createMaterials = () => {
   return {
@@ -591,6 +590,9 @@ const EnhancedRefrigeratedProductDisplay = ({ product, width, height }) => {
 }
 
 // Modify the Product3D component to better handle side-facing products
+// Replace the entire Product3D component with this improved version:
+
+// Modify the Product3D component to better handle side-facing products
 const Product3D = ({
   position,
   size,
@@ -662,50 +664,49 @@ const Product3D = ({
   // Déterminer si c'est une rotation latérale (pour les côtés gauche/droit)
   const isLateralRotation = Math.abs(rotation[1]) === Math.PI / 2
 
-  // Réduire davantage la largeur individuelle pour éviter les chevauchements
-  // Utiliser un facteur de réduction plus important quand la quantité augmente
-  const scaleFactor = quantity > 1 ? 0.7 : 0.85 // Réduction plus importante pour les quantités multiples
+  // Calculate the appropriate scale factor based on quantity
+  const scaleFactor = quantity > 1 ? 0.7 : 0.85
 
-  // Pour les produits sur les côtés, nous devons ajuster la dimension qui représente la "largeur"
+  // Calculate product width based on orientation
   const productWidth = isLateralRotation ? (depth / quantity) * scaleFactor : (totalWidth / quantity) * scaleFactor
 
-  // Calculer l'espacement entre les produits - réduire considérablement l'espacement
-  const spacing = ((totalWidth - productWidth * quantity) / (quantity + 1)) * 0.15
+  // Calculate spacing between products (reduced for better display)
+  const spacing = productWidth * 0.1
 
   const productInstances = []
 
   for (let i = 0; i < quantity; i++) {
-    // Nouvelle méthode de positionnement avec espacement uniforme
-    // Positionner les produits avec un espacement égal entre eux
-    const x = baseX - totalWidth / 2 + spacing + i * (productWidth + spacing) + productWidth / 2
+    // Calculate position with even spacing
+    const offset = (i - (quantity - 1) / 2) * (productWidth + spacing)
+    const x = baseX + (isLateralRotation ? 0 : offset)
+    const z = baseZ + (isLateralRotation ? offset : 0)
 
-    // Ajouter une légère variation aléatoire pour plus de réalisme
+    // Add slight random variation for realism
     const jitterX = (Math.random() - 0.5) * 0.002
     const jitterY = (Math.random() - 0.5) * 0.002
     const jitterZ = (Math.random() - 0.5) * 0.002
 
-    // Ajuster la taille pour les produits latéraux
-    const adjustedWidth = isLateralRotation ? height * 1.2 : productWidth
-    const adjustedHeight = isLateralRotation ? productWidth * 1.5 : height * 0.9
+    // Adjust dimensions based on orientation
+    const adjustedWidth = isLateralRotation ? height * 0.9 : productWidth
+    const adjustedHeight = isLateralRotation ? productWidth * 1.2 : height * 0.9
 
     productInstances.push(
       <group
         key={`product-${cellIndex}-${i}`}
-        position={[x + jitterX, baseY + jitterY, baseZ + jitterZ]}
+        position={[x + jitterX, baseY + jitterY, z + jitterZ]}
         rotation={rotation}
         castShadow
         receiveShadow
       >
         {texture ? (
-          // Utiliser un plan avec la texture du produit
-          <mesh castShadow receiveShadow position={[0, height * 0.5, 0]}>
-            {/* Ajuster la géométrie pour les produits sur les côtés */}
+          // Use a plane with the product texture
+          <mesh castShadow receiveShadow position={[0, adjustedHeight / 2, 0]}>
             <planeGeometry args={[adjustedWidth, adjustedHeight]} />
             <meshBasicMaterial map={texture} transparent={true} side={THREE.DoubleSide} />
           </mesh>
         ) : (
-          // Fallback si pas de texture
-          <mesh castShadow receiveShadow position={[0, height * 0.5, 0]}>
+          // Fallback if no texture
+          <mesh castShadow receiveShadow position={[0, adjustedHeight / 2, 0]}>
             <planeGeometry args={[adjustedWidth, adjustedHeight]} />
             <meshBasicMaterial color={product.color || "#f3f4f6"} />
           </mesh>
@@ -2058,21 +2059,21 @@ export const CashierDisplay = ({ furniture, displayItems, products, onRemove }) 
 
 // ShelvesDisplay Component
 export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) => {
-  const { width, height, depth, sections, slots, color, x, y, z, rotation } = furniture
+  const { width, height, depth, sections, slots, color, x, y, z, rotation, shelvesConfig } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
   const { i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
 
-  // Configuration identique à planogram-editor
-  const shelvesConfig = {
-    rows: sections,
-    frontBackColumns: 6,  // 6 colonnes pour avant/arrière comme dans planogram-editor
-    leftRightColumns: 1   // 1 colonne pour gauche/droite
+  // Configuration from furniture or defaults
+  const effectiveConfig = {
+    rows: shelvesConfig?.rows || sections,
+    frontBackColumns: shelvesConfig?.frontBackColumns || 6,
+    leftRightColumns: shelvesConfig?.leftRightColumns || 1,
   }
 
   // Calculate dimensions
-  const shelfSpacing = height / sections
+  const shelfSpacing = height / effectiveConfig.rows
   const shelfThickness = 0.05
   const baseHeight = 0.3
 
@@ -2085,8 +2086,8 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
   const rightSideColor = "#e8e8e8"
 
   // Calculate slot widths
-  const slotWidthFrontBack = width / shelvesConfig.frontBackColumns
-  const slotWidthSides = depth / shelvesConfig.leftRightColumns
+  const slotWidthFrontBack = width / effectiveConfig.frontBackColumns
+  const slotWidthSides = depth / effectiveConfig.leftRightColumns
 
   return (
     <group position={[x, y, z]} rotation={[0, (rotation * Math.PI) / 180, 0]}>
@@ -2116,7 +2117,7 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
         </mesh>
 
         {/* Shelves for all four sides */}
-        {Array.from({ length: shelvesConfig.rows }).map((_, rowIndex) => {
+        {Array.from({ length: effectiveConfig.rows }).map((_, rowIndex) => {
           const shelfY = (rowIndex + 1) * shelfSpacing
 
           return (
@@ -2156,7 +2157,12 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
 
-              <mesh position={[-width / 2 - 0.1, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+              <mesh
+                position={[-width / 2 - 0.1, shelfY + 0.02, 0]}
+                rotation={[0, Math.PI / 2, 0]}
+                castShadow
+                receiveShadow
+              >
                 <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
@@ -2179,55 +2185,50 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
           if (!product) return null
 
           const quantity = Math.max(1, item.quantity || 1)
-          
+
           // Determine position and side
           let side, relativePosition, itemX, itemZ, itemRotation
-          
+
           // Total columns calculation
-          const totalColumns = shelvesConfig.leftRightColumns * 2 + shelvesConfig.frontBackColumns * 2
-          
+          const totalColumns = effectiveConfig.leftRightColumns * 2 + effectiveConfig.frontBackColumns * 2
+
           // Calculate boundaries for each section
-          const leftLimit = shelvesConfig.leftRightColumns
-          const frontLimit = leftLimit + shelvesConfig.frontBackColumns
-          const backLimit = frontLimit + shelvesConfig.frontBackColumns
+          const leftLimit = effectiveConfig.leftRightColumns
+          const frontLimit = leftLimit + effectiveConfig.frontBackColumns
+          const backLimit = frontLimit + effectiveConfig.frontBackColumns
 
           if (item.position < leftLimit) {
             // Left side
             side = "left"
             relativePosition = item.position
             itemX = -width / 2 - 0.1
-            itemZ = -depth / 4 + (relativePosition * depth) / (shelvesConfig.leftRightColumns * 2)
+            itemZ = -depth / 4 + (relativePosition * depth) / (effectiveConfig.leftRightColumns * 2)
             itemRotation = [0, Math.PI / 2, 0]
-          } 
-          else if (item.position < frontLimit) {
+          } else if (item.position < frontLimit) {
             // Front side - 6 columns
             side = "front"
             relativePosition = item.position - leftLimit
             itemX = -width / 2 + (relativePosition + 0.5) * slotWidthFrontBack
             itemZ = depth / 2 - 0.2
             itemRotation = [0, 0, 0]
-          }
-          else if (item.position < backLimit) {
+          } else if (item.position < backLimit) {
             // Back side - 6 columns
             side = "back"
             relativePosition = item.position - frontLimit
             itemX = -width / 2 + (relativePosition + 0.5) * slotWidthFrontBack
             itemZ = -depth / 2 + 0.2
             itemRotation = [0, Math.PI, 0]
-          }
-          else {
+          } else {
             // Right side
             side = "right"
             relativePosition = item.position - backLimit
             itemX = width / 2
-            itemZ = depth / 4 - (relativePosition * depth) / (shelvesConfig.leftRightColumns * 2)
+            itemZ = depth / 4 - (relativePosition * depth) / (effectiveConfig.leftRightColumns * 2)
             itemRotation = [0, Math.PI / 2, 0]
           }
 
           // Product dimensions
-          const productWidth = side === "front" || side === "back" 
-            ? slotWidthFrontBack * 0.8 
-            : shelfSpacing * 0.7
+          const productWidth = side === "front" || side === "back" ? slotWidthFrontBack * 0.8 : shelfSpacing * 0.7
           const productHeight = shelfSpacing * 0.7
           const productDepth = 0.05
 

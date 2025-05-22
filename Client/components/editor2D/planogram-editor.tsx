@@ -561,9 +561,14 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
                 <boxGeometry args={[depth - 0.1, shelfThickness, 1.2]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
-              
+
               {/* Metal edge pour le côté gauche */}
-              <mesh position={[-width / 2 - 0.1, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
+              <mesh
+                position={[-width / 2 - 0.1, shelfY + 0.02, 0]}
+                rotation={[0, Math.PI / 2, 0]}
+                receiveShadow
+                castShadow
+              >
                 <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
@@ -607,7 +612,7 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
   )
 }
 
-//  la fonction createTransparentTexture 
+//  la fonction createTransparentTexture
 const createTransparentTexture = (imageUrl) => {
   return new Promise((resolve, reject) => {
     // Créer un canvas temporaire
@@ -1205,6 +1210,7 @@ export function PlanogramEditor() {
   const [viewMode, setViewMode] = useState<"2D" | "3D">("2D")
   const [isExporting, setIsExporting] = useState(false)
   const [forceRender, setForceRender] = useState(0)
+  
   const [productSizeScale, setProductSizeScale] = useState(180) // Augmenter la taille par défaut pour un rendu plus compact
   const [defaultQuantity, setDefaultQuantity] = useState(3)
 
@@ -1236,7 +1242,7 @@ export function PlanogramEditor() {
             furnitureType: planogramConfig.furnitureType,
             quantity: defaultQuantity,
             side: "left",
-            position: "external" 
+            position: "external",
           })
         }
       }
@@ -1545,6 +1551,15 @@ export function PlanogramEditor() {
       y: 0,
       z: 0,
       rotation: 0,
+      // Add shelvesConfig for 4-sided displays
+      shelvesConfig:
+        planogramConfig.furnitureType === "shelves-display"
+          ? {
+              rows: planogramConfig.shelvesConfig.rows,
+              frontBackColumns: planogramConfig.shelvesConfig.frontBackColumns,
+              leftRightColumns: planogramConfig.shelvesConfig.leftRightColumns,
+            }
+          : undefined,
     }
 
     // Si aucun produit n'est fourni, les extraire des cellules

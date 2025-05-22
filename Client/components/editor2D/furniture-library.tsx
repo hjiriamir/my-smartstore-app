@@ -108,7 +108,7 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden text-left">
       <div
         className="relative aspect-video bg-muted/30 flex items-center justify-center cursor-pointer"
         onClick={() => setShowPreview(true)}
@@ -297,7 +297,9 @@ export function FurnitureLibrary() {
   }
 
   return (
-    <div className="container max-w-6xl mx-auto py-6 mt-12">
+    <div className="container max-w-6xl mx-auto py-6 mt-12"
+    dir={textDirection} // Applique RTL/LTR au conteneur principal
+  >
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">{t("furnitureLibrary")}</h1>

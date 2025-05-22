@@ -53,6 +53,7 @@ import {
   ClothingWallDisplay,
   ClothingDisplay,
 } from "@/components/editor2D/furniture-3d-components"
+import { Wall, Window } from "@/components/editor2D/structural-3d-components"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -84,6 +85,8 @@ const ROOM_CONFIG = {
 // Drag item types
 const ItemTypes = {
   FURNITURE: "furniture",
+  WALL: "wall",
+  WINDOW: "window",
 }
 
 // Composant pour précharger les textures des produits
@@ -360,6 +363,10 @@ const ManualMatchDialog = ({ open, onOpenChange, furnitureId, furnitureName, flo
   )
 }
 
+// Fonction pour créer des murs et des fenêtres après la fonction handleManualElementSelection
+// Ajouter cette fonction après handleManualElementSelection
+
+
 // Realistic Room Components
 const RealisticFloor = () => {
   const floorTextures = useTexture({
@@ -627,6 +634,17 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
   // Fonction pour mettre à jour les dimensions
   const handleDimensionChange = (dimension, value) => {
     console.log(`Changing ${dimension} to ${value}`)
+    
+    // Handle walls and windows (direct properties)
+    if (selectedFurniture.type === 'wall' || selectedFurniture.type === 'window') {
+      onUpdate({
+        ...selectedFurniture,
+        [dimension]: Number.parseFloat(value),
+      })
+      return
+    }
+
+    // Handle furniture (nested structure)
     onUpdate({
       ...selectedFurniture,
       savedFurniture: {
@@ -685,9 +703,10 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
           <Label htmlFor="furniture-name">{t("productImport.floorPlan.nomMeuble")}</Label>
           <Input
             id="furniture-name"
-            value={selectedFurniture.savedFurniture.furniture.name}
+            value={selectedFurniture?.savedFurniture?.furniture?.name || ""} 
             onChange={(e) => handleNameChange(e.target.value)}
           />
+
         </div>
 
         {/* Position Controls */}
@@ -769,44 +788,55 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
 
         {/* Dimension Controls */}
         <div>
-          <h4 className="text-sm font-medium mb-2">{t("productImport.dimensions")}</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="width">{t("productImport.width")}</Label>
-              <Input
-                id="width"
-                type="number"
-                step="0.1"
-                min="0.1"
-                value={selectedFurniture.savedFurniture.furniture.width || 1}
-                onChange={(e) => handleDimensionChange("width", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="height">{t("productImport.height")}</Label>
-              <Input
-                id="height"
-                type="number"
-                step="0.1"
-                min="0.1"
-                value={selectedFurniture.savedFurniture.furniture.height || 1}
-                onChange={(e) => handleDimensionChange("height", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="depth">{t("productImport.depth")}</Label>
-              <Input
-                id="depth"
-                type="number"
-                step="0.1"
-                min="0.1"
-                value={selectedFurniture.savedFurniture.furniture.depth || 1}
-                onChange={(e) => handleDimensionChange("depth", e.target.value)}
-              />
-            </div>
+        <h4 className="text-sm font-medium mb-2">{t("productImport.dimensions")}</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor="width">{t("productImport.width")}</Label>
+            <Input
+              id="width"
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={
+                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window'
+                  ? selectedFurniture.width
+                  : selectedFurniture?.savedFurniture?.furniture?.width || 0.1
+              }
+              onChange={(e) => handleDimensionChange("width", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="height">{t("productImport.height")}</Label>
+            <Input
+              id="height"
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={
+                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window'
+                  ? selectedFurniture.height
+                  : selectedFurniture?.savedFurniture?.furniture?.height || 0.1
+              }
+              onChange={(e) => handleDimensionChange("height", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="depth">{t("productImport.depth")}</Label>
+            <Input
+              id="depth"
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={
+                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window'
+                  ? selectedFurniture.depth
+                  : selectedFurniture?.savedFurniture?.furniture?.depth || 0.1
+              }
+              onChange={(e) => handleDimensionChange("depth", e.target.value)}
+            />
           </div>
         </div>
-
+      </div>
         <div className="pt-2">
           <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
             <Trash2 className="h-4 w-4 mr-2" />
@@ -1013,9 +1043,55 @@ const StoreDisplayArea = ({
         {/* Floor plan */}
         <FloorPlanVisualization />
 
-        {/* Placed furniture */}
+        {/* Placed furniture, walls and windows */}
         <Suspense fallback={null}>
           {placedFurniture.map((item) => {
+            // Handle walls and windows
+            if (item.type === "wall") {
+              return (
+                <group 
+                    key={`wall-${item.id}`} 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectFurniture(item.id)
+                    }}
+                    userData-selected={item.id === selectedFurnitureId}
+                    position={[item.x, item.y, item.z]}
+                    rotation={[0, (item.rotation * Math.PI) / 180, 0]}
+                  >
+                    <Wall 
+                      width={item.width} 
+                      height={item.height} 
+                      depth={item.depth} 
+                    />
+                  </group>
+
+                                )
+                              }
+
+                              if (item.type === "window") {
+                                return (
+                                  <group 
+                    key={`window-${item.id}`} 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelectFurniture(item.id)
+                    }}
+                    userData-selected={item.id === selectedFurnitureId}
+                    position={[item.x, item.y, item.z]}
+                    rotation={[0, (item.rotation * Math.PI) / 180, 0]}
+                  >
+                    <Window 
+                      width={item.width} 
+                      height={item.height} 
+                      depth={item.depth} 
+                    />
+                  </group>
+
+              )
+            }
+
+            // Original furniture rendering code
             const savedFurniture = item.savedFurniture
             if (!savedFurniture) return null
 
@@ -1303,6 +1379,49 @@ export function StoreDisplayEditor() {
     },
     [products],
   )
+  const handleAddWall = (x, z, width = 5, height = 3, depth = 0.2, rotation = 0) => {
+    const newWall = {
+      id: `wall-${Date.now()}`,
+      type: "wall",
+      x: x,
+      y: 0,
+      z: z,
+      width: width,
+      height: height,
+      depth: depth,
+      rotation: rotation,
+    }
+  
+    setPlacedFurniture((prev) => [...prev, newWall])
+    setSelectedFurnitureId(newWall.id)
+  
+    toast({
+      title: "Mur ajouté",
+      description: "Un nouveau mur a été ajouté à la scène.",
+    })
+  }
+  
+  const handleAddWindow = (x, z, width = 2, height = 1.5, depth = 0.1, rotation = 0) => {
+    const newWindow = {
+      id: `window-${Date.now()}`,
+      type: "window",
+      x: x,
+      y: 1.5, // Position en hauteur par défaut
+      z: z,
+      width: width,
+      height: height,
+      depth: depth,
+      rotation: rotation,
+    }
+  
+    setPlacedFurniture((prev) => [...prev, newWindow])
+    setSelectedFurnitureId(newWindow.id)
+  
+    toast({
+      title: "Fenêtre ajoutée",
+      description: "Une nouvelle fenêtre a été ajoutée à la scène.",
+    })
+  }
 
   // Load floor plans from local storage
   useEffect(() => {
@@ -1689,7 +1808,7 @@ export function StoreDisplayEditor() {
 
       toast({
         title: "Meuble placé",
-        description: `Le meuble "${furniture.furniture.name}" a ét�� placé à l'emplacement sélectionné.`,
+        description: `Le meuble "${furniture.furniture.name}" a ét placé à l'emplacement sélectionné.`,
       })
     }
   }
@@ -2266,12 +2385,15 @@ export function StoreDisplayEditor() {
                     <CardContent className="p-0 h-full">
                       <Tabs defaultValue="library" className="h-full flex flex-col">
                         <div className="px-4 pt-4">
-                          <TabsList className="w-full grid grid-cols-2 gap-1 mb-4">
+                          <TabsList className="w-full grid grid-cols-3 gap-1 mb-4">
                             <TabsTrigger value="library" className="flex-1">
                               {t("productImport.library")}
                             </TabsTrigger>
                             <TabsTrigger value="placed" className="flex-1">
                               {t("productImport.floorPlan.placed")}
+                            </TabsTrigger>
+                            <TabsTrigger value="structural" className="flex-1">
+                              {t("productImport.floorPlan.structural")}
                             </TabsTrigger>
                             {selectedFurniture && (
                               <TabsTrigger value="edit" className="flex-1">
@@ -2385,7 +2507,10 @@ export function StoreDisplayEditor() {
                                         onClick={() => setSelectedFurnitureId(item.id)}
                                         dir={textDirection}
                                       >
-                                        <div className="flex-1 truncate">{item.savedFurniture.furniture.name}</div>
+                                       <div className="flex-1 truncate">
+                                          {item.savedFurniture?.furniture?.name || t("furniture.unknown")}
+                                        </div>
+
                                         <div className="flex space-x-1">
                                           <Button
                                             variant="ghost"
@@ -2470,6 +2595,47 @@ export function StoreDisplayEditor() {
                                     showShadows={showShadows}
                                     setShowShadows={setShowShadows}
                                   />
+                                </div>
+                              </ScrollArea>
+                            </div>
+                          </TabsContent>
+                          <TabsContent
+                            value="structural"
+                            className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
+                          >
+                            <div className="flex-1 overflow-hidden px-4">
+                              <ScrollArea className="h-full pr-2" type="always">
+                                <div className="space-y-4 pb-6">
+                                  <h3 className="font-medium mt-4">
+                                    {t("productImport.floorPlan.structuralElements")}
+                                  </h3>
+
+                                  <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                      variant="outline"
+                                      className="h-20 flex flex-col items-center justify-center"
+                                      onClick={() => handleAddWall(0, 0)}
+                                    >
+                                      <div className="w-12 h-6 bg-gray-400 rounded-sm mb-2"></div>
+                                      <span className="text-xs">Mur</span>
+                                    </Button>
+
+                                    <Button
+                                      variant="outline"
+                                      className="h-20 flex flex-col items-center justify-center"
+                                      onClick={() => handleAddWindow(0, 0)}
+                                    >
+                                      <div className="w-12 h-6 bg-blue-200 border-2 border-gray-400 rounded-sm mb-2"></div>
+                                      <span className="text-xs">Fenêtre</span>
+                                    </Button>
+                                  </div>
+
+                                  <div className="text-sm text-muted-foreground mt-4">
+                                    <p>
+                                      Cliquez sur un élément pour l'ajouter à la scène. Vous pourrez ensuite le
+                                      positionner et le configurer.
+                                    </p>
+                                  </div>
                                 </div>
                               </ScrollArea>
                             </div>

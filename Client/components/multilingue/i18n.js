@@ -825,7 +825,7 @@ i18n
             refrigerator:"Frigo",
             clothing_wall:"Mur vêtements",
             clothing_display:"Présentoir vêtements",
-            allTypes:"furnitureEditor",
+            allTypes:"Tous types",
             visualiser:"Cliquez pour prévisualiser",
 
 
