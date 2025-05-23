@@ -632,6 +632,7 @@ i18n
             structuralElements: "Structural elements",
             window:"Window",
             wall:"Wall",
+            door:"Door",
             conseil:"Click on an element to add it to the scene. You can then position and configure it.",
 
             
@@ -1344,6 +1345,7 @@ i18n
               structuralElements: "Éléments structurels",
               window:"Fenêtre",
               wall:"Mur",
+              door:"Porte",
               conseil:"Cliquez sur un élément pour l'ajouter à la scène. Vous pourrez ensuite le positionner et le configurer.",
 
 
@@ -2046,6 +2048,7 @@ i18n
               structuralElements: "عناصر هيكلية",
               window:"نافذة",
               wall:"جدار",
+              door:"باب",
               conseil:"انقر على عنصر لإضافته إلى المشهد. يمكنك بعد ذلك وضعه وتكوينه.",
             },
             chargerJSONvalide: "تم تحميل إعدادات JSON بنجاح",

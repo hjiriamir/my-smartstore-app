@@ -634,19 +634,20 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
   }
 
   // Fonction pour mettre à jour les dimensions
-  const handleDimensionChange = (dimension, value) => {
-    console.log(`Changing ${dimension} to ${value}`)
-    
-    // Handle walls and windows (direct properties)
-    if (selectedFurniture.type === 'wall' || selectedFurniture.type === 'window') {
-      onUpdate({
-        ...selectedFurniture,
-        [dimension]: Number.parseFloat(value),
-      })
-      return
-    }
+const handleDimensionChange = (dimension, value) => {
+  console.log(`Changing ${dimension} to ${value}`)
+  
+  // Pour les éléments structurels (mur, fenêtre, porte)
+  if (['wall', 'window', 'door'].includes(selectedFurniture.type)) {
+    onUpdate({
+      ...selectedFurniture,
+      [dimension]: Number.parseFloat(value),
+    })
+    return
+  }
 
-    // Handle furniture (nested structure)
+  // Pour les meubles normaux
+  if (selectedFurniture.savedFurniture && selectedFurniture.savedFurniture.furniture) {
     onUpdate({
       ...selectedFurniture,
       savedFurniture: {
@@ -658,6 +659,7 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
       },
     })
   }
+}
 
   // Fonction pour mettre à jour le nom
   const handleNameChange = (value) => {
@@ -826,7 +828,7 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
               step="0.1"
               min="0.1"
               value={
-                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window'
+                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window' || selectedFurniture.type === 'door'
                   ? selectedFurniture.width
                   : selectedFurniture?.savedFurniture?.furniture?.width || 0.1
               }
@@ -841,7 +843,7 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
               step="0.1"
               min="0.1"
               value={
-                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window'
+                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window' || selectedFurniture.type === 'door'
                   ? selectedFurniture.height
                   : selectedFurniture?.savedFurniture?.furniture?.height || 0.1
               }
@@ -856,7 +858,7 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
               step="0.1"
               min="0.1"
               value={
-                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window'
+                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window' || selectedFurniture.type === 'door'
                   ? selectedFurniture.depth
                   : selectedFurniture?.savedFurniture?.furniture?.depth || 0.1
               }
