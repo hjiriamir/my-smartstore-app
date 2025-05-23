@@ -936,6 +936,32 @@ const StoreDisplayArea = ({
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
+   // Nouveau composant pour les contrôles améliorés
+  const EnhancedControls = () => {
+    const { camera, gl } = useThree()
+    
+    useEffect(() => {
+      // Configuration initiale de la caméra
+      camera.position.set(ROOM_CONFIG.width / 2, ROOM_CONFIG.height * 1.5, ROOM_CONFIG.depth / 2)
+      camera.lookAt(ROOM_CONFIG.width / 2, 0, ROOM_CONFIG.depth / 2)
+      camera.updateProjectionMatrix()
+    }, [camera])
+
+    return (
+      <OrbitControls
+        makeDefault
+        enablePan={true}
+        enableZoom={true}
+        enableRotate={true}
+        minDistance={3}
+        maxDistance={ROOM_CONFIG.width * 2}
+        minPolarAngle={Math.PI / 6} // Limite l'angle vers le bas
+        maxPolarAngle={Math.PI / 2} // Limite l'angle vers le haut
+        screenSpacePanning={false}
+        target={[ROOM_CONFIG.width / 2, 0, ROOM_CONFIG.depth / 2]}
+      />
+    )
+  }
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.FURNITURE,
     drop: (item: { id: string }, monitor) => {

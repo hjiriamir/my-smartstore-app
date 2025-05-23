@@ -63,23 +63,42 @@ export const Window = ({ width = 2, height = 1.5, depth = 0.1, frameColor = "#55
   return (
     <group>
       {/* Window frame */}
-      <mesh ref={frameRef} castShadow receiveShadow>
-        <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={frameColor} roughness={0.7} metalness={0.3} />
-      </mesh>
+      <mesh position={[0, height / 2 - 0.05, 0]} castShadow receiveShadow>
+          <boxGeometry args={[width, 0.1, depth]} />
+          <meshStandardMaterial color={frameColor} metalness={0.6} roughness={0.5} />
+        </mesh>
+        <mesh position={[0, -height / 2 + 0.05, 0]} castShadow receiveShadow>
+          <boxGeometry args={[width, 0.1, depth]} />
+          <meshStandardMaterial color={frameColor} metalness={0.6} roughness={0.5} />
+        </mesh>
+        <mesh position={[-width / 2 + 0.05, 0, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.1, height - 0.2, depth]} />
+          <meshStandardMaterial color={frameColor} metalness={0.6} roughness={0.5} />
+        </mesh>
+        <mesh position={[width / 2 - 0.05, 0, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.1, height - 0.2, depth]} />
+          <meshStandardMaterial color={frameColor} metalness={0.6} roughness={0.5} />
+        </mesh>
 
       {/* Window glass */}
       <mesh ref={glassRef} position={[0, 0, depth / 4]}>
-        <boxGeometry args={[width - 0.1, height - 0.1, depth / 2]} />
+        <boxGeometry args={[width - 0.15, height - 0.15, depth / 2]} />
         <meshPhysicalMaterial
           color={glassColor}
-          roughness={0.1}
-          transmission={0.9}
-          thickness={0.05}
+          roughness={0}
+          metalness={0}
+          transmission={1}
+          thickness={0.1}
           transparent={true}
           opacity={0.6}
+          reflectivity={0.8}
+          clearcoat={1}
+          clearcoatRoughness={0}
+          ior={1.52}
+          envMapIntensity={1}
         />
       </mesh>
+
     </group>
   )
 }
@@ -98,9 +117,27 @@ export const Door = ({ width = 1, height = 2.2, depth = 0.05, color = "#8B4513" 
   })
 
   return (
-    <mesh ref={doorRef} castShadow receiveShadow>
-      <boxGeometry args={[width, height, depth]} />
-      <meshStandardMaterial color={color} roughness={0.8} metalness={0.2} />
-    </mesh>
+    <group>
+<mesh ref={doorRef} castShadow receiveShadow>
+  <boxGeometry args={[width, height, depth]} />
+  <meshStandardMaterial color={color} roughness={0.8} metalness={0.2} />
+</mesh>
+
+<mesh position={[0, 0, depth / 2 + 0.01]}>
+  <boxGeometry args={[width - 0.2, height - 0.2, 0.01]} />
+  <meshPhysicalMaterial
+    color={"#87CEEB"}
+    roughness={0.05}
+    metalness={0}
+    transmission={1}
+    transparent
+    opacity={0.5}
+    thickness={0.05}
+    reflectivity={0.8}
+    clearcoat={1}
+    ior={1.52}
+  />
+</mesh>
+</group>
   )
 }

@@ -29,57 +29,18 @@ export default function Home() {
 
   const featureCards = [
     {
-      id: 'editor',
-      icon: LayoutGrid,
-      type: "editor",
-      title: t("feature.editor.title"),
-      description: t("feature.editor.description"),
-      buttonText: t("feature.editor.buttonText"),
-      stats: {
-        value: "5-15%",  // si ce n'est pas à traduire, tu peux laisser tel quel
-        title: t("feature.editor.statsTitle")
-      },
+      id: 'import',
+      icon: Upload,
+      type: "import",
+      title: t("feature.import.title"),
+      description: t("feature.import.description"),
+      buttonText: t("feature.import.button"),
       features: [
-        t("feature.editor.features.0"),
-        t("feature.editor.features.1"),
-        t("feature.editor.features.2")
+        t("feature.import.features.0"),
+        t("feature.import.features.1"),
+        t("feature.import.features.2"),
       ],
-      href: "/planogram-editor"
-    },
-    {
-      id: 'display',
-        icon: LayoutPanelTop,
-        type: "display",
-        title: t("feature.display.title"),
-        description: t("feature.display.description"),
-        buttonText: t("feature.display.buttonText"),
-        stats: {
-          value: "20-30%",  
-          title: t("feature.display.statsTitle")
-        },
-        features: [
-          t("feature.display.features.0"),
-          t("feature.display.features.1"),
-          t("feature.display.features.2"),
-          t("feature.display.features.3"),
-          t("feature.display.features.4")
-        ],
-        href: "/store-display"
-    },
-    {
-      id: 'floor',
-      icon: LayoutPanelTop,
-      type: "floor",
-      title: t("feature.floor.title"),
-      description: t("feature.floor.description"),
-      buttonText: t("feature.floor.button"),
-      stats: { value: "40-60%", title: t("feature.floor.stats") },
-      features: [
-        t("feature.floor.features.0"),
-        t("feature.floor.features.1"),
-        t("feature.floor.features.2")
-      ],
-      href: "/floor-plan-editor"
+      href: "/product-import"
     }
     ,
     {
@@ -98,20 +59,52 @@ export default function Home() {
     }
     ,
     {
-      id: 'import',
-      icon: Upload,
-      type: "import",
-      title: t("feature.import.title"),
-      description: t("feature.import.description"),
-      buttonText: t("feature.import.button"),
+      id: 'floor',
+      icon: LayoutPanelTop,
+      type: "floor",
+      title: t("feature.floor.title"),
+      description: t("feature.floor.description"),
+      buttonText: t("feature.floor.button"),
+      stats: { value: "40-60%", title: t("feature.floor.stats") },
       features: [
-        t("feature.import.features.0"),
-        t("feature.import.features.1"),
-        t("feature.import.features.2"),
+        t("feature.floor.features.0"),
+        t("feature.floor.features.1"),
+        t("feature.floor.features.2")
       ],
-      href: "/product-import"
-    }
-    ,
+      href: "/floor-plan-editor"
+    },
+    {
+      id: 'editor',
+      icon: LayoutGrid,
+      type: "editor",
+      title: t("feature.editor.title"),
+      description: t("feature.editor.description"),
+      buttonText: t("feature.editor.buttonText"),
+      stats: {
+        value: "5-15%",  // si ce n'est pas à traduire, tu peux laisser tel quel
+        title: t("feature.editor.statsTitle")
+      },
+      features: [
+        t("feature.editor.features.0"),
+        t("feature.editor.features.1"),
+        t("feature.editor.features.2")
+      ],
+      href: "/planogram-editor"
+    },
+    {
+      id: 'furniture_editor',
+      icon: LayoutPanelTop,
+      type: "furniture_editor",
+      title: t("feature.furniture_editor.title"),
+      description: t("feature.furniture_editor.description"),
+      buttonText: t("feature.furniture_editor.button"),
+      features: [
+        t("feature.furniture_editor.features.0"),
+        t("feature.furniture_editor.features.1"),
+        t("feature.furniture_editor.features.2")
+      ],
+      href: "/furniture-editor"
+    },
     {
       id: 'ai',
       icon: BarChart4,
@@ -146,19 +139,27 @@ export default function Home() {
     }
     ,
     {
-      id: 'furniture_editor',
-      icon: LayoutPanelTop,
-      type: "furniture_editor",
-      title: t("feature.furniture_editor.title"),
-      description: t("feature.furniture_editor.description"),
-      buttonText: t("feature.furniture_editor.button"),
-      features: [
-        t("feature.furniture_editor.features.0"),
-        t("feature.furniture_editor.features.1"),
-        t("feature.furniture_editor.features.2")
-      ],
-      href: "/furniture-editor"
+      id: 'display',
+        icon: LayoutPanelTop,
+        type: "display",
+        title: t("feature.display.title"),
+        description: t("feature.display.description"),
+        buttonText: t("feature.display.buttonText"),
+        stats: {
+          value: "20-30%",  
+          title: t("feature.display.statsTitle")
+        },
+        features: [
+          t("feature.display.features.0"),
+          t("feature.display.features.1"),
+          t("feature.display.features.2"),
+          t("feature.display.features.3"),
+          t("feature.display.features.4")
+        ],
+        href: "/store-display"
     }
+    
+    
     
   ];
 
