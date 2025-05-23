@@ -54,7 +54,7 @@ import {
   ClothingDisplay,
   SupermarketFridge,
 } from "@/components/editor2D/furniture-3d-components"
-import { Wall, Window } from "@/components/editor2D/structural-3d-components"
+import { Wall, Window, Door } from "@/components/editor2D/structural-3d-components"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -88,6 +88,7 @@ const ItemTypes = {
   FURNITURE: "furniture",
   WALL: "wall",
   WINDOW: "window",
+  DOOR: "door"
 }
 
 // Composant pour précharger les textures des produits
@@ -712,57 +713,83 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
 
         {/* Position Controls */}
         <div>
-          <h4 className="text-sm font-medium mb-2">{t("position")}</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label htmlFor="position-x">{t("productImport.positionX")}</Label>
-              <Input
-                id="position-x"
-                type="number"
-                step="0.1"
-                value={selectedFurniture.x}
-                onChange={(e) => handlePositionChange("x", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="position-z">{t("productImport.positionZ")}</Label>
-              <Input
-                id="position-z"
-                type="number"
-                step="0.1"
-                value={selectedFurniture.z}
-                onChange={(e) => handlePositionChange("z", e.target.value)}
-              />
-            </div>
-          </div>
+  <h4 className="text-sm font-medium mb-2">{t("position")}</h4>
+  <div className="grid grid-cols-3 gap-2">
+    <div>
+      <Label htmlFor="position-x">{t("productImport.positionX")}</Label>
+      <Input
+        id="position-x"
+        type="number"
+        step="0.1"
+        value={selectedFurniture.x}
+        onChange={(e) => handlePositionChange("x", e.target.value)}
+      />
+    </div>
+    <div>
+      <Label htmlFor="position-y">{t("productImport.positionY")}</Label>
+      <Input
+        id="position-y"
+        type="number"
+        step="0.1"
+        value={selectedFurniture.y}
+        onChange={(e) => handlePositionChange("y", e.target.value)}
+      />
+    </div>
+    <div>
+      <Label htmlFor="position-z">{t("productImport.positionZ")}</Label>
+      <Input
+        id="position-z"
+        type="number"
+        step="0.1"
+        value={selectedFurniture.z}
+        onChange={(e) => handlePositionChange("z", e.target.value)}
+      />
+    </div>
+  </div>
 
-          {/* Movement Controls */}
-          <div className="mt-2">
-            <Label className="text-sm mb-1 block">{t("productImport.deplacer")}</Label>
-            <div className="grid grid-cols-3 gap-1 w-full">
-              <div className="col-span-3 flex justify-center">
-                <Button size="sm" variant="outline" onClick={() => handleMoveButton("z", -1)}>
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex justify-end">
-                <Button size="sm" variant="outline" onClick={() => handleMoveButton("x", isRTL ? 1 : -1)}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex justify-center">
-                <Button size="sm" variant="outline" onClick={() => handleMoveButton("z", 1)}>
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex justify-start">
-                <Button size="sm" variant="outline" onClick={() => handleMoveButton("x", isRTL ? -1 : 1)}>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+  {/* Movement Controls */}
+  <div className="mt-2">
+    <Label className="text-sm mb-1 block">{t("productImport.deplacer")}</Label>
+    <div className="grid grid-cols-3 gap-1 w-full">
+      <div className="col-span-3 flex justify-center">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => handleMoveButton("y", 1)}
+        >
+          <ArrowUp className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex justify-end">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => handleMoveButton("x", isRTL ? 1 : -1)}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex justify-center">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => handleMoveButton("y", -1)}
+        >
+          <ArrowDown className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex justify-start">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => handleMoveButton("x", isRTL ? -1 : 1)}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* Rotation Controls */}
         <div>
@@ -1047,6 +1074,26 @@ const StoreDisplayArea = ({
         {/* Placed furniture, walls and windows */}
         <Suspense fallback={null}>
           {placedFurniture.map((item) => {
+            if (item.type === "door") {
+              return (
+                <group 
+                  key={`door-${item.id}`} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectFurniture(item.id);
+                  }}
+                  userData-selected={item.id === selectedFurnitureId}
+                  position={[item.x, item.y, item.z]}
+                  rotation={[0, (item.rotation * Math.PI) / 180, 0]}
+                >
+                  <Door 
+                    width={item.width} 
+                    height={item.height} 
+                    depth={item.depth} 
+                  />
+                </group>
+              );
+            }
             // Handle walls and windows
             if (item.type === "wall") {
               return (
@@ -1401,7 +1448,27 @@ export function StoreDisplayEditor() {
       description: "Un nouveau mur a été ajouté à la scène.",
     })
   }
+  const handleAddDoor = (x, z, width = 1, height = 2, depth = 0.1, rotation = 0) => {
+    const newDoor = {
+      id: `door-${Date.now()}`,
+      type: "door",
+      x: x,
+      y: 0,
+      z: z,
+      width: width,
+      height: height,
+      depth: depth,
+      rotation: rotation,
+    };
   
+    setPlacedFurniture((prev) => [...prev, newDoor]);
+    setSelectedFurnitureId(newDoor.id);
+  
+    toast({
+      title: "Porte ajoutée",
+      description: "Une nouvelle porte a été ajoutée à la scène.",
+    });
+  };
   const handleAddWindow = (x, z, width = 2, height = 1.5, depth = 0.1, rotation = 0) => {
     const newWindow = {
       id: `window-${Date.now()}`,
@@ -1783,6 +1850,7 @@ export function StoreDisplayEditor() {
         }
       }
     }
+    onDrop(item.id, x, y, z);
   }
 
   // Handle element selection from dialog
@@ -2601,45 +2669,52 @@ export function StoreDisplayEditor() {
                             </div>
                           </TabsContent>
                           <TabsContent
-                            value="structural"
-                            className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
-                          >
-                            <div className="flex-1 overflow-hidden px-4">
-                              <ScrollArea className="h-full pr-2" type="always">
-                                <div className="space-y-4 pb-6">
-                                  <h3 className="font-medium mt-4">
-                                    {t("productImport.floorPlan.structuralElements")}
-                                  </h3>
+  value="structural"
+  className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
+>
+  <div className="flex-1 overflow-hidden px-4">
+    <ScrollArea className="h-full pr-2" type="always">
+      <div className="space-y-4 pb-6">
+        <h3 className="font-medium mt-4">
+          {t("productImport.floorPlan.structuralElements")}
+        </h3>
 
-                                  <div className="grid grid-cols-2 gap-2">
-                                  <Button
-                                      variant="outline"
-                                      className="h-20 flex flex-col items-center justify-center"
-                                      onClick={() => handleAddWall(0, 0)}
-                                    >
-                                      <div className="w-12 h-6 bg-gray-400 rounded-sm mb-2"></div>
-                                      <span className="text-xs">{t("productImport.floorPlan.wall")}</span>
-                                    </Button>
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
+            onClick={() => handleAddWall(0, 0)}
+          >
+            <div className="w-12 h-6 bg-gray-400 rounded-sm mb-2"></div>
+            <span className="text-xs">{t("productImport.floorPlan.wall")}</span>
+          </Button>
 
-                                    <Button
-                                      variant="outline"
-                                      className="h-20 flex flex-col items-center justify-center"
-                                      onClick={() => handleAddWindow(0, 0)}
-                                    >
-                                      <div className="w-12 h-6 bg-blue-200 border-2 border-gray-400 rounded-sm mb-2"></div>
-                                      <span className="text-xs">{t("productImport.floorPlan.window")}</span>
-                                    </Button>
-                                  </div>
+          <Button
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
+            onClick={() => handleAddWindow(0, 0)}
+          >
+            <div className="w-12 h-6 bg-blue-200 border-2 border-gray-400 rounded-sm mb-2"></div>
+            <span className="text-xs">{t("productImport.floorPlan.window")}</span>
+          </Button>
 
-                                  <div className="text-sm text-muted-foreground mt-4">
-                                    <p>
-                                    {t("productImport.floorPlan.conseil")}
-                                    </p>
-                                  </div>
-                                </div>
-                              </ScrollArea>
-                            </div>
-                          </TabsContent>
+          <Button
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center"
+            onClick={() => handleAddDoor(0, 0)}
+          >
+            <div className="w-12 h-6 bg-brown-400 border-2 border-gray-400 rounded-sm mb-2"></div>
+            <span className="text-xs">{t("productImport.floorPlan.door")}</span>
+          </Button>
+        </div>
+
+        <div className="text-sm text-muted-foreground mt-4">
+          <p>{t("productImport.floorPlan.conseil")}</p>
+        </div>
+      </div>
+    </ScrollArea>
+  </div>
+</TabsContent>
                         </div>
                       </Tabs>
                     </CardContent>
