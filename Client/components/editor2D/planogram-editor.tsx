@@ -1216,7 +1216,13 @@ export function PlanogramEditor() {
 
   // Get unique suppliers
   const suppliers = [...new Set(products.map((product) => product.supplier))].filter(Boolean).sort()
-
+  //const categories = [ ...new Set( products.flatMap((product) => [product.category1_id, product.category2_id,product.category3_id])) ].filter(Boolean).sort()
+  const { categories: allCategories } = useProductStore()
+  const categoryIds = [...new Set(products.flatMap((product) => [product.category1_id, product.category2_id, product.category3_id]))].filter(Boolean)
+  const categories = allCategories.filter(cat => categoryIds.includes(cat.id)).sort((a, b) => a.name.localeCompare(b.name))
+ 
+  
+  
   // Initialize planogram cells
   useEffect(() => {
     const newCells: PlanogramCell[] = []
@@ -1883,14 +1889,18 @@ export function PlanogramEditor() {
                             />
 
                             <div className="grid grid-cols-2 gap-2">
-                              <select
-                                className="p-2 border rounded-md text-sm"
-                                value={selectedCategory || ""}
-                                onChange={(e) => setSelectedCategory(e.target.value || null)}
-                              >
-                                <option value="">{t("productImport.allCategories")}</option>
-                                {/* Add categories here */}
-                              </select>
+                            <select
+  className="p-2 border rounded-md text-sm"
+  value={selectedCategory || ""}
+  onChange={(e) => setSelectedCategory(e.target.value || null)}
+>
+  <option value="">{t("productImport.allCategories")}</option>
+  {categories.map((category) => (
+    <option key={category.id} value={category.id}>
+      {category.name}
+    </option>
+  ))}
+</select>
 
                               <select
                                 className="p-2 border rounded-md text-sm"
