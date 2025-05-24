@@ -60,7 +60,7 @@ export function ProductLibrary() {
   // Get unique suppliers
   const suppliers = [...new Set(products.map((product) => product.supplier))].filter(Boolean).sort()
 
-  // Filter products
+  // Filter les produits
   const filteredProducts = products.filter((product) => {
     // Search term filter
     const matchesSearch =
