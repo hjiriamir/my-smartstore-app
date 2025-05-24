@@ -320,174 +320,157 @@ export function ProductLibrary() {
   
                 return viewMode === "grid" ? (
                   <Card key={product.primary_Id} className="overflow-hidden">
-                    <div className="relative aspect-square bg-muted/30 flex items-center justify-center">
-                      {product.image ? (
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className="object-contain w-full h-full p-4"
-                        />
-                      ) : (
-                        <Package className="h-16 w-16 text-muted-foreground/30" />
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        <div className={`flex items-start justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                          <h3 className="font-medium truncate">{product.name}</h3>
-                          <div className={`flex space-x-1 ${isRTL ? 'space-x-reverse' : ''}`}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => deleteProduct(product.primary_Id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {product.category1_id && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 h-4"
-                            >
-                              {t('category')}1: {product.category1_id}
-                            </Badge>
-                          )}
-                          {product.category2_id && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 h-4"
-                            >
-                              {t('category')}2: {product.category2_id}
-                            </Badge>
-                          )}
-                          {product.category3_id && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 h-4"
-                            >
-                              {t('category')}3: {product.category3_id}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">{t('id')}: {product.primary_Id}</div>
-                        {product.supplier && (
-                          <div className="text-xs text-muted-foreground">{t('supplier')}: {product.supplier}</div>
-                        )}
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {category1 && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 h-4"
-                              style={{ borderColor: category1.color, color: category1.color }}
-                            >
-                              {category1.name}
-                            </Badge>
-                          )}
-                          {category2 && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 h-4"
-                              style={{ borderColor: category2.color, color: category2.color }}
-                            >
-                              {category2.name}
-                            </Badge>
-                          )}
-                          {category3 && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 h-4"
-                              style={{ borderColor: category3.color, color: category3.color }}
-                            >
-                              {category3.name}
-                            </Badge>
-                          )}
-                        </div>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="w-full mt-2"
-                          onClick={() => goToPlanogramEditor(product)}
-                        >
-                          {t('placeInPlanogram')}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+  <div className="relative aspect-square bg-muted/30 flex items-center justify-center">
+    {product.image ? (
+      <img
+        src={product.image || "/placeholder.svg"}
+        alt={product.name}
+        className="object-contain w-full h-full p-4"
+      />
+    ) : (
+      <Package className="h-16 w-16 text-muted-foreground/30" />
+    )}
+  </div>
+  <CardContent className="p-4">
+    <div className="space-y-2">
+      <div className={`flex items-start justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <h3 className="font-medium truncate">{product.name}</h3>
+        <div className={`flex space-x-1 ${isRTL ? 'space-x-reverse' : ''}`}>
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive"
+            onClick={() => deleteProduct(product.primary_Id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="text-xs text-muted-foreground">{t('id')}: {product.primary_Id}</div>
+      {product.supplier && (
+        <div className="text-xs text-muted-foreground">{t('supplier')}: {product.supplier}</div>
+      )}
+<div className="flex flex-col items-start space-y-1 mt-1">
+  {category1 && (
+    <div className="flex items-center">
+      <Badge
+        variant="outline"
+        className="text-xs"
+        style={{ borderColor: category1.color, color: category1.color }}
+      >
+        {category1.name}
+      </Badge>
+    </div>
+  )}
+  {category2 && (
+    <div className="flex items-center ml-3"> {/* Indentation */}
+      <ChevronRight className="h-3 w-3 text-muted-foreground mr-1" />
+      <Badge
+        variant="outline"
+        className="text-xs"
+        style={{ borderColor: category2.color, color: category2.color }}
+      >
+        {category2.name}
+      </Badge>
+    </div>
+  )}
+  {category3 && (
+    <div className="flex items-center ml-6"> {/* Plus d'indentation */}
+      <ChevronRight className="h-3 w-3 text-muted-foreground mr-1" />
+      <Badge
+        variant="outline"
+        className="text-xs"
+        style={{ borderColor: category3.color, color: category3.color }}
+      >
+        {category3.name}
+      </Badge>
+    </div>
+  )}
+</div>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="w-full mt-2"
+        onClick={() => goToPlanogramEditor(product)}
+      >
+        {t('productImport.placeInPlanogram')}
+      </Button>
+    </div>
+  </CardContent>
+</Card>
                 ) : (
                   <div key={product.primary_Id} className={`flex items-center border rounded-md p-3 hover:bg-muted/30 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className="h-12 w-12 bg-muted/30 rounded-md flex items-center justify-center mr-4">
-                      {product.image ? (
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className="object-contain w-full h-full p-1"
-                        />
-                      ) : (
-                        <Package className="h-6 w-6 text-muted-foreground/30" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <h3 className="font-medium truncate">{product.name}</h3>
-                        <div className={`flex items-center space-x-1 ml-2 ${isRTL ? 'space-x-reverse mr-2 ml-0' : ''}`}>
-                          {product.category1_id && (
-                            <Badge variant="outline" className="text-xs">
-                              {t('category')}1: {product.category1_id}
-                            </Badge>
-                          )}
-                          {product.category2_id && (
-                            <Badge variant="outline" className="text-xs">
-                              {t('category')}2: {product.category2_id}
-                            </Badge>
-                          )}
-                          {product.category3_id && (
-                            <Badge variant="outline" className="text-xs">
-                              {t('category')}3: {product.category3_id}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className={`text-xs text-muted-foreground ${isRTL ? 'mr-2 ml-0' : 'ml-2'}`}>
-                          ({t('id')}: {product.primary_Id})
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {product.supplier && `${t('supplier')}: ${product.supplier}`}
-                      </div>
-                    </div>
-                    <div className={`flex items-center space-x-1 ${isRTL ? 'mr-4 ml-0 space-x-reverse' : 'ml-2'}`}>
-                      {category1 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs"
-                          style={{ borderColor: category1.color, color: category1.color }}
-                        >
-                          {category1.name}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className={`flex space-x-2 ${isRTL ? 'mr-auto ml-4 space-x-reverse' : 'ml-4'}`}>
-                      <Button variant="secondary" size="sm" onClick={() => goToPlanogramEditor(product)}>
-                        {t('place')}
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => deleteProduct(product.primary_Id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+  <div className="h-12 w-12 bg-muted/30 rounded-md flex items-center justify-center mr-4">
+    {product.image ? (
+      <img
+        src={product.image || "/placeholder.svg"}
+        alt={product.name}
+        className="object-contain w-full h-full p-1"
+      />
+    ) : (
+      <Package className="h-6 w-6 text-muted-foreground/30" />
+    )}
+  </div>
+  <div className="flex-1 min-w-0">
+    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+      <h3 className="font-medium truncate">{product.name}</h3>
+      <div className={`text-xs text-muted-foreground ${isRTL ? 'mr-2 ml-0' : 'ml-2'}`}>
+        ({t('id')}: {product.primary_Id})
+      </div>
+    </div>
+    <div className="text-sm text-muted-foreground truncate">
+      {product.supplier && `${t('supplier')}: ${product.supplier}`}
+    </div>
+    <div className={`flex items-center space-x-1 mt-1 ${isRTL ? 'space-x-reverse' : ''}`}>
+      {category1 && (
+        <Badge
+          variant="outline"
+          className="text-xs"
+          style={{ borderColor: category1.color, color: category1.color }}
+        >
+          {category1.name}
+        </Badge>
+      )}
+      {category2 && (
+        <Badge
+          variant="outline"
+          className="text-xs"
+          style={{ borderColor: category2.color, color: category2.color }}
+        >
+          {category2.name}
+        </Badge>
+      )}
+      {category3 && (
+        <Badge
+          variant="outline"
+          className="text-xs"
+          style={{ borderColor: category3.color, color: category3.color }}
+        >
+          {category3.name}
+        </Badge>
+      )}
+    </div>
+  </div>
+  <div className={`flex space-x-2 ${isRTL ? 'mr-auto ml-4 space-x-reverse' : 'ml-4'}`}>
+    <Button variant="secondary" size="sm" onClick={() => goToPlanogramEditor(product)}>
+      {t('place')}
+    </Button>
+    <Button variant="ghost" size="icon" className="h-8 w-8">
+      <Edit className="h-4 w-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 text-destructive"
+      onClick={() => deleteProduct(product.primary_Id)}
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+</div>
                 )
               })
             ) : (
@@ -501,7 +484,7 @@ export function ProductLibrary() {
           {totalPages > 1 && (
             <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className="text-sm text-muted-foreground">
-                {t('showingProducts', {
+                {t('productImport.showingProducts', {
                   start: (currentPage - 1) * itemsPerPage + 1,
                   end: Math.min(currentPage * itemsPerPage, filteredProducts.length),
                   total: filteredProducts.length
@@ -517,7 +500,7 @@ export function ProductLibrary() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-sm">
-                  {t('pageXofY', { current: currentPage, total: totalPages })}
+                  {t('productImport.pageXofY', { current: currentPage, total: totalPages })}
                 </div>
                 <Button
                   variant="outline"
@@ -535,10 +518,10 @@ export function ProductLibrary() {
                     <SelectValue placeholder={t('perPage')} />
                   </SelectTrigger>
                   <SelectContent className={isRTL ? 'text-right' : 'text-left'}>
-                    <SelectItem value="12">{t('itemsPerPage', { count: 12 })}</SelectItem>
-                    <SelectItem value="24">{t('itemsPerPage', { count: 24 })}</SelectItem>
-                    <SelectItem value="48">{t('itemsPerPage', { count: 48 })}</SelectItem>
-                    <SelectItem value="96">{t('itemsPerPage', { count: 96 })}</SelectItem>
+                    <SelectItem value="12">{t('productImport.itemsPerPage', { count: 12 })}</SelectItem>
+                    <SelectItem value="24">{t('productImport.itemsPerPage', { count: 24 })}</SelectItem>
+                    <SelectItem value="48">{t('productImport.itemsPerPage', { count: 48 })}</SelectItem>
+                    <SelectItem value="96">{t('productImport.itemsPerPage', { count: 96 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

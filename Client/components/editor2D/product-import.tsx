@@ -30,11 +30,24 @@ interface ProductData {
   category1_id?: string
   category2_id?: string
   category3_id?: string
+  category1_name?: string // Ajouté pour référence
+  category2_name?: string // Ajouté pour référence
+  category3_name?: string // Ajouté pour référence
   width_cm?: number
   height_cm?: number
   depth_cm?: number
   [key: string]: any
 }
+
+// Ajoutez cette interface pour le type de catégorie
+interface Category {
+  id: string
+  name: string
+  color: string
+  parentId: string | null
+  children?: Category[]
+}
+
 
 export function ProductImport() {
   const { t, i18n } = useTranslation();
@@ -56,6 +69,7 @@ export function ProductImport() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const [categoriesWithIds, setCategoriesWithIds] = useState<Category[]>([])
 
   // Handle file selection for product data
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,6 +222,22 @@ export function ProductImport() {
       ) {
         mapping[column] = "category3_id"
       }
+      else if (
+        lowerColumn === "category1_name" ||
+        (lowerColumn.includes("cat") && lowerColumn.includes("1") && lowerColumn.includes("name"))
+      ) {
+        mapping[column] = "category1_name"
+      } else if (
+        lowerColumn === "category2_name" ||
+        (lowerColumn.includes("cat") && lowerColumn.includes("2") && lowerColumn.includes("name"))
+      ) {
+        mapping[column] = "category2_name"
+      } else if (
+        lowerColumn === "category3_name" ||
+        (lowerColumn.includes("cat") && lowerColumn.includes("3") && lowerColumn.includes("name"))
+      ) {
+        mapping[column] = "category3_name"
+      }
       // Détection des dimensions
       else if (
         lowerColumn === "width_cm" ||
@@ -258,7 +288,19 @@ export function ProductImport() {
     setColumnMapping(mapping)
     setStep(2)
   }
-
+  const findCategoryById = (id: string): Category | undefined => {
+    const findInTree = (categories: Category[]): Category | undefined => {
+      for (const category of categories) {
+        if (category.id === id) return category
+        if (category.children) {
+          const found = findInTree(category.children)
+          if (found) return found
+        }
+      }
+      return undefined
+    }
+    return findInTree(categoriesWithIds)
+  }
   // Update column mapping
   const updateColumnMapping = (originalColumn: string, mappedColumn: string) => {
     setColumnMapping((prev) => ({
@@ -336,11 +378,56 @@ export function ProductImport() {
       setImageFiles(Array.from(files))
     }
   }
-
+  const mapCategories = (product: ProductData) => {
+    const mappedProduct = { ...product }
+    
+    // Si category1_id est fourni, trouver la catégorie correspondante
+    if (product.category1_id) {
+      const category = findCategoryById(product.category1_id)
+      if (category) {
+        mappedProduct.category1_name = category.name
+      }
+    }
+    
+    // Si category1_name est fourni mais pas category1_id, trouver par nom
+    else if (product.category1_name) {
+      const category = categoriesWithIds.find(c => c.name === product.category1_name)
+      if (category) {
+        mappedProduct.category1_id = category.id
+      }
+    }
+    
+    // Répéter pour les sous-catégories...
+    if (product.category2_id) {
+      const category = findCategoryById(product.category2_id)
+      if (category) {
+        mappedProduct.category2_name = category.name
+      }
+    } else if (product.category2_name) {
+      const category = categoriesWithIds.find(c => c.name === product.category2_name)
+      if (category) {
+        mappedProduct.category2_id = category.id
+      }
+    }
+    
+    if (product.category3_id) {
+      const category = findCategoryById(product.category3_id)
+      if (category) {
+        mappedProduct.category3_name = category.name
+      }
+    } else if (product.category3_name) {
+      const category = categoriesWithIds.find(c => c.name === product.category3_name)
+      if (category) {
+        mappedProduct.category3_id = category.id
+      }
+    }
+    
+    return mappedProduct
+  }
   // Import the products
   const importProducts = () => {
     // Filtrer les produits qui ont un ID et un nom
-    const validProducts = parsedData.map(mapRow).filter((product) => product.primary_Id && product.name)
+    const validProducts = parsedData.map(mapRow).map(mapCategories).filter((product) => product.primary_Id && product.name)
 
     if (validProducts.length === 0) {
       toast({
@@ -445,17 +532,23 @@ export function ProductImport() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {showCategoryManager ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">c</h3>
-                <Button variant="ghost" onClick={() => setShowCategoryManager(false)}>
-                  Retour à l'importation
-                </Button>
-              </div>
-              <CategoryManager />
+        {showCategoryManager ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Gestion des catégories</h3>
+              <Button variant="ghost" onClick={() => setShowCategoryManager(false)}>
+                Retour à l'importation
+              </Button>
             </div>
-          ) : (
+            <CategoryManager 
+              categories={categoriesWithIds}
+              onCategoriesChange={setCategoriesWithIds}
+              onCategoryAdd={(newCategory: Category) => {
+                setCategoriesWithIds(prev => [...prev, newCategory])
+              }}
+            />
+          </div>
+         ) : (
             <>
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center space-x-2">

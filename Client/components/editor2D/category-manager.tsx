@@ -25,10 +25,12 @@ export function CategoryManager() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [newCategory, setNewCategory] = useState<{
+    id: string // Ajouté pour l'ID personnalisé
     name: string
     color: string
     parentId: string | null
   }>({
+    id: "", // ID laissé vide par défaut (sera généré automatiquement)
     name: "",
     color: "#6366f1",
     parentId: null,
@@ -43,11 +45,10 @@ export function CategoryManager() {
     color: "",
   })
 
-  // Build category tree
+  // Build category tree (inchangé)
   const buildCategoryTree = (): Category[] => {
     const categoryMap = new Map<string, Category>()
 
-    // Create category objects
     categories.forEach((cat) => {
       categoryMap.set(cat.id, {
         ...cat,
@@ -55,7 +56,6 @@ export function CategoryManager() {
       })
     })
 
-    // Build tree structure
     const rootCategories: Category[] = []
 
     categoryMap.forEach((category) => {
@@ -74,7 +74,7 @@ export function CategoryManager() {
 
   const categoryTree = buildCategoryTree()
 
-  // Toggle category expansion
+  // Toggle category expansion (inchangé)
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) => {
       const newSet = new Set(prev)
@@ -87,7 +87,7 @@ export function CategoryManager() {
     })
   }
 
-  // Add new category
+  // Add new category (modifié)
   const handleAddCategory = () => {
     if (!newCategory.name.trim()) {
       toast({
@@ -98,7 +98,21 @@ export function CategoryManager() {
       return
     }
 
-    const id = `cat-${Date.now()}`
+    // Vérifier si un ID personnalisé est fourni et qu'il est unique
+    const customId = newCategory.id.trim()
+    if (customId) {
+      if (categories.some(cat => cat.id === customId)) {
+        toast({
+          title: "Erreur",
+          description: "Cet ID est déjà utilisé par une autre catégorie",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
+    // Utiliser l'ID personnalisé ou générer un nouvel ID
+    const id = customId || `cat-${Date.now()}`
 
     addCategory({
       id,
@@ -107,7 +121,9 @@ export function CategoryManager() {
       parentId: newCategory.parentId,
     })
 
+    // Réinitialiser le formulaire
     setNewCategory({
+      id: "", // Réinitialiser l'ID pour la prochaine catégorie
       name: "",
       color: "#6366f1",
       parentId: null,
@@ -115,11 +131,11 @@ export function CategoryManager() {
 
     toast({
       title: "Catégorie ajoutée",
-      description: `La catégorie "${newCategory.name}" a été ajoutée avec succès`,
+      description: `La catégorie "${newCategory.name}" a été ajoutée avec succès (ID: ${id})`,
     })
   }
 
-  // Start editing a category
+  // Start editing a category (inchangé)
   const startEditing = (category: Category) => {
     setEditingCategory(category.id)
     setEditForm({
@@ -129,7 +145,7 @@ export function CategoryManager() {
     })
   }
 
-  // Save edited category
+  // Save edited category (inchangé)
   const saveCategory = () => {
     if (!editForm.name.trim()) {
       toast({
@@ -153,7 +169,7 @@ export function CategoryManager() {
     })
   }
 
-  // Delete a category
+  // Delete a category (inchangé)
   const handleDeleteCategory = (categoryId: string) => {
     deleteCategory(categoryId)
 
@@ -163,7 +179,7 @@ export function CategoryManager() {
     })
   }
 
-  // Render a category and its children recursively
+  // Render a category and its children recursively (inchangé)
   const renderCategory = (category: Category, level = 0) => {
     const isExpanded = expandedCategories.has(category.id)
     const isEditing = editingCategory === category.id
@@ -187,7 +203,9 @@ export function CategoryManager() {
             <>
               <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: category.color }} />
               <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span className="flex-1">{category.name}</span>
+              <span className="flex-1">
+                {category.name} <span className="text-xs text-muted-foreground ml-2">(ID: {category.id})</span>
+              </span>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(category)}>
                   <Edit className="h-4 w-4" />
@@ -239,9 +257,8 @@ export function CategoryManager() {
   }
 
   return (
-    
     <div className="space-y-2">     
-            <Button 
+      <Button 
         variant="outline" 
         onClick={() => window.location.href = "/Editor"}
         className="flex items-center gap-2 mb-4"
@@ -253,6 +270,16 @@ export function CategoryManager() {
         <div className="space-y-2">
           <h3 className="text-lg font-medium">Ajouter une nouvelle catégorie</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            {/* Nouveau champ pour l'ID */}
+            <div>
+              <Label htmlFor="category-id">ID (optionnel)</Label>
+              <Input
+                id="category-id"
+                value={newCategory.id}
+                onChange={(e) => setNewCategory({ ...newCategory, id: e.target.value })}
+                placeholder="Laisser vide pour générer automatiquement"
+              />
+            </div>
             <div className="sm:col-span-2">
               <Label htmlFor="category-name">Nom</Label>
               <Input
@@ -295,7 +322,7 @@ export function CategoryManager() {
                 <option value="">-- Catégorie principale --</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.name}
+                    {category.name} (ID: {category.id})
                   </option>
                 ))}
               </select>

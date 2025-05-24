@@ -158,9 +158,9 @@ export function PlanogramIA() {
       name,
       sections: generatedConfig.rows,
       slots: generatedConfig.columns,
-      width: generatedConfig.furnitureDimensions.width /15, // Divisé par 10 partout
-      height: generatedConfig.furnitureDimensions.height /15,
-      depth: generatedConfig.furnitureDimensions.depth /15,
+      width: generatedConfig.furnitureDimensions.width / 20, // Divisé par 10 partout
+      height: generatedConfig.furnitureDimensions.height / 20,
+      depth: generatedConfig.furnitureDimensions.depth / 22,
       color: "#f0f0f0",
       x: 0,
       y: 0,
