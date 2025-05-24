@@ -2656,7 +2656,7 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
 }
 
 // PlanogramDisplay Component
-export const PlanogramDisplay = ({ furniture, displayItems, products, onRemove, cellWidth, cellHeight }) => {
+export const PlanogramDisplay = ({ furniture, displayItems, products, onRemove }) => {
   const { width, height, depth, sections = 4, slots, color, x, y, z, rotation } = furniture
   const materials = useMemo(() => createMaterials(), [])
   const itemsBySection = useMemo(() => groupItemsBySection(displayItems), [displayItems])
