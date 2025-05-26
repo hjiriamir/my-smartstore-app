@@ -334,17 +334,47 @@ i18n
 
 
           },
+          categoryImport: {
+            step3:"Validation & Import",
+            title:"Import categories file",
+            description:"Select an Excel (.xlsx, .xls) or CSV file containing your categories. The file must contain at least the following columns: ID_Categorie, Nom_Categorie, ID_Parent.",
+            importCategories:"Import Categories",
+            viewAllCategories:"View all categories",
+            validCategoryImport:"Imported Categories",
+            importedCategoriesDescription:"Here is the list of categories you have imported.",
+            importStep :{
+              title:"Categories Import",
+              description: "Review the summary before finalizing the import.",
+              summary:"Import categories summary",
+              categoriesToImport:"Categories ready for import",
+            },
+            completeStep: {
+              title: "Import Completed",
+              categoriesImported: "categories successfully imported",
+              importMore: "Import More Categories",
+              viewCategories: "View Categories",
+              
+            },
+            importProgress: {
+              title: "Import in Progress",
+              description: "Please wait while the categories are being imported", 
+              processing: "Processing data...",
+              complete: "Import completed!",
+            },
+
+          },
           productImport: {
             title: "Product Import",
+            title1:"Importing Categories",
             description: "Import your products from an Excel or CSV file and associate them with images",
+            description1:"category import simplifies hierarchical integration from Excel or CSV files",
             step1: "File",
             step2: "Columns",
             step3: "Images",
             step4: "Complete",
             fileStep: {
               title: "Import product file",
-              description:
-                "Select an Excel (.xlsx, .xls) or CSV file containing your products. The file must contain at least the following columns: primary_Id, name, supplier.",
+              description:"Select an Excel (.xlsx, .xls) or CSV file containing your products. The file must contain at least the following columns: primary_Id, name, supplier.",
               fileSelected: " products detected",
               changeFile: "Change file",
               selectFile: "Click to select a file",
@@ -396,6 +426,7 @@ i18n
               goToEditor: "Go to planogram editor",
             },
             backToEditor: "Back to editor",
+            backToEditor1:"back to Dashboard Management",
             manageCategories: "Manage categories",
             backToImport: "Back to import",
             continue: "Continue",
@@ -1047,9 +1078,38 @@ i18n
 
 
           },
+          categoryImport: {
+            step3:"Validation & Import",
+            title:"Importer un fichier de catégories",
+            description:"Sélectionnez un fichier Excel (.xlsx, .xls) ou CSV contenant vos catégories. Le fichier doit contenir au moins les colonnes suivantes : ID_Categorie, Nom_Categorie, ID_Parent.",
+            importCategories:"Importer les catégories",
+            viewAllCategories:"Voir toutes les catégories",
+            validCategoryImport:"Catégories Importées",
+            importedCategoriesDescription:"Voici la liste des catégories que vous avez importées.",
+            importStep :{
+              title:"Importation des catégories",
+              description: "Vérifiez le résumé avant de procéder à l'importation définitive.",
+              summary:"Résumé des catégories à importer",
+              categoriesToImport:"Catégories prêtes à l'importation",
+            },
+            completeStep :{
+              title: "Importation terminée",
+              categoriesImported: "catégories importées avec succès",
+              importMore: "Importer d'autres catégories",
+              viewCategories: "Voir les catégories",
+            },
+            importProgress: {
+              title: "Importation en cours",
+              description: "Veuillez patienter pendant l'importation des catégories",
+              processing: "Traitement des données...",
+              complete: "Importation terminée !",
+            },
+          },
           productImport: {
             title: "Importation de Produits",
+            title1:"Importation de Categories",
             description: "Importez vos produits depuis un fichier Excel ou CSV et associez-les à des images",
+            description1:"L'importation des catégories facilite l'intégration hiérarchique depuis des fichiers Excel ou CSV",
             step1: "Fichier",
             step2: "Colonnes",
             step3: "Images",
@@ -1110,6 +1170,7 @@ i18n
               goToEditor: "Aller à l'éditeur de planogramme",
             },
             backToEditor: "Retour à l'éditeur",
+            backToEditor1:"Retour à Dashboard Management",
             manageCategories: "Gérer les catégories",
             backToImport: "Retour à l'importation",
             continue: "Continuer",
@@ -1755,9 +1816,38 @@ i18n
 
 
         },
+        categoryImport: {
+          step3:"التحقق والاستيراد",
+          title:"استيراد ملف الفئات",
+          description:"حدد ملف Excel (.xlsx, .xls) أو CSV الذي يحتوي على فئاتك. يجب أن يحتوي الملف على الأعمدة التالية على الأقل: ID_Category، Name_Category، ID_Parent.",
+          importCategories:"استيراد الفئات",
+          viewAllCategories:"عرض جميع الفئات",
+          validCategoryImport:"الفئات المستوردة",
+          importedCategoriesDescription:"إليك قائمة الفئات التي قمت باستيرادها",
+          importStep :{
+            title:"استيراد الفئات",
+            description: "يرجى مراجعة الملخص قبل تنفيذ الاستيراد النهائي.",
+            summary:"ملخص الفئات المراد استيرادها",
+            categoriesToImport:"الفئات الجاهزة للاستيراد",
+          },
+          completeStep: {
+            title: "الاستيراد مكتمل",
+            categoriesImported: "تم استيراد الفئات بنجاح",
+            importMore: "استيراد المزيد من الفئات",
+            viewCategories: "عرض الفئات",    
+          },
+          importProgress: {
+            title: "جارٍ الاستيراد",
+            description: "يرجى الانتظار أثناء استيراد الفئات",
+            processing: "... جاري معالجة البيانات",
+            complete: "! تم الاستيراد بنجاح",
+          },
+        },
           productImport: {
             title: "استيراد المنتجات",
+            title1:"استيراد الفئات",
             description: "قم باستيراد منتجاتك من ملف Excel أو CSV واربطها بالصور",
+            description1:"استيراد الفئات يسهل التكامل الهرمي من ملفات Excel أو CSV",
             step1: "الملف",
             step2: "الأعمدة",
             step3: "الصور",
@@ -1816,6 +1906,7 @@ i18n
               goToEditor: "الذهاب إلى محرر البلانوجرام",
             },
             backToEditor: "العودة إلى المحرر",
+            backToEditor1:"العودة إلى إدارة لوحة المعلومات",
             manageCategories: "إدارة الفئات",
             backToImport: "العودة إلى الاستيراد",
             continue: "متابعة",

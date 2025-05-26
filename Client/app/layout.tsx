@@ -39,7 +39,11 @@ const noHeaderFooterRoutes = [
   '/furniture-library',
   '/categories',
   '/product-library',
-  '/planogram-ia'
+  '/planogram-ia',
+  '/management-page',
+  '/category-management',
+  '/magasin-management',
+  '/zones-management',
 ];
 
 const topBannerRoutes = [
@@ -53,6 +57,10 @@ const topBannerRoutes = [
   '/floor-plan-editor',
   '/furniture-library',
   '/furniture-editor',
+  '/management-page',
+  '/category-management',
+  '/magasin-management',
+  '/zones-management',
   // Ajoute ici les routes concernées
 ];
 

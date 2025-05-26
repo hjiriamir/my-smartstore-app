@@ -63,7 +63,7 @@ const RightSidebarDashboard = () => {
             
           </Link>
           <a
-            href="#"
+            href="/management-page"
             className={`menu-item ${activeItem === 'category-management' ? 'active' : ''}`}
             style={{ backgroundColor: activeItem === 'category-management' ? '#0f766e' : '' }}
             onClick={() => handleClick('category-management')}
