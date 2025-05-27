@@ -33,21 +33,26 @@ interface CategoryData {
   date_modification?: string
 }
 
-export function CategoryImport() {
+export function CategoryImport({ 
+  importedMagasins, 
+  onCategoriesImported, 
+  existingData = [], 
+  isComplete 
+}: CategoryImportProps) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const textDirection = isRTL ? 'rtl' : 'ltr';
   const router = useRouter()
   const { toast } = useToast()
 
-  const [step, setStep] = useState<number>(1)
+  const [step, setStep] = useState(isComplete ? 5 : 1)
   const [file, setFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<CategoryData[]>([])
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [importProgress, setImportProgress] = useState<number>(0)
   const [rawData, setRawData] = useState<any[]>([])
-  const [importedCategories, setImportedCategories] = useState<CategoryData[]>([])
+  const [importedCategories, setImportedCategories] = useState<CategoryData[]>(existingData);
   const [existingCategories, setExistingCategories] = useState<CategoryData[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showAddForm, setShowAddForm] = useState(true);
@@ -66,7 +71,12 @@ export function CategoryImport() {
     magasin_id?: string;
     date_creation?: string;
   }
-  
+  interface CategoryImportProps {
+    importedMagasins: any[];
+    onCategoriesImported?: (categories: any[]) => void;
+    existingData: CategoryData[]; // Ajouter cette prop
+    isComplete: boolean;
+  }
   const niveauOptions = [
     { value: "1", label: "Catégorie" },
     { value: "2", label: "Sous-catégorie" },
@@ -134,7 +144,9 @@ export function CategoryImport() {
     };
   
     // Ajouter à la liste des catégories importées
-    setImportedCategories(prev => [...prev, categoryToAdd]);
+    const updatedCategories = [...importedCategories, categoryToAdd];
+    setImportedCategories(updatedCategories);
+    handleImport(updatedCategories);
     
     // Réinitialiser le formulaire
     setNewCategory({
@@ -160,12 +172,18 @@ export function CategoryImport() {
   };
 
   useEffect(() => {
-    if (step === 5 && importedCategories.length > 0) {
-      console.log("Imported categories:", importedCategories);
-      setExistingCategories(importedCategories);
-      console.log("Existing categories set:", importedCategories);
+    setImportedCategories(existingData);
+    if (isComplete && existingData.length > 0 && step !== 5) {
+      setStep(5); 
     }
-  }, [step, importedCategories]);
+  }, [existingData, isComplete]);
+
+  const handleImport = (data: CategoryData[]) => {
+    setImportedCategories(data);
+    if (onCategoriesImported) {
+      onCategoriesImported(data);
+    }
+  };
 
   const getNiveauLabel = (value: number | undefined) => {
     if (!value) return "-";
@@ -190,7 +208,9 @@ export function CategoryImport() {
 
   // Fonction pour supprimer une catégorie
 const handleDeleteCategory = (categoryId: string) => {
-  setImportedCategories(prev => prev.filter(cat => cat.categorie_id !== categoryId));
+  const updatedCategories = importedCategories.filter(cat => cat.categorie_id !== categoryId);
+  setImportedCategories(updatedCategories);
+  handleImport(updatedCategories);
   toast({
     title: "Succès",
     description: "Catégorie supprimée avec succès",
@@ -218,6 +238,7 @@ const handleSaveEdit = () => {
   );
 
   setImportedCategories(updatedCategories);
+  handleImport(updatedCategories);
   setEditingCategory(null);
   setEditField(null);
   
@@ -531,7 +552,9 @@ const handleCancelEdit = () => {
       return mappedCategory;
     }).filter(cat => cat.categorie_id && cat.nom);
   
-    setImportedCategories(validCategories);
+    // Fusionner avec les données existantes
+  const mergedCategories = [...importedCategories, ...validCategories];
+  handleImport(mergedCategories);
     
     setImportProgress(0)
     const interval = setInterval(() => {
@@ -554,8 +577,9 @@ const handleCancelEdit = () => {
       }, 500)
     }, 1000)
   }
-
+  
   return (
+    
     <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
       <Button 
         variant="outline" 
@@ -569,6 +593,7 @@ const handleCancelEdit = () => {
         <CardHeader>
           <CardTitle className="text-2xl">{t("productImport.title1")}</CardTitle>
           <CardDescription>
+          Étape complétée ({importedCategories.length} catégories)
             {t("productImport.description1")}
           </CardDescription>
         </CardHeader>
@@ -897,12 +922,28 @@ const handleCancelEdit = () => {
           </div>
           <div className="space-y-2">
     <label className="text-sm font-medium">ID Magasin</label>
-    <Input
-      name="magasin_id"
-      value={newCategory.magasin_id || ""}
-      onChange={handleNewCategoryChange}
-      placeholder="ID du magasin"
-    />
+    <div className="flex gap-2">
+              <select
+                name="magasin_id"
+                value={newCategory.magasin_id || ""}
+                onChange={handleNewCategoryChange}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Sélectionner un magasin</option>
+                {importedMagasins.map((magasin) => (
+                  <option key={magasin.magasin_id} value={magasin.magasin_id}>
+                    {magasin.nom_magasin} (ID: {magasin.magasin_id})
+                  </option>
+                ))}
+              </select>
+              <Input
+                name="magasin_id"
+                value={newCategory.magasin_id || ""}
+                onChange={handleNewCategoryChange}
+                placeholder="Ou saisir un ID"
+                className="w-full"
+              />
+            </div>
   </div>
           <div className="space-y-2">
   <label className="text-sm font-medium">ID Parent</label>

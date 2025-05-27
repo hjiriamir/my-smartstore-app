@@ -9,6 +9,7 @@ import { verifyRole } from './Middlewares/authMiddleware.js';
 import entrepriceRoute from './Routes/entrepriseRoutes.js'
 import emailRoutes from "./Routes/SendEmailRoute.js";
 import contactRoutes from "./Routes/contactMessageRoute.js";
+import ManagementRoute from "./Routes/CategoriesManagementRoute.js";
 
 
 const app = express();
@@ -27,6 +28,8 @@ app.use('/api/demande', demandeAbonnRoute);
 app.use('/api/demande', entrepriceRoute);
 app.use("/api/emails", emailRoutes);
 app.use("/api/message", contactRoutes);
+app.use("/api/management", ManagementRoute);
+
 app.get('/',verifyUser,(req,res)=>{
     return res.json({ Status: "Success", name: req.name });
 });

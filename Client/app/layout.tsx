@@ -44,6 +44,7 @@ const noHeaderFooterRoutes = [
   '/category-management',
   '/magasin-management',
   '/zones-management',
+  '/combined-management',
 ];
 
 const topBannerRoutes = [
@@ -61,6 +62,7 @@ const topBannerRoutes = [
   '/category-management',
   '/magasin-management',
   '/zones-management',
+  '/combined-management',
   // Ajoute ici les routes concernées
 ];
 

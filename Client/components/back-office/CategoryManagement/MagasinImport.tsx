@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import Papa from "papaparse"
@@ -27,8 +27,12 @@ interface StoreData {
   date_creation?: string
   date_modification?: string
 }
-
-export function MagasinImport() {
+interface MagasinImportProps {
+  onMagasinsImported?: (magasins: StoreData[]) => void;
+  existingData: any[];
+  isComplete: boolean;
+}
+export function MagasinImport({ onMagasinsImported, existingData = [], isComplete }: MagasinImportProps) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const textDirection = isRTL ? 'rtl' : 'ltr';
@@ -42,12 +46,13 @@ export function MagasinImport() {
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [importProgress, setImportProgress] = useState<number>(0)
   const [rawData, setRawData] = useState<any[]>([])
-  const [importedStores, setImportedStores] = useState<StoreData[]>([])
+  const [importedStores, setImportedStores] = useState<StoreData[]>(existingData || [])
+  
+  const [magasins, setMagasins] = useState<any[]>(existingData);
 
   const [showAddForm, setShowAddForm] = useState(true);
   const [editingStore, setEditingStore] = useState<StoreData | null>(null);
   const [editField, setEditField] = useState<{key: string, value: any} | null>(null);
-
   const [newStore, setNewStore] = useState<Omit<StoreData, 'date_creation' | 'date_modification'> & {
     date_creation?: string;
   }>({
@@ -60,6 +65,21 @@ export function MagasinImport() {
     adresse: "",
     date_creation: "",
   });
+
+  useEffect(() => {
+    if (isComplete && existingData.length > 0) {
+      setImportedStores(existingData);
+      setStep(5); // Aller directement à l'affichage si déjà complété
+    }
+  }, [isComplete, existingData]);
+
+  const handleImport = (newData: StoreData[]) => {
+    setImportedStores(newData);
+    if (onMagasinsImported) {
+      onMagasinsImported(newData); // Envoie toutes les données mises à jour
+    }
+  };
+
 
   // formulaire d'ajout
   // Fonction pour gérer les changements dans le formulaire d'ajout
@@ -94,7 +114,9 @@ const handleAddStore = () => {
     date_modification: now,
   };
 
+  const updatedStores = [...importedStores, storeToAdd];
   setImportedStores(prev => [...prev, storeToAdd]);
+  handleImport(updatedStores);
   
   setNewStore({
     magasin_id: "",
@@ -116,7 +138,9 @@ const handleAddStore = () => {
 
 // Fonction pour supprimer un magasin
 const handleDeleteStore = (storeId: string) => {
-  setImportedStores(prev => prev.filter(store => store.magasin_id !== storeId));
+  const updatedStores = importedStores.filter(store => store.magasin_id !== storeId);
+  setImportedStores(updatedStores);
+  handleImport(updatedStores);
   toast({
     title: "Succès",
     description: "Magasin supprimé avec succès",
@@ -140,6 +164,7 @@ const handleSaveEdit = () => {
   );
 
   setImportedStores(updatedStores);
+  handleImport(updatedStores);
   setEditingStore(null);
   setEditField(null);
   
@@ -406,9 +431,11 @@ const handleCancelEdit = () => {
       
       return mappedStore;
     }).filter(store => store.magasin_id && store.nom_magasin);
+    const mergedStores = [...importedStores, ...validStores];
   
-    setImportedStores(validStores);
-    
+    setImportedStores(mergedStores);
+    handleImport(mergedStores);
+
     setImportProgress(0)
     const interval = setInterval(() => {
       setImportProgress((prev) => {

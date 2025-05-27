@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import Papa from "papaparse"
@@ -25,27 +25,40 @@ interface ZoneData {
   date_creation?: string
   date_modification?: string
 }
+interface ZonesImportProps {
+  importedMagasins: any[];
+  importedCategories: any[];
+  onZonesImported?: (zones: any[]) => void;
+  existingData?: ZoneData[]; 
+  isComplete?: boolean;
+}
 
-export function ZonesImport() {
+export function ZonesImport({importedMagasins, 
+  importedCategories, 
+  onZonesImported, 
+  existingData = [], 
+  isComplete = false 
+}: ZonesImportProps) {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'ar'
   const textDirection = isRTL ? 'rtl' : 'ltr'
   const router = useRouter()
   const { toast } = useToast()
 
-  const [step, setStep] = useState<number>(1)
+  const [step, setStep] = useState(isComplete ? 5 : 1);
   const [file, setFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ZoneData[]>([])
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({})
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [importProgress, setImportProgress] = useState<number>(0)
   const [rawData, setRawData] = useState<any[]>([])
-  const [importedZones, setImportedZones] = useState<ZoneData[]>([])
+  const [importedZones, setImportedZones] = useState<ZoneData[]>(existingData);
 
   const [showAddForm, setShowAddForm] = useState(true);
   const [editingZone, setEditingZone] = useState<ZoneData | null>(null);
   const [editField, setEditField] = useState<{key: string, value: any} | null>(null);
   const [existingZones, setExistingZones] = useState<ZoneData[]>([]);
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [newZone, setNewZone] = useState<Omit<ZoneData, 'date_creation' | 'date_modification'> & {
     date_creation?: string;
   }>({
@@ -85,7 +98,9 @@ const handleAddZone = () => {
     date_modification: now,
   };
 
-  setImportedZones(prev => [...prev, zoneToAdd]);
+  const updatedZones = [...importedZones, zoneToAdd];
+  setImportedZones(updatedZones);
+  handleImport(updatedZones);
   
   setNewZone({
     zone_id: "",
@@ -103,9 +118,25 @@ const handleAddZone = () => {
   });
 };
 
+useEffect(() => {
+  setImportedZones(existingData);
+  if (isComplete && existingData.length > 0 && step !== 5) {
+    setStep(5); // Aller à l'affichage si déjà complété
+  }
+}, [existingData, isComplete]);
+
+const handleImport = (data: ZoneData[]) => {
+  setImportedZones(data);
+  if (onZonesImported) {
+    onZonesImported(data);
+  }
+};
+
 // Fonction pour supprimer une zone
 const handleDeleteZone = (zoneId: string) => {
-  setImportedZones(prev => prev.filter(zone => zone.zone_id !== zoneId));
+  const updatedZones = importedZones.filter(z => z.zone_id !== zoneId);
+  setImportedZones(updatedZones);
+  handleImport(updatedZones);
   toast({
     title: "Succès",
     description: "Zone supprimée avec succès",
@@ -129,6 +160,7 @@ const handleSaveEdit = () => {
   );
 
   setImportedZones(updatedZones);
+  handleImport(updatedZones);
   setEditingZone(null);
   setEditField(null);
   
@@ -400,28 +432,62 @@ const handleCancelEdit = () => {
       return mappedZone
     }).filter(zone => zone.zone_id && zone.nom_zone && zone.magasin_id)
   
-    setImportedZones(validZones)
+    // Fusion avec données existantes
+  const mergedZones = [...importedZones, ...validZones];
+  handleImport(mergedZones)
     
-    setImportProgress(0)
-    const interval = setInterval(() => {
-      setImportProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval)
-          return prev
-        }
-        return prev + 5
-      })
-    }, 100)
+  setImportProgress(0);
+  const interval = setInterval(() => {
+    setImportProgress((prev) => {
+      if (prev >= 95) {
+        clearInterval(interval);
+        return prev;
+      }
+      return prev + 5;
+    });
+  }, 100);
 
+  setTimeout(() => {
+    clearInterval(interval);
+    setImportProgress(100);
     setTimeout(() => {
-      clearInterval(interval)
-      setImportProgress(100)
-      setTimeout(() => {
-        setStep(4)
-      }, 500)
-    }, 1000)
+      setStep(4);
+      setShowCompletionPopup(true); 
+    }, 500);
+  }, 1000);
   }
-
+  const CompletionPopup = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div className="text-center">
+          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold mb-2">Toutes les étapes sont terminées !</h3>
+          <p className="text-gray-600 mb-6">
+            Vous avez importé avec succès :
+            <br />
+            - {importedMagasins.length} magasins
+            <br />
+            - {importedCategories.length} catégories
+            <br />
+            - {importedZones.length} zones
+          </p>
+          <div className="flex justify-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCompletionPopup(false)}
+            >
+              Continuer l'édition
+            </Button>
+            <Button 
+              onClick={() => window.location.href = "/management-page"}
+            >
+              Aller au tableau de bord
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
   return (
     <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
       <Button 
@@ -672,6 +738,8 @@ const handleCancelEdit = () => {
               </Card>
             </div>
           )}
+          {/* Popup de complétion (affiché si showCompletionPopup est true) */}
+    {showCompletionPopup && <CompletionPopup />}
 
           {step === 4 && (
             <div className="space-y-6">
@@ -758,13 +826,29 @@ const handleCancelEdit = () => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">ID Magasin*</label>
+              <div className="flex gap-2">
+              <select
+                name="magasin_id"
+                value={newZone.magasin_id || ""}
+                onChange={handleNewZoneChange}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Sélectionner un magasin</option>
+                {importedMagasins.map((magasin) => (
+                  <option key={magasin.magasin_id} value={magasin.magasin_id}>
+                    {magasin.nom_magasin} (ID: {magasin.magasin_id})
+                  </option>
+                ))}
+              </select>
               <Input
                 name="magasin_id"
-                value={newZone.magasin_id}
+                value={newZone.magasin_id || ""}
                 onChange={handleNewZoneChange}
-                placeholder="ID du magasin associé"
+                placeholder="Ou saisir un ID"
+                className="w-full"
                 required
               />
+            </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Description</label>
@@ -873,6 +957,8 @@ const handleCancelEdit = () => {
 )}
         </CardContent>
       </Card>
+      {showCompletionPopup && <CompletionPopup />}
     </div>
-  )
+  
+)
 }
