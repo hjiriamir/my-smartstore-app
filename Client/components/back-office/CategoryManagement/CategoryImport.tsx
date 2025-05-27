@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect  } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import Papa from "papaparse"
-import { FileSpreadsheet, CheckCircle2, AlertCircle, ChevronRight, ArrowLeft } from "lucide-react"
+import { FileSpreadsheet, CheckCircle2, AlertCircle, ChevronRight, ArrowLeft, RefreshCw } from "lucide-react"
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import '@/components/multilingue/i18n.js';
+import './CardsPage.css'
 
 interface CategoryData {
   categorie_id: string
@@ -47,8 +48,137 @@ export function CategoryImport() {
   const [importProgress, setImportProgress] = useState<number>(0)
   const [rawData, setRawData] = useState<any[]>([])
   const [importedCategories, setImportedCategories] = useState<CategoryData[]>([])
-
+  const [existingCategories, setExistingCategories] = useState<CategoryData[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showAddForm, setShowAddForm] = useState(true);
+
+  interface NewCategoryForm {
+    categorie_id: string;
+    nom: string;
+    parent_id?: string;
+    niveau?: string;
+    saisonnalite?: string;
+    priorite?: string;
+    zone_exposition_preferee?: string;
+    temperature_exposition?: string;
+    conditionnement?: string;
+    clientele_ciblee?: string;
+    magasin_id?: string;
+    date_creation?: string;
+  }
+  
+  const niveauOptions = [
+    { value: "1", label: "Catégorie" },
+    { value: "2", label: "Sous-catégorie" },
+    { value: "3", label: "Sous-sous-catégorie" },
+  ];
+  
+  const prioriteOptions = [
+    { value: "1", label: "Basse" },
+    { value: "2", label: "Moyenne" },
+    { value: "3", label: "Haute" },
+  ];
+
+  const [newCategory, setNewCategory] = useState<NewCategoryForm>({
+    categorie_id: "",
+    nom: "",
+    parent_id: "",
+    niveau: "",
+    saisonnalite: "",
+    priorite: "",
+    zone_exposition_preferee: "",
+    temperature_exposition: "",
+    conditionnement: "",
+    clientele_ciblee: "",
+    magasin_id: "",
+    date_creation: "",
+  });
+
+  const handleNewCategoryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewCategory(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleAddCategory = () => {
+    // Validation simple
+    if (!newCategory.categorie_id || !newCategory.nom) {
+      toast({
+        title: "Erreur",
+        description: "L'ID et le nom de la catégorie sont obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    // Obtenir la date et heure actuelles au format ISO
+    const now = new Date().toISOString();
+  
+    // Convertir les valeurs pour correspondre au type CategoryData
+    const categoryToAdd: CategoryData = {
+      categorie_id: newCategory.categorie_id,
+      nom: newCategory.nom,
+      parent_id: newCategory.parent_id || undefined,
+      magasin_id: newCategory.magasin_id || undefined,
+      niveau: newCategory.niveau ? parseInt(newCategory.niveau) : undefined,
+      saisonnalite: newCategory.saisonnalite || undefined,
+      priorite: newCategory.priorite ? parseInt(newCategory.priorite) : undefined,
+      zone_exposition_preferee: newCategory.zone_exposition_preferee || undefined,
+      temperature_exposition: newCategory.temperature_exposition || undefined,
+      conditionnement: newCategory.conditionnement || undefined,
+      clientele_ciblee: newCategory.clientele_ciblee || undefined,
+      magasin_id: newCategory.magasin_id || undefined,
+      date_creation: now,
+    };
+  
+    // Ajouter à la liste des catégories importées
+    setImportedCategories(prev => [...prev, categoryToAdd]);
+    
+    // Réinitialiser le formulaire
+    setNewCategory({
+      categorie_id: "",
+      nom: "",
+      parent_id: "",
+      niveau: "",
+      saisonnalite: "",
+      priorite: "",
+      zone_exposition_preferee: "",
+      temperature_exposition: "",
+      conditionnement: "",
+      clientele_ciblee: "",
+      magasin_id: newCategory.magasin_id || "",
+      date_creation: "",
+    });
+  
+    toast({
+      title: "Succès",
+      description: "La catégorie a été ajoutée avec succès",
+      variant: "default",
+    });
+  };
+
+  useEffect(() => {
+    if (step === 5 && importedCategories.length > 0) {
+      console.log("Imported categories:", importedCategories);
+      setExistingCategories(importedCategories);
+      console.log("Existing categories set:", importedCategories);
+    }
+  }, [step, importedCategories]);
+
+  const getNiveauLabel = (value: number | undefined) => {
+    if (!value) return "-";
+    const option = niveauOptions.find(opt => parseInt(opt.value) === value);
+    return option ? option.label : value;
+  };
+  
+  const getPrioriteLabel = (value: number | undefined) => {
+    if (!value) return "-";
+    const option = prioriteOptions.find(opt => parseInt(opt.value) === value);
+    return option ? option.label : value;
+  };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -58,7 +188,62 @@ export function CategoryImport() {
     }
   }
 
+  // Fonction pour supprimer une catégorie
+const handleDeleteCategory = (categoryId: string) => {
+  setImportedCategories(prev => prev.filter(cat => cat.categorie_id !== categoryId));
+  toast({
+    title: "Succès",
+    description: "Catégorie supprimée avec succès",
+    variant: "default",
+  });
+};
+
+// État pour la modification
+const [editingCategory, setEditingCategory] = useState<CategoryData | null>(null);
+const [editField, setEditField] = useState<{key: string, value: any} | null>(null);
+
+// Fonction pour démarrer la modification
+const handleStartEdit = (category: CategoryData) => {
+  setEditingCategory(category);
+};
+
+// Fonction pour valider les modifications
+const handleSaveEdit = () => {
+  if (!editingCategory || !editField) return;
+
+  const updatedCategories = importedCategories.map(cat => 
+    cat.categorie_id === editingCategory.categorie_id 
+      ? {...cat, [editField.key]: editField.value}
+      : cat
+  );
+
+  setImportedCategories(updatedCategories);
+  setEditingCategory(null);
+  setEditField(null);
   
+  toast({
+    title: "Succès",
+    description: "Catégorie modifiée avec succès",
+    variant: "default",
+  });
+};
+
+// Fonction pour gérer le double-clic sur un champ
+const handleFieldDoubleClick = (category: CategoryData, fieldName: string, value: any) => {
+  if (editingCategory?.categorie_id === category.categorie_id) {
+    setEditField({key: fieldName, value});
+  }
+};
+
+// Fonction pour annuler la modification
+const handleCancelEdit = () => {
+  setEditingCategory(null);
+  setEditField(null);
+};
+
+
+
+
   
   const parseFile = async (file: File) => {
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
@@ -374,7 +559,7 @@ export function CategoryImport() {
     <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
       <Button 
         variant="outline" 
-        onClick={() => window.location.href = "/Editor"}
+        onClick={() => window.location.href = "/management-page"}
         className={`flex items-center gap-2 mb-4 mt-14 ${isRTL ? 'flex-row-reverse' : ''}`}
       >
         <ArrowLeft className="h-4 w-4" />
@@ -671,32 +856,405 @@ export function CategoryImport() {
       </p>
     </div>
 
-    <ScrollArea className="h-[500px] border rounded-md">
-      <table className="w-full text-sm">
-        <thead className="border-b sticky top-0 bg-background">
+    {/* Bouton pour afficher/masquer le formulaire */}
+    <div className="flex justify-end">
+      <Button 
+        variant="outline" 
+        onClick={() => setShowAddForm(!showAddForm)}
+        className="mb-4"
+      >
+        {showAddForm ? "Masquer le formulaire" : "Afficher le formulaire"}
+      </Button>
+    </div>
+
+    {/* Nouveau formulaire d'ajout manuel */}
+    {showAddForm && (
+    <Card>
+      <CardHeader>
+        <CardTitle>Ajouter une catégorie manuellement</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">ID Catégorie*</label>
+            <Input
+              name="categorie_id"
+              value={newCategory.categorie_id}
+              onChange={handleNewCategoryChange}
+              placeholder="ID unique de la catégorie"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nom*</label>
+            <Input
+              name="nom"
+              value={newCategory.nom}
+              onChange={handleNewCategoryChange}
+              placeholder="Nom de la catégorie"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+    <label className="text-sm font-medium">ID Magasin</label>
+    <Input
+      name="magasin_id"
+      value={newCategory.magasin_id || ""}
+      onChange={handleNewCategoryChange}
+      placeholder="ID du magasin"
+    />
+  </div>
+          <div className="space-y-2">
+  <label className="text-sm font-medium">ID Parent</label>
+  <select
+    name="parent_id"
+    value={newCategory.parent_id || ""}
+    onChange={handleNewCategoryChange}
+    className="w-full p-2 border rounded-md"
+  >
+    <option value="">Aucun parent (catégorie racine)</option>
+    {existingCategories && existingCategories.length > 0 ? (
+      existingCategories.map((category) => (
+        <option key={category.categorie_id} value={category.categorie_id}>
+          {category.nom} (ID: {category.categorie_id})
+        </option>
+      ))
+    ) : (
+      <option disabled>Aucune catégorie disponible</option>
+    )}
+  </select>
+</div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Niveau</label>
+            <select
+              name="niveau"
+              value={newCategory.niveau}
+              onChange={handleNewCategoryChange}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="">Sélectionner un niveau</option>
+              {niveauOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Priorité</label>
+            <select
+              name="priorite"
+              value={newCategory.priorite}
+              onChange={handleNewCategoryChange}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="">Sélectionner une priorité</option>
+              {prioriteOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Saisonnalité</label>
+            <Input
+              name="saisonnalite"
+              value={newCategory.saisonnalite}
+              onChange={handleNewCategoryChange}
+              placeholder="Saisonnalité"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Zone exposition préférée</label>
+            <Input
+              name="zone_exposition_preferee"
+              value={newCategory.zone_exposition_preferee}
+              onChange={handleNewCategoryChange}
+              placeholder="Zone d'exposition"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Température exposition</label>
+            <Input
+              name="temperature_exposition"
+              value={newCategory.temperature_exposition}
+              onChange={handleNewCategoryChange}
+              placeholder="Température"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Conditionnement</label>
+            <Input
+              name="conditionnement"
+              value={newCategory.conditionnement}
+              onChange={handleNewCategoryChange}
+              placeholder="Conditionnement"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Clientèle ciblée</label>
+            <Input
+              name="clientele_ciblee"
+              value={newCategory.clientele_ciblee}
+              onChange={handleNewCategoryChange}
+              placeholder="Clientèle cible"
+            />
+          </div>
+          
+        </div>
+        <Button onClick={handleAddCategory} className="mt-4">
+          Ajouter la catégorie
+        </Button>
+      </CardContent>
+    </Card>
+ )}
+    {/* Liste des catégories existantes */}
+    <div className="space-y-2">
+  <h4 className="font-medium">Catégories importées</h4>
+  <div className="relative">
+    {/* Conteneur avec scroll horizontal seulement */}
+    <div className="w-full overflow-x-auto">
+      {/* Tableau avec largeur adaptée au contenu */}
+      <table className="w-full text-sm" style={{ minWidth: "max-content" }}>
+        <thead className="border-b">
           <tr>
-            {Object.keys(importedCategories[0] || {}).map((key) => (
-              <th key={key} className="p-2 text-left font-medium capitalize">
-                {key.split('_').join(' ')}
-              </th>
-            ))}
+          <th className="p-2 text-left font-medium">Actions</th>
+            <th className="p-2 text-left font-medium">ID Catégorie</th>
+            <th className="p-2 text-left font-medium">Nom</th>
+            <th className="p-2 text-left font-medium">ID Parent</th>
+            <th className="p-2 text-left font-medium">Niveau</th>
+            <th className="p-2 text-left font-medium">Saisonnalité</th>
+            <th className="p-2 text-left font-medium">Priorité</th>
+            <th className="p-2 text-left font-medium">Zone exposition</th>
+            <th className="p-2 text-left font-medium">Température</th>
+            <th className="p-2 text-left font-medium">Conditionnement</th>
+            <th className="p-2 text-left font-medium">Clientèle</th>
+            <th className="p-2 text-left font-medium">ID Magasin</th>
+            <th className="p-2 text-left font-medium">Date création</th>
+           
           </tr>
         </thead>
         <tbody>
-          {importedCategories.map((category, index) => (
-            <tr key={index} className="border-b hover:bg-muted/50">
-              {Object.entries(category).map(([key, value]) => (
-                <td key={key} className="p-2">
-                  {value === undefined || value === null || value === "" 
-                    ? "-" 
-                    : String(value)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
+  {importedCategories.map((category, index) => (
+    <tr key={index} className="border-b hover:bg-muted/50">
+      {/* Colonne Actions */}
+      <td className="p-2 flex gap-2">
+        <Button 
+          variant="destructive" 
+          size="sm"
+          onClick={() => handleDeleteCategory(category.categorie_id)}
+        >
+          Supprimer
+        </Button>
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSaveEdit}>Valider</Button>
+            <Button variant="outline" size="sm" onClick={handleCancelEdit}>Annuler</Button>
+          </div>
+        ) : (
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={() => handleStartEdit(category)}
+          >
+            Modifier
+          </Button>
+        )}
+      </td>
+
+      {/* ID Catégorie */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'categorie_id' ? editField.value : category.categorie_id}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'categorie_id', category.categorie_id)}
+            onChange={(e) => setEditField({key: 'categorie_id', value: e.target.value})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'categorie_id', category.categorie_id)}>
+            {category.categorie_id || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Nom */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'nom' ? editField.value : category.nom}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'nom', category.nom)}
+            onChange={(e) => setEditField({key: 'nom', value: e.target.value})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'nom', category.nom)}>
+            {category.nom || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* ID Parent */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'parent_id' ? editField.value : category.parent_id || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'parent_id', category.parent_id)}
+            onChange={(e) => setEditField({key: 'parent_id', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'parent_id', category.parent_id)}>
+            {category.parent_id || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Niveau */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id && editField?.key === 'niveau' ? (
+          <select
+            value={editField.value || ""}
+            onChange={(e) => setEditField({key: 'niveau', value: e.target.value ? parseInt(e.target.value) : undefined})}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="">-</option>
+            {niveauOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'niveau', category.niveau)}>
+            {getNiveauLabel(category.niveau)}
+          </span>
+        )}
+      </td>
+
+      {/* Saisonnalité */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'saisonnalite' ? editField.value : category.saisonnalite || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'saisonnalite', category.saisonnalite)}
+            onChange={(e) => setEditField({key: 'saisonnalite', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'saisonnalite', category.saisonnalite)}>
+            {category.saisonnalite || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Priorité */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id && editField?.key === 'priorite' ? (
+          <select
+            value={editField.value || ""}
+            onChange={(e) => setEditField({key: 'priorite', value: e.target.value ? parseInt(e.target.value) : undefined})}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="">-</option>
+            {prioriteOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'priorite', category.priorite)}>
+            {getPrioriteLabel(category.priorite)}
+          </span>
+        )}
+      </td>
+
+      {/* Zone exposition préférée */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'zone_exposition_preferee' ? editField.value : category.zone_exposition_preferee || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'zone_exposition_preferee', category.zone_exposition_preferee)}
+            onChange={(e) => setEditField({key: 'zone_exposition_preferee', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'zone_exposition_preferee', category.zone_exposition_preferee)}>
+            {category.zone_exposition_preferee || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Température exposition */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'temperature_exposition' ? editField.value : category.temperature_exposition || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'temperature_exposition', category.temperature_exposition)}
+            onChange={(e) => setEditField({key: 'temperature_exposition', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'temperature_exposition', category.temperature_exposition)}>
+            {category.temperature_exposition || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Conditionnement */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'conditionnement' ? editField.value : category.conditionnement || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'conditionnement', category.conditionnement)}
+            onChange={(e) => setEditField({key: 'conditionnement', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'conditionnement', category.conditionnement)}>
+            {category.conditionnement || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Clientèle ciblée */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'clientele_ciblee' ? editField.value : category.clientele_ciblee || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'clientele_ciblee', category.clientele_ciblee)}
+            onChange={(e) => setEditField({key: 'clientele_ciblee', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'clientele_ciblee', category.clientele_ciblee)}>
+            {category.clientele_ciblee || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* ID Magasin */}
+      <td className="p-2">
+        {editingCategory?.categorie_id === category.categorie_id ? (
+          <Input
+            value={editField?.key === 'magasin_id' ? editField.value : category.magasin_id || ""}
+            onDoubleClick={() => handleFieldDoubleClick(category, 'magasin_id', category.magasin_id)}
+            onChange={(e) => setEditField({key: 'magasin_id', value: e.target.value || undefined})}
+          />
+        ) : (
+          <span onDoubleClick={() => handleFieldDoubleClick(category, 'magasin_id', category.magasin_id)}>
+            {category.magasin_id || "-"}
+          </span>
+        )}
+      </td>
+
+      {/* Date création (non éditable) */}
+      <td className="p-2">
+        {category.date_creation 
+          ? new Date(category.date_creation).toLocaleString() 
+          : "-"}
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
-    </ScrollArea>
+    </div>
+  </div>
+</div>
 
     <div className="flex justify-between">
       <Button variant="outline" onClick={() => setStep(4)}>

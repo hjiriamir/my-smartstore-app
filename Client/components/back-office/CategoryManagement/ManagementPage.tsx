@@ -1,44 +1,64 @@
 import React from 'react';
 import ManagementCard from './ManagementCard';
-import Link from 'next/link'; // Utilisez Link de next/link
-
+import Link from 'next/link';
 import { 
   LayoutGrid, 
   Store, 
-  MapPin 
+  MapPin,
+  ChevronRight
 } from 'lucide-react';
+import "@/components/multilingue/i18n.js"
+import { useTranslation } from "react-i18next"
 
 const ManagementPage: React.FC = () => {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+  
   return (
-    <div className="min-h-screen bg-sky-100 p-6 md:p-10 mt-16">
-      <div className="max-w-7xl mx-auto"> 
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Dashboard Management</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/category-management" passHref>         
-              <ManagementCard 
-                title="Gestion des catégories"
-                description="Créez, structurez et gérez vos catégories, sous-catégories et critères d’attribution pour enrichir vos planogrammes et optimiser l’expérience en magasin."
-                icon={<LayoutGrid size={24} className="text-amber-500" />}
-              />
-          </Link>
-          <Link href="/magasin-management" passHref>  
-          <ManagementCard 
-            title="Gestion des magasins"
-            description="Administrez l’ensemble de vos magasins, configurez leurs espaces et zones, et associez chaque magasin à ses catégories et planogrammes pour une gestion cohérente et centralisée."
-            icon={<Store size={24} className="text-blue-500" />}
-            
-          />
-          </Link>
-          <Link href="/zones-management" passHref>  
-          <ManagementCard 
-            title="Gestion des zones"
-            description="Configurez et organisez les zones d’exposition dans chaque magasin (par exemple : entrée, étagères, murs), afin d’optimiser l’aménagement, la circulation et la présentation des produits."
-            icon={<MapPin size={24} className="text-emerald-500" />}
-            
-          />
-          </Link>
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10 mt-16"> {/* Fond plus neutre */}
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-gray-800 mb-3">{t("dashboardManagement.title")}</h1>
+         
         </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"> {/* Container blanc pour les cartes */}
+            <Link href="/category-management" passHref>         
+              <ManagementCard 
+                title={t("categoryManagement")}
+                description={t("dashboardManagement.categoryManagementDescription")}
+                icon={<LayoutGrid />}
+                accentColor="amber"
+                badgeText="Nouveau"
+              />
+            </Link>
+          </div>
+          
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <Link href="/magasin-management" passHref>  
+              <ManagementCard 
+                title={t("magasinManagement")}
+                description={t("dashboardManagement.magasinManagementDescription")}
+                icon={<Store />}
+                accentColor="blue"
+              />
+            </Link>
+          </div>
+          
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <Link href="/zones-management" passHref>  
+              <ManagementCard 
+                title={t("zoneManagement")}
+                description={t("dashboardManagement.zoneManagementDescription")}
+                icon={<MapPin />}
+                accentColor="emerald"
+              />
+            </Link>
+          </div>
+        </div>
+
       </div>
     </div>
   );

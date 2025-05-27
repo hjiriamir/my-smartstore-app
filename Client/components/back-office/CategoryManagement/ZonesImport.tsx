@@ -42,6 +42,117 @@ export function ZonesImport() {
   const [rawData, setRawData] = useState<any[]>([])
   const [importedZones, setImportedZones] = useState<ZoneData[]>([])
 
+  const [showAddForm, setShowAddForm] = useState(true);
+  const [editingZone, setEditingZone] = useState<ZoneData | null>(null);
+  const [editField, setEditField] = useState<{key: string, value: any} | null>(null);
+  const [existingZones, setExistingZones] = useState<ZoneData[]>([]);
+  const [newZone, setNewZone] = useState<Omit<ZoneData, 'date_creation' | 'date_modification'> & {
+    date_creation?: string;
+  }>({
+    zone_id: "",
+    nom_zone: "",
+    magasin_id: "",
+    description: "",
+    emplacement: "",
+    date_creation: "",
+  });
+
+  // Fonction pour gérer les changements dans le formulaire d'ajout
+const handleNewZoneChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setNewZone(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+// Fonction pour ajouter une nouvelle zone
+const handleAddZone = () => {
+  if (!newZone.zone_id || !newZone.nom_zone || !newZone.magasin_id) {
+    toast({
+      title: "Erreur",
+      description: "L'ID, le nom de la zone et l'ID du magasin sont obligatoires",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  const now = new Date().toISOString();
+  
+  const zoneToAdd: ZoneData = {
+    ...newZone,
+    date_creation: now,
+    date_modification: now,
+  };
+
+  setImportedZones(prev => [...prev, zoneToAdd]);
+  
+  setNewZone({
+    zone_id: "",
+    nom_zone: "",
+    magasin_id: "",
+    description: "",
+    emplacement: "",
+    date_creation: "",
+  });
+
+  toast({
+    title: "Succès",
+    description: "La zone a été ajoutée avec succès",
+    variant: "default",
+  });
+};
+
+// Fonction pour supprimer une zone
+const handleDeleteZone = (zoneId: string) => {
+  setImportedZones(prev => prev.filter(zone => zone.zone_id !== zoneId));
+  toast({
+    title: "Succès",
+    description: "Zone supprimée avec succès",
+    variant: "default",
+  });
+};
+
+// Fonction pour démarrer la modification
+const handleStartEdit = (zone: ZoneData) => {
+  setEditingZone(zone);
+};
+
+// Fonction pour valider les modifications
+const handleSaveEdit = () => {
+  if (!editingZone || !editField) return;
+
+  const updatedZones = importedZones.map(z => 
+    z.zone_id === editingZone.zone_id 
+      ? {...z, [editField.key]: editField.value}
+      : z
+  );
+
+  setImportedZones(updatedZones);
+  setEditingZone(null);
+  setEditField(null);
+  
+  toast({
+    title: "Succès",
+    description: "Zone modifiée avec succès",
+    variant: "default",
+  });
+};
+
+// Fonction pour gérer le double-clic sur un champ
+const handleFieldDoubleClick = (zone: ZoneData, fieldName: string, value: any) => {
+  if (editingZone?.zone_id === zone.zone_id) {
+    setEditField({key: fieldName, value});
+  }
+};
+
+// Fonction pour annuler la modification
+const handleCancelEdit = () => {
+  setEditingZone(null);
+  setEditField(null);
+};
+
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,15 +332,15 @@ export function ZonesImport() {
     const errors: string[] = []
 
     if (!Object.values(columnMapping).includes("zone_id")) {
-      errors.push("L'identifiant de la zone est requis")
+      errors.push(t('zoneImport.zoneIdError'))
     }
 
     if (!Object.values(columnMapping).includes("nom_zone")) {
-      errors.push("Le nom de la zone est requis")
+      errors.push(t('zoneImport.zoneNomError'))
     }
 
     if (!Object.values(columnMapping).includes("magasin_id")) {
-      errors.push("L'identifiant du magasin est requis")
+      errors.push(t('zoneImport.error'))
     }
 
     parsedData.forEach((row, index) => {
@@ -315,7 +426,7 @@ export function ZonesImport() {
     <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
       <Button 
         variant="outline" 
-        onClick={() => window.location.href = "/Editor"}
+        onClick={() => window.location.href = "/management-page"}
         className={`flex items-center gap-2 mb-4 mt-14 ${isRTL ? 'flex-row-reverse' : ''}`}
       >
         <ArrowLeft className="h-4 w-4" />
@@ -323,33 +434,33 @@ export function ZonesImport() {
       </Button>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Importation de zones</CardTitle>
+          <CardTitle className="text-2xl">{t("zoneImport.title")}</CardTitle>
           <CardDescription>
-            Importez un fichier CSV ou Excel contenant vos zones
+          {t("zoneImport.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-2">
               <Badge variant={step >= 1 ? "default" : "outline"}>1</Badge>
-              <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>Sélection du fichier</span>
+              <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>{t("zoneImport.selectFile")}</span>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
 
               <Badge variant={step >= 2 ? "default" : "outline"}>2</Badge>
-              <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>Mapping des colonnes</span>
+              <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>{t("zoneImport.mapColonne")}</span>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
 
               <Badge variant={step >= 3 ? "default" : "outline"}>3</Badge>
-              <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>Importation</span>
+              <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>{t("zoneImport.import")}</span>
             </div>
           </div>
 
           {step === 1 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">Importation de zones</h3>
+                <h3 className="text-lg font-medium">{t("zoneImport.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Sélectionnez un fichier CSV ou Excel contenant vos zones
+                {t("zoneImport.description1")}
                 </p>
               </div>
 
@@ -381,7 +492,7 @@ export function ZonesImport() {
                         }
                       }}
                     >
-                      Changer de fichier
+                      {t("productImport.changeFile")}
                     </Button>
                   </div>
                 ) : (
@@ -389,8 +500,8 @@ export function ZonesImport() {
                     <div className="flex justify-center">
                       <FileSpreadsheet className="h-12 w-12 text-muted-foreground" />
                     </div>
-                    <p className="text-lg font-medium">Sélectionnez un fichier</p>
-                    <p className="text-sm text-muted-foreground">Glissez-déposez un fichier CSV ou Excel ici</p>
+                    <p className="text-lg font-medium">{t("zoneImport.select")}</p>
+                    <p className="text-sm text-muted-foreground">{t("zoneImport.dragdrop")}</p>
                   </div>
                 )}
                 <Input
@@ -404,7 +515,7 @@ export function ZonesImport() {
 
               {file && (
                 <div className="flex justify-end">
-                  <Button onClick={() => setStep(2)}>Continuer</Button>
+                  <Button onClick={() => setStep(2)}>{t("productImport.continue")}</Button>
                 </div>
               )}
             </div>
@@ -413,16 +524,16 @@ export function ZonesImport() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">Mapping des colonnes</h3>
+                <h3 className="text-lg font-medium">{t("zoneImport.mapColonne")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Associez les colonnes de votre fichier aux champs de zone
+                {t("zoneImport.associer")}
                 </p>
               </div>
 
               <div className="border rounded-md">
                 <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 font-medium border-b">
-                  <div>Colonne du fichier</div>
-                  <div>Champ correspondant</div>
+                  <div>{t("productImport.columnsStep.fileColumn")}</div>
+                  <div>{t("productImport.columnsStep.mappedField")}</div>
                 </div>
                 <ScrollArea className="h-[300px]">
                   <div className="p-4 space-y-4">
@@ -451,7 +562,7 @@ export function ZonesImport() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium">Aperçu des données</h4>
+                <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
                 <ScrollArea className="h-[200px] border rounded-md">
                   <div className="p-4">
                     <table className="w-full text-sm">
@@ -484,7 +595,7 @@ export function ZonesImport() {
                     </table>
                     {parsedData.length > 5 && (
                       <div className="p-2 text-center text-muted-foreground">
-                        + {parsedData.length - 5} autres zones
+                        + {parsedData.length - 5} {t("zoneImport.moreZone")}
                       </div>
                     )}
                   </div>
@@ -494,7 +605,7 @@ export function ZonesImport() {
               {validationErrors.length > 0 && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Erreurs de validation</AlertTitle>
+                  <AlertTitle>{t("productImport.validation.errors")}</AlertTitle>
                   <AlertDescription>
                     <ul className="list-disc pl-5 mt-2 space-y-1">
                       {validationErrors.slice(0, 5).map((error, index) => (
@@ -508,9 +619,9 @@ export function ZonesImport() {
 
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(1)}>
-                  Retour
+                {t("productImport.back")}
                 </Button>
-                <Button onClick={validateData}>Valider et continuer</Button>
+                <Button onClick={validateData}>{t("productImport.validateContinue")}</Button>
               </div>
             </div>
           )}
@@ -518,25 +629,25 @@ export function ZonesImport() {
           {step === 3 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">Importation des zones</h3>
+                <h3 className="text-lg font-medium">{t("zoneImport.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Prêt à importer {parsedData.length} zones
+                {t("zoneImport.pret")} {parsedData.length} {t("zoneImport.pret1")}
                 </p>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium">Résumé</h4>
+                <h4 className="font-medium">{t("zoneImport.resume")}</h4>
                 <div className="border rounded-md p-4">
-                  <p className="text-sm text-muted-foreground">Zones à importer</p>
+                  <p className="text-sm text-muted-foreground">{t("zoneImport.Aimporter")}</p>
                   <p className="text-2xl font-bold">{parsedData.length}</p>
                 </div>
               </div>
 
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(2)}>
-                  Retour
+                {t("productImport.retourGenerateur")}
                 </Button>
-                <Button onClick={importZones}>Importer les zones</Button>
+                <Button onClick={importZones}>{t("zoneImport.validImport")}</Button>
               </div>
             </div>
           )}
@@ -545,17 +656,17 @@ export function ZonesImport() {
             <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
               <Card className="w-[400px]">
                 <CardHeader>
-                  <CardTitle>Importation en cours</CardTitle>
+                  <CardTitle>{t("productImport.importationEnCours")}</CardTitle>
                   <CardDescription>
-                    Veuillez patienter pendant l'importation des zones
+                  {t("zoneImport.patient")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Progress value={importProgress} className="h-2" />
                   <p className="text-center text-sm">
                     {importProgress < 100 
-                      ? "Traitement des données..." 
-                      : "Importation terminée !"}
+                      ? t('zoneImport.processing')
+                      : t('zoneImport.complete')}
                   </p>
                 </CardContent>
               </Card>
@@ -569,9 +680,9 @@ export function ZonesImport() {
                   <div className="flex justify-center">
                     <CheckCircle2 className="h-16 w-16 text-green-500" />
                   </div>
-                  <h3 className="text-2xl font-medium">Importation terminée</h3>
+                  <h3 className="text-2xl font-medium">{t("zoneImport.complete")}</h3>
                   <p className="text-muted-foreground">
-                    {parsedData.length} zones importées avec succès
+                    {parsedData.length} {t("zoneImport.succesImport")}
                   </p>
                 </div>
               </div>
@@ -588,61 +699,178 @@ export function ZonesImport() {
                     setImportProgress(0)
                   }}
                 >
-                  Importer d'autres zones
+                 {t("zoneImport.autreZone")}
                 </Button>
                 <Button onClick={() => setStep(5)}>
-                  Voir les zones importées
+                {t("zoneImport.viewZone")}
                 </Button>
               </div>
             </div>
           )}
 
-          {step === 5 && (
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Zones importées</h3>
-                <p className="text-sm text-muted-foreground">
-                  Liste des zones importées avec succès
-                </p>
-              </div>
+{step === 5 && (
+  <div className="space-y-6">
+    <div className="space-y-2">
+      <h3 className="text-lg font-medium">{t("zoneImport.zoneImporter")}</h3>
+      <p className="text-sm text-muted-foreground">
+        {t("zoneImport.listeZones")}
+      </p>
+    </div>
 
-              <ScrollArea className="h-[500px] border rounded-md">
-                <table className="w-full text-sm">
-                  <thead className="border-b sticky top-0 bg-background">
-                    <tr>
-                      {Object.keys(importedZones[0] || {}).map((key) => (
-                        <th key={key} className="p-2 text-left font-medium capitalize">
-                          {key.split('_').join(' ')}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {importedZones.map((zone, index) => (
-                      <tr key={index} className="border-b hover:bg-muted/50">
-                        {Object.entries(zone).map(([key, value]) => (
-                          <td key={key} className="p-2">
-                            {value === undefined || value === null || value === "" 
-                              ? "-" 
-                              : String(value)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </ScrollArea>
+    {/* Bouton pour afficher/masquer le formulaire */}
+    <div className="flex justify-end">
+      <Button 
+        variant="outline" 
+        onClick={() => setShowAddForm(!showAddForm)}
+        className="mb-4"
+      >
+        {showAddForm ? "Masquer le formulaire" : "Afficher le formulaire"}
+      </Button>
+    </div>
 
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setStep(4)}>
-                  Retour
-                </Button>
-                <Button onClick={() => window.location.href = "/zones"}>
-                  Voir toutes les zones
-                </Button>
-              </div>
+    {/* Formulaire d'ajout de zone */}
+    {showAddForm && (
+      <Card>
+        <CardHeader>
+          <CardTitle>Ajouter une zone manuellement</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">ID Zone*</label>
+              <Input
+                name="zone_id"
+                value={newZone.zone_id}
+                onChange={handleNewZoneChange}
+                placeholder="ID unique de la zone"
+                required
+              />
             </div>
-          )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nom de la zone*</label>
+              <Input
+                name="nom_zone"
+                value={newZone.nom_zone}
+                onChange={handleNewZoneChange}
+                placeholder="Nom de la zone"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">ID Magasin*</label>
+              <Input
+                name="magasin_id"
+                value={newZone.magasin_id}
+                onChange={handleNewZoneChange}
+                placeholder="ID du magasin associé"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                name="description"
+                value={newZone.description}
+                onChange={handleNewZoneChange}
+                placeholder="Description de la zone"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">Emplacement</label>
+              <Input
+                name="emplacement"
+                value={newZone.emplacement}
+                onChange={handleNewZoneChange}
+                placeholder="Emplacement dans le magasin"
+              />
+            </div>
+          </div>
+          <Button onClick={handleAddZone} className="mt-4">
+            Ajouter la zone
+          </Button>
+        </CardContent>
+      </Card>
+    )}
+
+    {/* Liste des zones avec fonctionnalités de modification/suppression */}
+    <div className="space-y-2">
+      <h4 className="font-medium">Zones importées</h4>
+      <div className="relative">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-sm" style={{ minWidth: "max-content" }}>
+            <thead className="border-b">
+              <tr>
+                <th className="p-2 text-left font-medium">Actions</th>
+                {Object.keys(importedZones[0] || {}).map((key) => (
+                  <th key={key} className="p-2 text-left font-medium capitalize">
+                    {key.split('_').join(' ')}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {importedZones.map((zone, index) => (
+                <tr key={index} className="border-b hover:bg-muted/50">
+                  {/* Colonne Actions */}
+                  <td className="p-2 flex gap-2">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleDeleteZone(zone.zone_id)}
+                    >
+                      Supprimer
+                    </Button>
+                    {editingZone?.zone_id === zone.zone_id ? (
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveEdit}>Valider</Button>
+                        <Button variant="outline" size="sm" onClick={handleCancelEdit}>Annuler</Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => handleStartEdit(zone)}
+                      >
+                        Modifier
+                      </Button>
+                    )}
+                  </td>
+
+                  {/* Autres colonnes */}
+                  {Object.entries(zone).map(([key, value]) => (
+                    <td key={key} className="p-2">
+                      {editingZone?.zone_id === zone.zone_id && editField?.key === key ? (
+                        <Input
+                          value={editField.value}
+                          onChange={(e) => setEditField({key, value: e.target.value})}
+                        />
+                      ) : (
+                        <span onDoubleClick={() => handleFieldDoubleClick(zone, key, value)}>
+                          {value === undefined || value === null || value === "" 
+                            ? "-" 
+                            : String(value)}
+                        </span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex justify-between">
+      <Button variant="outline" onClick={() => setStep(4)}>
+        {t("productImport.retourGenerateur")}
+      </Button>
+      <Button onClick={() => window.location.href = "/zones"}>
+        {t("zoneImport.viewZone")}
+      </Button>
+    </div>
+  </div>
+)}
         </CardContent>
       </Card>
     </div>
