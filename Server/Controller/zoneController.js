@@ -1,4 +1,4 @@
-import { createzone } from '../Model/zone.js';
+import { createzone, createzones } from '../Model/zone.js';
 
 
 
@@ -14,4 +14,20 @@ export const createNewZone = (req, res) => {
             return res.json({ status: "Success zone ajoutée" });
         });
     
+};
+
+export const createNewZones = (req, res) => {
+    const zones = req.body; // Ici, on suppose que req.body est un tableau d'objets zone
+
+    if (!Array.isArray(zones) || zones.length === 0) {
+        return res.status(400).json({ Error: "Aucune zone fournie ou format invalide" });
+    }
+
+    createzones(zones, (err, result) => {
+        if (err) {
+            console.error("Erreur d'insertion dans la base de données :", err);
+            return res.status(500).json({ Error: "Erreur lors de l'ajout des zones" });
+        }
+        return res.json({ status: "Success zones ajoutées", result });
+    });
 };

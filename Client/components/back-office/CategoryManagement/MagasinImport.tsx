@@ -49,6 +49,7 @@ export function MagasinImport({ onMagasinsImported, existingData = [], isComplet
   const [importedStores, setImportedStores] = useState<StoreData[]>(existingData || [])
   
   const [magasins, setMagasins] = useState<any[]>(existingData);
+  const [isFileValid, setIsFileValid] = useState<boolean>(true);
 
   const [showAddForm, setShowAddForm] = useState(true);
   const [editingStore, setEditingStore] = useState<StoreData | null>(null);
@@ -201,14 +202,16 @@ const handleCancelEdit = () => {
 
   const parseFile = async (file: File) => {
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
+    setIsFileValid(true); // Réinitialiser l'état de validation
 
-    const showFileError = (fileType: string, message: string) => {
-      toast({
-        title: `Erreur ${fileType}`,
-        description: message,
-        variant: "destructive",
-      });
-    };
+  const showFileError = (fileType: string, message: string) => {
+    setIsFileValid(false);
+    toast({
+      title: `Erreur ${fileType}`,
+      description: message,
+      variant: "destructive",
+    });
+  };
 
     if (fileExtension === "csv") {
       const buffer = await file.arrayBuffer();
@@ -311,19 +314,31 @@ const handleCancelEdit = () => {
 
   const handleParsedData = (data: StoreData[]) => {
     if (data.length === 0) {
+      setIsFileValid(false);
       toast({
         title: "Fichier vide",
         description: "Le fichier importé ne contient aucune donnée.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+  
     const filteredData = data.filter((row) => {
-      return Object.values(row).some((value) => value !== undefined && value !== null && value !== "")
-    })
-
-    setParsedData(filteredData)
+      return Object.values(row).some((value) => value !== undefined && value !== null && value !== "");
+    });
+  
+    if (filteredData.length === 0) {
+      setIsFileValid(false);
+      toast({
+        title: "Aucune donnée valide",
+        description: "Le fichier ne contient aucune donnée valide.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    setParsedData(filteredData);
+    setIsFileValid(true);
 
     const firstRow = data[0]
     const mapping: Record<string, string> = {}
@@ -507,27 +522,42 @@ const handleCancelEdit = () => {
                 onClick={() => fileInputRef.current?.click()}
               >
                 {file ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <FileSpreadsheet className="h-8 w-8 text-primary" />
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    </div>
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">{parsedData.length} magasins détectés</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFile(null)
-                        setParsedData([])
-                        if (fileInputRef.current) {
-                          fileInputRef.current.value = ""
-                        }
-                      }}
-                    >
-                     {t("productImport.changeFile")}
-                    </Button>
+  <div className="space-y-2">
+    <div className="flex items-center justify-center gap-2">
+      <FileSpreadsheet className="h-8 w-8 text-primary" />
+      {isFileValid ? (
+        <CheckCircle2 className="h-5 w-5 text-green-500" />
+      ) : (
+        <AlertCircle className="h-5 w-5 text-red-500" />
+      )}
+    </div>
+    <p className="font-medium">{file.name}</p>
+    <p className="text-sm text-muted-foreground">
+      {isFileValid ? `${parsedData.length} magasins détectés` : "Fichier non valide"}
+    </p>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={(e) => {
+        e.stopPropagation()
+        setFile(null)
+        setParsedData([])
+        setIsFileValid(true)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""
+        }
+      }}
+    >
+      {t("productImport.changeFile")}
+    </Button>
+    {!isFileValid && (
+      <Alert variant="destructive" className="mt-2">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Le fichier sélectionné n'est pas valide. Veuillez choisir un autre fichier.
+        </AlertDescription>
+      </Alert>
+    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -548,10 +578,15 @@ const handleCancelEdit = () => {
               </div>
 
               {file && (
-                <div className="flex justify-end">
-                  <Button onClick={() => setStep(2)}>{t("productImport.generateurContinuer")}</Button>
-                </div>
-              )}
+  <div className="flex justify-end">
+    <Button 
+      onClick={() => setStep(2)} 
+      disabled={!isFileValid || parsedData.length === 0}
+    >
+      {t("productImport.generateurContinuer")}
+    </Button>
+  </div>
+)}
             </div>
           )}
 

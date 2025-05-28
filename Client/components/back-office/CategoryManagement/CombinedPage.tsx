@@ -4,7 +4,7 @@ import { CategoryImport } from './CategoryImport';
 import { ZonesImport } from './ZonesImport';
 import './CombinedPage.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, X, Zap } from 'lucide-react';
+import { CheckCircle, X, Zap, Save, Database } from 'lucide-react';
 
 const CombinedPage = () => {
   const [activeTab, setActiveTab] = useState<'magasin' | 'categorie' | 'zone'>('magasin');
@@ -23,6 +23,182 @@ const CombinedPage = () => {
   const [isMagasinComplete, setIsMagasinComplete] = useState(false);
   const [isCategorieComplete, setIsCategorieComplete] = useState(false);
   const [isZoneComplete, setIsZoneComplete] = useState(false);
+
+  // nouvel état pour la section de sauvegarde
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
+
+  // fonction pour sauvegarder les données via l'API
+ // fonction pour sauvegarder les données via l'API
+const handleSaveData = async () => {
+    setIsSaving(true);
+    setSaveStatus('idle');
+    setSaveError('');
+  
+    try {
+      // Sauvegarde des catégories
+      const categoriesResponse = await fetch('http://localhost:8081/api/management/createCategories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(importedCategories)
+      });
+  
+      if (!categoriesResponse.ok) {
+        throw new Error('Échec de la sauvegarde des catégories');
+      }
+  
+      // Sauvegarde des magasins
+      const magasinsResponse = await fetch('http://localhost:8081/api/management/createMagasins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(importedMagasins)
+      });
+  
+      if (!magasinsResponse.ok) {
+        throw new Error('Échec de la sauvegarde des magasins');
+      }
+  
+      // Sauvegarde des zones
+      const zonesResponse = await fetch('http://localhost:8081/api/management/createZones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(importedZones)
+      });
+  
+      if (!zonesResponse.ok) {
+        throw new Error('Échec de la sauvegarde des zones');
+      }
+  
+      setSaveStatus('success');
+      
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      setSaveStatus('error');
+      setSaveError(error.message || 'Une erreur est survenue');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+// Composant pour afficher les détails des données
+const DataSummary = () => {
+    // Fonction pour trouver le nom d'un magasin par son ID
+    const getMagasinName = (magasinId: number) => {
+        const magasin = importedMagasins.find(m => m.id === magasinId);
+        return magasin?.name || magasin?.nom_magasin || magasin?.libelle || magasin?.magasinName || magasin?.magasinNom || `Magasin ${magasinId}`;
+      };
+  
+    return (
+      <div className="data-summary">
+        <h3 className="summary-title">
+          <Database size={20} className="mr-2" />
+          Récapitulatif des données importées
+        </h3>
+        
+        <div className="summary-grid">
+          {/* Section Magasins */}
+          <div className="summary-card">
+            <h4>Magasins</h4>
+            <ul>
+            {importedMagasins.slice(0, 3).map((magasin, index) => (
+            <li key={index}>
+                <strong>{magasin.name || magasin.nom_magasin || magasin.libelle || magasin.magasinName || `Magasin ${index + 1}`}</strong>
+                <div className="detail-item">ID: {magasin.magasin_id}</div>
+            </li>
+            ))}
+              {importedMagasins.length > 3 && (
+                <li className="more-items">+ {importedMagasins.length - 3} autres</li>
+              )}
+            </ul>
+            <div className="total-count">{importedMagasins.length} magasin(s)</div>
+          </div>
+  
+          {/* Section Catégories */}
+          <div className="summary-card">
+            <h4>Catégories</h4>
+            <ul>
+            {importedCategories.slice(0, 3).map((categorie, index) => (
+                <li key={index}>
+                    <strong>{ categorie.nom || `Catégorie ${index + 1}`}</strong>
+                    {categorie.magasin_id && (
+                    <div className="detail-item">
+                        Magasin: {getMagasinName(categorie.magasin_id)}
+                    </div>
+                    )}
+                </li>
+                ))}
+              {importedCategories.length > 3 && (
+                <li className="more-items">+ {importedCategories.length - 3} autres</li>
+              )}
+            </ul>
+            <div className="total-count">{importedCategories.length} catégorie(s)</div>
+          </div>
+  
+          {/* Section Zones */}
+          <div className="summary-card">
+            <h4>Zones</h4>
+            <ul>
+            {importedZones.slice(0, 3).map((zone, index) => (
+  <li key={index}>
+    <strong>{zone.nom_zone || `Zone ${index + 1}`}</strong>
+    {zone.magasin_id && (
+      <div className="detail-item">
+        Magasin: {getMagasinName(zone.magasin_id)}
+      </div>
+    )}
+  </li>
+))}
+              {importedZones.length > 3 && (
+                <li className="more-items">+ {importedZones.length - 3} autres</li>
+              )}
+            </ul>
+            <div className="total-count">{importedZones.length} zone(s)</div>
+          </div>
+        </div>
+  
+        {/* Section Sauvegarde */}
+        <div className="save-section">
+          <button 
+            onClick={handleSaveData} 
+            disabled={isSaving || !allStepsCompleted}
+            className={`save-button ${!allStepsCompleted ? 'disabled' : ''}`}
+          >
+            <Save size={18} className="mr-2" />
+            {isSaving ? 'Sauvegarde en cours...' : 'Sauvegarder dans la base de données'}
+          </button>
+  
+          {saveStatus === 'success' && (
+  <div className="save-status success">
+    <CheckCircle size={16} className="mr-2" />
+    Données sauvegardées avec succès !
+    <div className="save-details">
+      <span>{importedMagasins.length} magasin(s)</span>
+      <span>{importedCategories.length} catégorie(s)</span>
+      <span>{importedZones.length} zone(s)</span>
+    </div>
+  </div>
+)}
+  
+          {saveStatus === 'error' && (
+            <div className="save-status error">
+              <X size={16} className="mr-2" />
+              {saveError || 'Erreur lors de la sauvegarde'}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+
+
 
   const handleMagasinsImported = (data: any[]) => {
     setImportedMagasins(data);
@@ -104,6 +280,8 @@ const allStepsCompleted = importedMagasins.length > 0 &&
             importedCategories={importedCategories}
           />
         );
+        case 'summary':
+        return <DataSummary />;
       default:
         return null;
     }
@@ -128,6 +306,25 @@ const allStepsCompleted = importedMagasins.length > 0 &&
       }, 1500);
     }
   }, [importedMagasins, importedCategories, activeTab]);
+
+  useEffect(() => {
+    if (importedMagasins.length > 0) {
+      console.log("Liste des magasins:", importedMagasins);
+    }
+  }, [importedMagasins]);
+
+  useEffect(() => {
+    if (importedCategories.length > 0) {
+      console.log("Liste des catégories:", importedCategories);
+    }
+  }, [importedCategories]);
+
+  useEffect(() => {
+    if (importedZones.length > 0) {
+      console.log("Liste des zones:", importedZones);
+    }
+  }, [importedZones]);
+  
 //  fonction pour le popup
 const CompletionPopup = () => (
     <motion.div 
@@ -271,6 +468,21 @@ const CompletionPopup = () => (
     <span className="badge">{importedZones.length}</span>
   )}
 </button>
+<button
+            onClick={() => setActiveTab('summary')}
+            className={`tab-button ${activeTab === 'summary' ? 'active' : ''} ${
+              !allStepsCompleted ? 'disabled' : ''
+            }`}
+            disabled={!allStepsCompleted}
+          >
+            <i className="icon-database"></i>
+            Récapitulatif
+            {allStepsCompleted && (
+              <span className="badge success-badge">
+                <CheckCircle size={14} />
+              </span>
+            )}
+          </button>
         </div>
         </motion.div>
 
