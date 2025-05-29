@@ -452,42 +452,11 @@ const handleCancelEdit = () => {
     setImportProgress(100);
     setTimeout(() => {
       setStep(4);
-      setShowCompletionPopup(true); 
+      //setShowCompletionPopup(true); 
     }, 500);
   }, 1000);
   }
-  const CompletionPopup = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <div className="text-center">
-          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold mb-2">Toutes les étapes sont terminées !</h3>
-          <p className="text-gray-600 mb-6">
-            Vous avez importé avec succès :
-            <br />
-            - {importedMagasins.length} magasins
-            <br />
-            - {importedCategories.length} catégories
-            <br />
-            - {importedZones.length} zones
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowCompletionPopup(false)}
-            >
-              Continuer l'édition
-            </Button>
-            <Button 
-              onClick={() => window.location.href = "/management-page"}
-            >
-              Aller au tableau de bord
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+ 
   return (
     <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
       <Button 
@@ -957,7 +926,7 @@ const handleCancelEdit = () => {
 )}
         </CardContent>
       </Card>
-      {showCompletionPopup && <CompletionPopup />}
+      
     </div>
   
 )

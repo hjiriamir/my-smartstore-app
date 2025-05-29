@@ -64,3 +64,57 @@
   background-color: #cbd5e0;
   border-radius: 4px;
 }
+
+/* Ajoutez ces règles pour le support RTL */
+[dir="rtl"] .tabs-container {
+  direction: rtl;
+}
+
+[dir="rtl"] .tab-button {
+  margin-left: 0;
+  margin-right: 10px;
+}
+
+[dir="rtl"] .tab-button .badge {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+[dir="rtl"] .suggestion-banner {
+  text-align: right;
+}
+
+[dir="rtl"] .suggestion-banner button {
+  margin-left: 0;
+  margin-right: 10px;
+}
+
+[dir="rtl"] .summary-title,
+[dir="rtl"] .summary-card h4,
+[dir="rtl"] .save-section {
+  text-align: right;
+}
+
+[dir="rtl"] .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .tour-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .popup-content {
+  text-align: right;
+}
+
+[dir="rtl"] .stat-item {
+  direction: rtl;
+}
+
+[dir="rtl"] .detail-item {
+  text-align: right;
+}
+.flipped {
+  transform: scaleX(-1);
+}

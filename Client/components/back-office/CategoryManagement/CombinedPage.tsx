@@ -5,8 +5,17 @@ import { ZonesImport } from './ZonesImport';
 import './CombinedPage.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, X, Zap, Save, Database } from 'lucide-react';
+import '@/components/multilingue/i18n.js';
+import { useTranslation } from 'react-i18next';
+
 
 const CombinedPage = () => {
+    
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
+  const textDirection = isRTL ? 'rtl' : 'ltr';
+
+
   const [activeTab, setActiveTab] = useState<'magasin' | 'categorie' | 'zone'>('magasin');
   const [importedMagasins, setImportedMagasins] = useState<any[]>([]);
   const [showTour, setShowTour] = useState(true);
@@ -96,16 +105,16 @@ const DataSummary = () => {
       };
   
     return (
-      <div className="data-summary">
+      <div className="data-summary" style={{ textAlign: isRTL ? 'right' : 'left' }}>
         <h3 className="summary-title">
           <Database size={20} className="mr-2" />
-          Récapitulatif des données importées
+          {t("combinedManagement.reacapitulatifDescription")}
         </h3>
         
         <div className="summary-grid">
           {/* Section Magasins */}
           <div className="summary-card">
-            <h4>Magasins</h4>
+            <h4>{t("combinedManagement.magasins")}</h4>
             <ul>
             {importedMagasins.slice(0, 3).map((magasin, index) => (
             <li key={index}>
@@ -114,52 +123,52 @@ const DataSummary = () => {
             </li>
             ))}
               {importedMagasins.length > 3 && (
-                <li className="more-items">+ {importedMagasins.length - 3} autres</li>
+                <li className="more-items">+ {importedMagasins.length - 3} {t("combinedManagement.others")}</li>
               )}
             </ul>
-            <div className="total-count">{importedMagasins.length} magasin(s)</div>
+            <div className="total-count">{importedMagasins.length} {t("combinedManagement.plusMagasins")}</div>
           </div>
   
           {/* Section Catégories */}
           <div className="summary-card">
-            <h4>Catégories</h4>
+            <h4>{t("combinedManagement.categories")}</h4>
             <ul>
             {importedCategories.slice(0, 3).map((categorie, index) => (
                 <li key={index}>
                     <strong>{ categorie.nom || `Catégorie ${index + 1}`}</strong>
                     {categorie.magasin_id && (
                     <div className="detail-item">
-                        Magasin: {getMagasinName(categorie.magasin_id)}
+                        {t("combinedManagement.seulMG")}: {getMagasinName(categorie.magasin_id)}
                     </div>
                     )}
                 </li>
                 ))}
               {importedCategories.length > 3 && (
-                <li className="more-items">+ {importedCategories.length - 3} autres</li>
+                <li className="more-items">+ {importedCategories.length - 3} {t("combinedManagement.others")}</li>
               )}
             </ul>
-            <div className="total-count">{importedCategories.length} catégorie(s)</div>
+            <div className="total-count">{importedCategories.length} {t("combinedManagement.plusCategories")}</div>
           </div>
   
           {/* Section Zones */}
           <div className="summary-card">
-            <h4>Zones</h4>
+            <h4>{t("combinedManagement.zones")}</h4>
             <ul>
             {importedZones.slice(0, 3).map((zone, index) => (
   <li key={index}>
     <strong>{zone.nom_zone || `Zone ${index + 1}`}</strong>
     {zone.magasin_id && (
       <div className="detail-item">
-        Magasin: {getMagasinName(zone.magasin_id)}
+        {t("combinedManagement.seulMG")}: {getMagasinName(zone.magasin_id)}
       </div>
     )}
   </li>
 ))}
               {importedZones.length > 3 && (
-                <li className="more-items">+ {importedZones.length - 3} autres</li>
+                <li className="more-items">+ {importedZones.length - 3} {t("combinedManagement.others")}</li>
               )}
             </ul>
-            <div className="total-count">{importedZones.length} zone(s)</div>
+            <div className="total-count">{importedZones.length} {t("combinedManagement.plusZones")}</div>
           </div>
         </div>
   
@@ -171,17 +180,17 @@ const DataSummary = () => {
             className={`save-button ${!allStepsCompleted ? 'disabled' : ''}`}
           >
             <Save size={18} className="mr-2" />
-            {isSaving ? 'Sauvegarde en cours...' : 'Sauvegarder dans la base de données'}
+            {isSaving ? t('combinedManagement.sauvegardEnCours') : t('combinedManagement.sauvegarderDansBD')}
           </button>
   
-          {saveStatus === 'success' && (
+          {saveStatus === t('combinedManagement.success') && (
   <div className="save-status success">
     <CheckCircle size={16} className="mr-2" />
-    Données sauvegardées avec succès !
+    {t("combinedManagement.successSave")}
     <div className="save-details">
-      <span>{importedMagasins.length} magasin(s)</span>
-      <span>{importedCategories.length} catégorie(s)</span>
-      <span>{importedZones.length} zone(s)</span>
+      <span>{importedMagasins.length} {t("combinedManagement.plusMagasins")}</span>
+      <span>{importedCategories.length} {t("combinedManagement.plusCategories")}</span>
+      <span>{importedZones.length} {t("combinedManagement.plusZones")}</span>
     </div>
   </div>
 )}
@@ -222,20 +231,20 @@ const allStepsCompleted = importedMagasins.length > 0 &&
                             importedZones.length > 0;
   const tourSteps = [
     {
-      title: "Bienvenue dans l'outil d'import",
-      content: "Commencez par importer vos magasins, puis les catégories et enfin les zones."
+      title: t("combinedManagement.bienvenue"),
+      content: t("combinedManagement.bienvenueDescription"),
     },
     {
-      title: "Import des magasins",
-      content: "Importez votre fichier CSV/Excel de magasins ou ajoutez-les manuellement."
+      title: t("combinedManagement.magasinImport"),
+      content:t("combinedManagement.magasinImportDesc"),
     },
     {
-      title: "Import des catégories",
-      content: "Une fois les magasins importés, passez aux catégories."
+      title: t("combinedManagement.categorieImport"),
+      content: t("combinedManagement.categorieImportDesc"),
     },
     {
-      title: "Import des zones",
-      content: "Enfin, importez les zones en les associant aux magasins existants."
+      title: t("combinedManagement.zoneImport"),
+      content: t("combinedManagement.zoneImportDesc"),
     }
   ];
 
@@ -347,21 +356,21 @@ const CompletionPopup = () => (
         
         <div className="popup-content">
           <CheckCircle size={60} className="success-icon" />
-          <h3>Félicitations !</h3>
-          <p>Vous avez complété toutes les étapes d'import avec succès.</p>
+          <h3>{t("combinedManagement.felicitation")}</h3>
+          <p>{t("combinedManagement.felicitationDescription")}</p>
           
           <div className="stats-grid">
             <div className="stat-item">
               <span className="stat-number">{importedMagasins.length}</span>
-              <span className="stat-label">Magasins</span>
+              <span className="stat-label">{t("combinedManagement.magasins")}</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">{importedCategories.length}</span>
-              <span className="stat-label">Catégories</span>
+              <span className="stat-label">{t("combinedManagement.categories")}</span>
             </div>
             <div className="stat-item">
               <span className="stat-number">{importedZones.length}</span>
-              <span className="stat-label">Zones</span>
+              <span className="stat-label">{t("combinedManagement.zones")}</span>
             </div>
           </div>
           
@@ -373,34 +382,47 @@ const CompletionPopup = () => (
             }}
           >
             <Zap size={18} className="mr-2" />
-            Voir le tableau de bord
+            {t("combinedManagement.viewDashboard")}
           </button>
         </div>
       </motion.div>
     </motion.div>
   );
   return (
-    <div className="mt-12 combined-page">
+    <div className="mt-12 combined-page" dir={textDirection}>
       {showTour && (
         <div className="tour-overlay">
           <div className="tour-card">
             <h3>{tourSteps[currentStep].title}</h3>
             <p>{tourSteps[currentStep].content}</p>
             <div className="tour-actions">
-              {currentStep < tourSteps.length - 1 ? (
-                <>
-                  <button onClick={handleSkipTour} className="secondary-button">
-                    Passer
-                  </button>
-                  <button onClick={handleNextStep} className="primary-button">
-                    Suivant
-                  </button>
-                </>
-              ) : (
-                <button onClick={handleSkipTour} className="primary-button">
-                  Commencer
-                </button>
-              )}
+            {currentStep < tourSteps.length - 1 ? (
+  <>
+    {isRTL ? (
+      <>
+        <button onClick={handleNextStep} className="primary-button">
+          {t("combinedManagement.bienvenueSuivant")}
+        </button>
+        <button onClick={handleSkipTour} className="secondary-button">
+          {t("combinedManagement.bienvenuePasser")}
+        </button>
+      </>
+    ) : (
+      <>
+        <button onClick={handleSkipTour} className="secondary-button">
+          {t("combinedManagement.bienvenuePasser")}
+        </button>
+        <button onClick={handleNextStep} className="primary-button">
+          {t("combinedManagement.bienvenueSuivant")}
+        </button>
+      </>
+    )}
+  </>
+) : (
+  <button onClick={handleSkipTour} className="primary-button">
+    {t("combinedManagement.commencer")}
+  </button>
+)}
             </div>
             <div className="tour-progress">
               {tourSteps.map((_, index) => (
@@ -421,8 +443,8 @@ const CompletionPopup = () => (
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Gestion des Données
-          <div className="subtitle">Importez et gérez vos données commerciales</div>
+          {t("combinedManagement.gestionDonnee")}
+          <div className="subtitle">{t("combinedManagement.gestionDecription")}</div>
         </motion.h1>
         
         <motion.div 
@@ -437,7 +459,7 @@ const CompletionPopup = () => (
           className={`tab-button ${activeTab === 'magasin' ? 'active' : ''}`}
         >
           <i className="icon-store"></i>
-          Magasins
+          {t("combinedManagement.magasins")}
           {importedMagasins.length > 0 && (
             <span className="badge">{importedMagasins.length}</span>
           )}
@@ -450,7 +472,7 @@ const CompletionPopup = () => (
           disabled={importedMagasins.length === 0}
         >
           <i className="icon-category"></i>
-          Catégories
+          {t("combinedManagement.categories")}
           {importedCategories.length > 0 && (
             <span className="badge">{importedCategories.length}</span>
           )}
@@ -463,7 +485,7 @@ const CompletionPopup = () => (
   disabled={importedCategories.length === 0}
 >
   <i className="icon-zone"></i>
-  Zones
+  {t("combinedManagement.zones")}
   {importedZones.length > 0 && (
     <span className="badge">{importedZones.length}</span>
   )}
@@ -476,7 +498,7 @@ const CompletionPopup = () => (
             disabled={!allStepsCompleted}
           >
             <i className="icon-database"></i>
-            Récapitulatif
+            {t("combinedManagement.recapitulatif")}
             {allStepsCompleted && (
               <span className="badge success-badge">
                 <CheckCircle size={14} />
@@ -501,18 +523,26 @@ const CompletionPopup = () => (
 
         {importedMagasins.length > 0 && activeTab === 'magasin' && (
         <motion.div className="suggestion-banner">
-          <p>Vous avez importé {importedMagasins.length} magasin(s). Passez maintenant aux catégories !</p>
+          <p>{t("combinedManagement.import")} {importedMagasins.length} {t("combinedManagement.importMgasin2")}</p>
           <button onClick={() => setActiveTab('categorie')} className="suggestion-button">
-            Aller aux catégories <i className="icon-arrow-right"></i>
-          </button>
+  {isRTL ? (
+    <>
+      <i className="icon-arrow-left"></i> {t("combinedManagement.versCategorie")}
+    </>
+  ) : (
+    <>
+      {t("combinedManagement.versCategorie")} <i className="icon-arrow-right"></i>
+    </>
+  )}
+</button>
         </motion.div>
       )}
 
       {importedCategories.length > 0 && activeTab === 'categorie' && (
         <motion.div className="suggestion-banner">
-          <p>Vous avez importé {importedCategories.length} catégorie(s). Passez maintenant aux zones !</p>
+          <p>{t("combinedManagement.import")} {importedCategories.length} {t("combinedManagement.importCategorie2")}</p>
           <button onClick={() => setActiveTab('zone')} className="suggestion-button">
-            Aller aux zones <i className="icon-arrow-right"></i>
+          {t("combinedManagement.versZone")} <i className={`icon-arrow-right ${isRTL ? 'flipped' : ''}`}></i>
           </button>
         </motion.div>
       )}

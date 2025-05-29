@@ -554,7 +554,7 @@ const handleCancelEdit = () => {
       <Alert variant="destructive" className="mt-2">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Le fichier sélectionné n'est pas valide. Veuillez choisir un autre fichier.
+        {t("magasinImport.fichierNotValid")}
         </AlertDescription>
       </Alert>
     )}
@@ -615,16 +615,16 @@ const handleCancelEdit = () => {
                             value={columnMapping[column] || ""}
                             onChange={(e) => updateColumnMapping(column, e.target.value)}
                           >
-                            <option value="">-- Ignorer cette colonne --</option>
+                            <option value="">-- {t("productImport.columnsStep.ignoreColumn")} --</option>
                             <option value="magasin_id">ID Magasin</option>
-                            <option value="nom_magasin">Nom du magasin</option>
-                            <option value="surface">Surface</option>
-                            <option value="longueur">Longueur</option>
-                            <option value="largeur">Largeur</option>
-                            <option value="zones_configurees">Zones configurées</option>
-                            <option value="adresse">Adresse</option>
-                            <option value="date_creation">Date création</option>
-                            <option value="date_modification">Date modification</option>
+                            <option value="nom_magasin">{t("magasinImport.requiredNamePlaceholder")}</option>
+                            <option value="surface">{t("magasinImport.surface")}</option>
+                            <option value="longueur">{t("magasinImport.longeur")}</option>
+                            <option value="largeur">{t("magasinImport.largeur")}</option>
+                            <option value="zones_configurees">{t("magasinImport.configureZone")}</option>
+                            <option value="adresse">{t("magasinImport.addresse")}</option>
+                            <option value="date_creation">{t("magasinImport.creationDate")}</option>
+                            <option value="date_modification">{t("magasinImport.updateDate")}</option>
                           </select>
                         </div>
                       ))}
@@ -666,7 +666,7 @@ const handleCancelEdit = () => {
                     </table>
                     {parsedData.length > 5 && (
                       <div className="p-2 text-center text-muted-foreground">
-                        + {parsedData.length - 5} autres magasins
+                        + {parsedData.length - 5} {t("magasinImport.otherStores")}
                       </div>
                     )}
                   </div>
@@ -676,13 +676,13 @@ const handleCancelEdit = () => {
               {validationErrors.length > 0 && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Erreurs de validation</AlertTitle>
+                  <AlertTitle>{t("productImport.validation.errors")}</AlertTitle>
                   <AlertDescription>
                     <ul className="list-disc pl-5 mt-2 space-y-1">
                       {validationErrors.slice(0, 5).map((error, index) => (
                         <li key={index}>{error}</li>
                       ))}
-                      {validationErrors.length > 5 && <li>+ {validationErrors.length - 5} autres erreurs</li>}
+                      {validationErrors.length > 5 && <li>+ {validationErrors.length - 5} {t("magasinImport.otherErrors")}</li>}
                     </ul>
                   </AlertDescription>
                 </Alert>
@@ -795,7 +795,7 @@ const handleCancelEdit = () => {
         onClick={() => setShowAddForm(!showAddForm)}
         className="mb-4"
       >
-        {showAddForm ? "Masquer le formulaire" : "Afficher le formulaire"}
+        {showAddForm ? t("magasinImport.hideFormulaire") : t("magasinImport.showFormulaire")}
       </Button>
     </div>
 
@@ -803,12 +803,12 @@ const handleCancelEdit = () => {
     {showAddForm && (
       <Card>
         <CardHeader>
-          <CardTitle>Ajouter un magasin manuellement</CardTitle>
+          <CardTitle>{t("magasinImport.addMagasinDesc")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">ID Magasin*</label>
+              <label className="text-sm font-medium">ID {t("magasinImport.magasin")}*</label>
               <Input
                 name="magasin_id"
                 value={newStore.magasin_id}
@@ -818,69 +818,69 @@ const handleCancelEdit = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nom du magasin*</label>
+              <label className="text-sm font-medium">{t("magasinImport.requiredName")}</label>
               <Input
                 name="nom_magasin"
                 value={newStore.nom_magasin}
                 onChange={handleNewStoreChange}
-                placeholder="Nom du magasin"
+                placeholder={t("magasinImport.requiredNamePlaceholder")}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Surface (m²)</label>
+              <label className="text-sm font-medium">{t("magasinImport.surface")}</label>
               <Input
                 name="surface"
                 type="number"
                 value={newStore.surface || ""}
                 onChange={handleNewStoreChange}
-                placeholder="Surface en m²"
+                placeholder={t("magasinImport.surfacePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Longueur (m)</label>
+              <label className="text-sm font-medium">{t("magasinImport.longeur")}</label>
               <Input
                 name="longueur"
                 type="number"
                 value={newStore.longueur || ""}
                 onChange={handleNewStoreChange}
-                placeholder="Longueur en mètres"
+                placeholder={t("magasinImport.longeurPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Largeur (m)</label>
+              <label className="text-sm font-medium">{t("magasinImport.largeurPlaceholder")}</label>
               <Input
                 name="largeur"
                 type="number"
                 value={newStore.largeur || ""}
                 onChange={handleNewStoreChange}
-                placeholder="Largeur en mètres"
+                placeholder={t("magasinImport.largeurPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Zones configurées</label>
+              <label className="text-sm font-medium">{t("magasinImport.configureZone")}</label>
               <select
                 name="zones_configurees"
                 value={newStore.zones_configurees ? "true" : "false"}
                 onChange={handleNewStoreChange}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="true">Oui</option>
-                <option value="false">Non</option>
+                <option value="true">{t("magasinImport.oui")}</option>
+                <option value="false">{t("magasinImport.non")}</option>
               </select>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium">Adresse</label>
+              <label className="text-sm font-medium">{t("magasinImport.addresse")}</label>
               <Input
                 name="adresse"
                 value={newStore.adresse}
                 onChange={handleNewStoreChange}
-                placeholder="Adresse complète"
+                placeholder={t("magasinImport.addressePlaceholder")}
               />
             </div>
           </div>
           <Button onClick={handleAddStore} className="mt-4">
-            Ajouter le magasin
+          {t("magasinImport.addMagasin")}
           </Button>
         </CardContent>
       </Card>
@@ -888,20 +888,20 @@ const handleCancelEdit = () => {
 
     {/* Liste des magasins avec fonctionnalités de modification/suppression */}
     <div className="space-y-2">
-      <h4 className="font-medium">Magasins importés</h4>
+      <h4 className="font-medium">{t("magasinImport.magasinImporter")}</h4>
       <div className="relative">
         <div className="w-full overflow-x-auto">
           <table className="w-full text-sm" style={{ minWidth: "max-content" }}>
-            <thead className="border-b">
-              <tr>
-                <th className="p-2 text-left font-medium">Actions</th>
-                {Object.keys(importedStores[0] || {}).map((key) => (
-                  <th key={key} className="p-2 text-left font-medium capitalize">
-                    {key.split('_').join(' ')}
-                  </th>
-                ))}
-              </tr>
-            </thead>
+          <thead className="border-b">
+            <tr>
+              <th className="p-2 text-left font-medium">{t("Tactions")}</th>
+              {Object.keys(importedStores[0] || {}).map((key) => (
+                <th key={key} className="p-2 text-left font-medium">
+                  {t(`magasinImport.headers.${key}`)}
+                </th>
+              ))}
+            </tr>
+          </thead>
             <tbody>
               {importedStores.map((store, index) => (
                 <tr key={index} className="border-b hover:bg-muted/50">
@@ -912,12 +912,12 @@ const handleCancelEdit = () => {
                       size="sm"
                       onClick={() => handleDeleteStore(store.magasin_id)}
                     >
-                      Supprimer
+                      {t("productImport.delete")}
                     </Button>
                     {editingStore?.magasin_id === store.magasin_id ? (
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveEdit}>Valider</Button>
-                        <Button variant="outline" size="sm" onClick={handleCancelEdit}>Annuler</Button>
+                        <Button size="sm" onClick={handleSaveEdit}>{t("magasinImport.valider1")}</Button>
+                        <Button variant="outline" size="sm" onClick={handleCancelEdit}>{t("cancel")}</Button>
                       </div>
                     ) : (
                       <Button 
@@ -925,7 +925,7 @@ const handleCancelEdit = () => {
                         size="sm"
                         onClick={() => handleStartEdit(store)}
                       >
-                        Modifier
+                        {t("modifier")}
                       </Button>
                     )}
                   </td>
@@ -940,8 +940,8 @@ const handleCancelEdit = () => {
                             onChange={(e) => setEditField({key, value: e.target.value === "true"})}
                             className="w-full p-2 border rounded-md"
                           >
-                            <option value="true">Oui</option>
-                            <option value="false">Non</option>
+                            <option value="true">{t("magasinImport.oui")}</option>
+                            <option value="false">{t("magasinImport.non")}</option>
                           </select>
                         ) : (
                           <Input
