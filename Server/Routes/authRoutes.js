@@ -1,7 +1,8 @@
 import express from 'express';
 import { register, login, logout, getMe, forgotPassword , resetPassword } from '../Controller/authController.js';
 import { verifyToken } from '../Middlewares/authMiddleware.js';
-import { createNewUser, getUsersExcludingAdmin } from '../Controller/userController.js';
+//import { createNewUser, getUsersExcludingAdmin } from '../Controller/userController.js';
+import { createUser, getAllUsersExcludingAdmin } from '../Controller/usersController.js';
 
 
 const router = express.Router();
@@ -9,8 +10,8 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.get('/logout', logout);
-router.post('/newUser', createNewUser);
-router.get('/users/excluding-admin', getUsersExcludingAdmin);
+router.post('/newUser', createUser);
+router.get('/users/excluding-admin', getAllUsersExcludingAdmin);
 router.get('/me', verifyToken, getMe); // Nouvelle route pour /me
 // Route pour la demande de réinitialisation du mot de passe
 router.post('/forgotPassword', forgotPassword);

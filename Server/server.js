@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './Routes/authRoutes.js';
+import usersRoutes from './Routes/usersRoutes.js';
+
 import demandeAbonnRoute from './Routes/demandeAbonnRoute.js'
 import { verifyUser } from './Controller/authController.js';
 import { verifyToken } from './Middlewares/authMiddleware.js';
@@ -15,6 +17,7 @@ import zoneRoutes from './Routes/zoneRoutes.js';
 import sequelize from './Config/database1.js';
 import categorieRoutes from './Routes/categorieRoutes.js';
 import contactMessage1 from './Model/contactMessage1.js';
+import Users from './Model/Users.js';
 import contactMessageRoutes from './Routes/messageContactRoutes.js';
 import demandeAbonnementRoutes from './Routes/demandeAbonnementRoutes.js';
 import entreprisesRoutes from './Routes/entreprisesRoutes.js';
@@ -32,6 +35,7 @@ app.use(cors({
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
+//app.use('/api/auth', usersRoutes);
 app.use('/api/demande', demandeAbonnementRoutes);
 app.use('/api/demande', entreprisesRoutes);
 app.use("/api/emails", emailRoutes);
