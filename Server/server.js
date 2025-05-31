@@ -16,6 +16,9 @@ import sequelize from './Config/database1.js';
 import categorieRoutes from './Routes/categorieRoutes.js';
 import contactMessage1 from './Model/contactMessage1.js';
 import contactMessageRoutes from './Routes/messageContactRoutes.js';
+import demandeAbonnementRoutes from './Routes/demandeAbonnementRoutes.js';
+import entreprisesRoutes from './Routes/entreprisesRoutes.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,8 +32,8 @@ app.use(cors({
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/demande', demandeAbonnRoute);
-app.use('/api/demande', entrepriceRoute);
+app.use('/api/demande', demandeAbonnementRoutes);
+app.use('/api/demande', entreprisesRoutes);
 app.use("/api/emails", emailRoutes);
 //app.use("/api/message", contactRoutes);
 app.use("/api/management", ManagementRoute);
@@ -41,7 +44,7 @@ app.use('/api/categories', categorieRoutes);
 app.use('/api/magasins', magasinRoutes);
 app.use('/api/zones', zoneRoutes);
 // Synchroniser Sequelize avec la base
-sequelize.sync({ force: false }) // force: true -> recrée les tables à chaque démarrage
+sequelize.sync({ alter: true }) // force: true -> recrée les tables à chaque démarrage
     .then(() => {
         console.log('Base synchronisée');
     })
