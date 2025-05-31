@@ -10,7 +10,12 @@ import entrepriceRoute from './Routes/entrepriseRoutes.js'
 import emailRoutes from "./Routes/SendEmailRoute.js";
 import contactRoutes from "./Routes/contactMessageRoute.js";
 import ManagementRoute from "./Routes/CategoriesManagementRoute.js";
-
+import magasinRoutes from './Routes/magasinRoutes.js';
+import zoneRoutes from './Routes/zoneRoutes.js';
+import sequelize from './Config/database1.js';
+import categorieRoutes from './Routes/categorieRoutes.js';
+import contactMessage1 from './Model/contactMessage1.js';
+import contactMessageRoutes from './Routes/messageContactRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,8 +32,28 @@ app.use('/api/auth', authRoutes);
 app.use('/api/demande', demandeAbonnRoute);
 app.use('/api/demande', entrepriceRoute);
 app.use("/api/emails", emailRoutes);
-app.use("/api/message", contactRoutes);
+//app.use("/api/message", contactRoutes);
 app.use("/api/management", ManagementRoute);
+app.use("/api/message", contactMessageRoutes);
+
+
+app.use('/api/categories', categorieRoutes);
+app.use('/api/magasins', magasinRoutes);
+app.use('/api/zones', zoneRoutes);
+// Synchroniser Sequelize avec la base
+sequelize.sync({ force: false }) // force: true -> recrée les tables à chaque démarrage
+    .then(() => {
+        console.log('Base synchronisée');
+    })
+    .catch(err => {
+        console.error('Erreur de synchronisation', err);
+    });
+
+//const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Serveur lancé sur le port ${PORT}`);
+});
+
 
 app.get('/',verifyUser,(req,res)=>{
     return res.json({ Status: "Success", name: req.name });

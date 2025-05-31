@@ -5,7 +5,8 @@ import {
   LayoutGrid, 
   Store, 
   MapPin,
-  ChevronRight
+  ChevronRight,
+  Database
 } from 'lucide-react';
 import "@/components/multilingue/i18n.js"
 import { useTranslation } from "react-i18next"
@@ -37,11 +38,11 @@ const ManagementPage: React.FC = () => {
           </div>
           
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <Link href="/magasin-management" passHref>  
+            <Link href="/display-data" passHref>  
               <ManagementCard 
-                title={t("magasinManagement")}
-                description={t("dashboardManagement.magasinManagementDescription")}
-                icon={<Store />}
+                title={t("databaseManagement")}
+                description={t("databaseManagementDesc")}
+                icon={<Database />}
                 accentColor="blue"
               />
             </Link>

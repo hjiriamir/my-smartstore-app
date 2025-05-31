@@ -136,8 +136,11 @@ i18n
           servicesOverview: "Check out our best services",
           invoiceManagement: "Invoice Management",
           inventoryManagement: "Inventory Management",
-          categoryManagement: "Category Management",
+          categoryManagement: "Management of Stores, Categories, and Zones",
           magasinManagement:"Store Management",
+          databaseManagement: "Management of available entities",
+          databaseManagementDesc: "View and manage all available stores, categories, and zones. Quickly access essential information for optimal and centralized organization.",
+
           zoneManagement:"Zone Management",
           productManagement: "Product Management",
           salesManagement: "Sales Management",
@@ -338,7 +341,7 @@ i18n
           },
           dashboardManagement:{
             title:"Dashboard Management",
-            categoryManagementDescription:"Create, structure, and manage your categories, subcategories, and attribution criteria to enrich your planograms and optimize the in-store experience.",
+            categoryManagementDescription:"Organize and manage stores, categories, and zones for centralized control and optimized store experience. Create, configure, and associate entities for greater consistency and effective planning.",
             magasinManagementDescription:"Manage all your stores, configure their spaces and zones, and link each store to its categories and planograms for consistent and centralized management.",
             zoneManagementDescription:"Set up and organize display areas within each store (e.g., entrance, shelves, walls) to optimize layout, traffic flow, and product presentation.",
             acceder:"Access",
@@ -374,7 +377,42 @@ i18n
               title:"Dashboard Management",
 
             },
+            headers: {
+              categorie_id: "Category ID",
+              nom: "Category Name",
+              parent_id: "Parent ID",
+              niveau: "Level",
+              saisonnalite: "Seasonality",
+              priorite: "Priority",
+              zone_exposition_preferee: "Preferred Display Zone",
+              clientele_ciblee: "Target Customers",
+              temperature_exposition: "Display Temperature",
+              conditionnement:"packaging",
+              magasin_id: "Store ID",
+              date_creation: "Creation Date",
+              date_modification: "Modification Date",
+            },
+            formulaire: {
+              addCategorie: "Add a category manually",
+              idCategoriePlaceholder: "Unique category ID",
+              iD_Placeholder: "Unique category ID",
+              namePlaceholder: "Category name",
+              selectMagasin: "Select a store",
+              orPutID: "Or enter an ID",
+              noParent: "No parent (root category)",
+              noCategorie: "No category available",
+              selectNiveau: "Select a level",
+              selectPriorite: "Select a priority",
+              saisonnalite: "Seasonality",
+              zone_preferee: "Preferred display area",
+              zone_preferee_placeholder: "Display area",
+              temperature: "Display temperature",
+              temperaturePlaceholder: "Temperature",
+              clinetel_cible: "Target clientele",
+              addCategBoutton: "Add Category",
 
+          },
+          
           },
           magasinImport: {
             title:"Store Import",
@@ -469,6 +507,25 @@ i18n
             zoneNomError:"Zone name is required",
             zoneImporter:"Zones imported",
             listeZones:"List of successfully imported zones",
+            zoneName:"Zone name",
+            headers: {
+              zone_id: "Zone ID",
+              nom_zone: "Zone Name",
+              magasin_id: "Store ID",
+              description: "Description",
+              emplacement: "Location",
+              date_creation: "Creation Date",
+              date_modification: "Modification Date"
+            },            
+            formulaire: {
+              addZone: "Add a zone manually",
+              zone_idPlaceholder: "Unique ID of the zone",
+              addZoneButton: "Add the zone",
+              zoneNameDescription: "Zone description",
+              emplacement: "Location in the store"
+
+            }
+            
           },
           combinedManagement:{
             bienvenue: "Welcome to the import tool",
@@ -503,11 +560,15 @@ i18n
             plusZones: "zone(s)",
             sauvegardEnCours: "Saving in progress...",
             sauvegarderDansBD: "Save to database",
+            sauvegardEnCours1:"Database dump in progress...",
+            sauvegarderDansBD1:"empty the database",
             success: "success",
             successSave: "Data saved successfully!",
             errorSave: "Error during saving",
             dataManagement: "Data Management",
-            commercialManagement: "Import and manage your commercial data"
+            commercialManagement: "Import and manage your commercial data",
+            seulMG:"store",
+            
           }
           ,
           productImport: {
@@ -1023,8 +1084,10 @@ i18n
           servicesOverview: "Découvrez nos meilleurs services",
           invoiceManagement: "Gestion des Factures",
           inventoryManagement: "Gestion des Stocks",
-          categoryManagement: "Gestion des Catégories",
+          categoryManagement: "Gestion des Magasins, Catégories et Zones",
           magasinManagement:"Gestion des magasins",
+          databaseManagement:"Gestion des entités disponibles",
+          databaseManagementDesc:"Visualisez et administrez l’ensemble des magasins, des catégories et des zones disponibles. Accédez rapidement aux informations essentielles pour une organisation optimale et centralisée.",
           zoneManagement:"Gestion des zones",
           productManagement: "Gestion des Produits",
           salesManagement: "Gestion des ventes",
@@ -1229,7 +1292,7 @@ i18n
           },
           dashboardManagement:{
             title:"Gestion du tableau de bord",
-            categoryManagementDescription:"Créez, structurez et gérez vos catégories, sous-catégories et critères d’attribution pour enrichir vos planogrammes et optimiser l’expérience en magasin.",
+            categoryManagementDescription:"Organisez et administrez l’ensemble des magasins, des catégories et des zones pour une gestion centralisée et une expérience magasin optimisée. Créez, configurez et associez les entités pour une meilleure cohérence et une planification efficace.",
             magasinManagementDescription:"Administrez l’ensemble de vos magasins, configurez leurs espaces et zones, et associez chaque magasin à ses catégories et planogrammes pour une gestion cohérente et centralisée.",
             zoneManagementDescription:"Configurez et organisez les zones d’exposition dans chaque magasin (par exemple : entrée, étagères, murs), afin d’optimiser l’aménagement, la circulation et la présentation des produits.",
             acceder:"Accéder",
@@ -1260,6 +1323,40 @@ i18n
               processing: "Traitement des données...",
               complete: "Importation terminée !",
             },
+            headers: {
+              categorie_id: "ID Catégorie",
+              nom: "Nom du Catégorie",
+              parent_id: "ID Parent",
+              niveau: "Niveau",
+              saisonnalite: "Saionnalité",
+              priorite: "Priorité",
+              zone_exposition_preferee: "Zone d'exposition préferée",
+              clientele_ciblee: "Clientèlz ciblée",
+              temperature_exposition: "Température d'exposition",
+              conditionnement:"Conditionnement",
+              magasin_id: "ID Magasin",
+              date_creation: "Date de création",
+              date_modification: "Date de modification",
+            },
+            formulaire:{
+            addCategorie:"Ajouter une catégorie manuellement",
+            idCategoriePlaceholder:"ID unique de la catégorie",
+            namePlaceholder:"Nom de la catégorie",
+            selectMagasin:"Sélectionner un magasin",
+            orPutID:"Ou saisir un ID",
+            noParent:"Aucun parent (catégorie racine)",
+            noCategorie:"Aucune catégorie disponible",
+            selectNiveau:"Sélectionner un niveau",
+            selectPriorite:"Sélectionner une priorité",
+            saisonnalite:"Saisonnalité",
+            zone_preferee:"Zone exposition préférée",
+            zone_preferee_placeholder:"Zone d'exposition",
+            temperature:"Température exposition",
+            temperaturePlaceholder:"Température",
+            clinetel_cible:"Clientèle ciblée",
+            addCategBoutton:"Ajouter la catégorie",
+            
+          },
           },
           magasinImport: {
             title:"Importation de magasins",
@@ -1352,6 +1449,23 @@ i18n
             zoneNomError:"Le nom de la zone est requis",
             zoneImporter:"Zones importées",
             listeZones:"Liste des zones importées avec succès",
+            zoneName:"Nom de la zone",
+            headers:{
+              zone_id:"ID Zone",
+              nom_zone:"Nom de la zone",
+              magasin_id:"ID Magasin",
+              description:"Description",
+              emplacement:"Emplacement",
+              date_creation:"Date de création",
+              date_modification:"Date de modification",
+            },
+            formulaire:{
+              addZone:"Ajouter une zone manuellement",
+              zone_idPlaceholder:"ID unique de la zone",
+              addZoneButton:"Ajouter la zone",
+              zoneNameDescription:"Description de la zone",
+              emplacement:"Emplacement dans le magasin",
+            },
           },
           combinedManagement:{
             bienvenue:"Bienvenue dans l'outil d'import",
@@ -1386,6 +1500,9 @@ i18n
             plusZones:"zone(s)",
             sauvegardEnCours:"Sauvegarde en cours...",
             sauvegarderDansBD:"Sauvegarder dans la base de données",
+            sauvegardEnCours1: "Sauvegarde de la base de données en cours...",
+            sauvegarderDansBD1: "Vider la base de données",
+
             success:"success",
             successSave:" Données sauvegardées avec succès !",
             errorSave:"Erreur lors de la sauvegarde",
@@ -1913,8 +2030,11 @@ i18n
           servicesOverview: "تطلع على أفضل الخدمات لدينا",
           invoiceManagement: "إدارة الفواتير",
           inventoryManagement: "إدارة المخزون",
-          categoryManagement: "إدارة الفئات",
+          categoryManagement: " إدارة المتاجر والفئات والمناطق",
           magasinManagement:"إدارة المتاجر",
+          databaseManagement: "إدارة الكيانات المتاحة",
+          databaseManagementDesc: "اعرض وأدِر جميع المتاجر والفئات والمناطق المتاحة. يمكنك الوصول بسرعة إلى المعلومات الأساسية لتحقيق تنظيم مثالي ومركزي.",
+
           zoneManagement:"إدارة المناطق",
           productManagement: "إدارة المنتجات",
           salesManagement: "إدارة المبيعات",
@@ -2113,7 +2233,7 @@ i18n
         },
         dashboardManagement:{
           title:"إدارة لوحة المعلومات",
-          categoryManagementDescription:"قم بإنشاء، وهيكلة، وإدارة الفئات، الفئات الفرعية، ومعايير التخصيص لتعزيز مخططات العرض وتحسين تجربة المتجر",
+          categoryManagementDescription:"نظّم وأدِر جميع المتاجر والفئات والمناطق لتحقيق إدارة مركزية وتجربة تسوّق محسنة. أنشئ، وخصص، واربط الكيانات لتحقيق انسجام أكبر وتخطيط فعّال.",
           magasinManagementDescription:"قم بإدارة جميع متاجرك، وتكوين مساحاتها ومناطقها، وربط كل متجر بفئاته ومخططات العرض لضمان إدارة متماسكة ومركزية",
           zoneManagementDescription:"قم بإعداد وتنظيم مناطق العرض داخل كل متجر (مثل: المدخل، الأرفف، الجدران) لتحسين التخطيط، حركة المرور، وعرض المنتجات",
           acceder:"الدخول ",
@@ -2144,6 +2264,42 @@ i18n
             processing: "... جاري معالجة البيانات",
             complete: "! تم الاستيراد بنجاح",
           },
+          headers: {
+            categorie_id: "معرف الفئة",
+            nom: "اسم الفئة",
+            parent_id: "معرف الأصل",
+            niveau: "المستوى",
+            saisonnalite: "الموسمية",
+            priorite: "الأولوية",
+            zone_exposition_preferee: "منطقة العرض المفضلة",
+            clientele_ciblee: "العملاء المستهدفون",
+            temperature_exposition: "درجة حرارة العرض",
+            conditionnement:"التعبئة والتغليف",
+            magasin_id: "معرف المتجر",
+            date_creation: "تاريخ الإنشاء",
+            date_modification: "تاريخ التعديل",
+
+          },
+          formulaire: {
+            addCategorie: "أضف فئة يدويًا",
+            idCategoriePlaceholder: "معرّف فريد للفئة",
+            namePlaceholder: "اسم الفئة",
+            selectMagasin: "اختر المتجر",
+            orPutID: "أو أدخل المعرّف",
+            noParent: "لا يوجد أصل (فئة جذرية)",
+            noCategorie: "لا توجد فئة متاحة",
+            selectNiveau: "اختر المستوى",
+            selectPriorite: "اختر الأولوية",
+            saisonnalite: "الموسمية",
+            zone_preferee: "منطقة العرض المفضلة",
+            zone_preferee_placeholder: "منطقة العرض",
+            temperature: "درجة حرارة العرض",
+            temperaturePlaceholder: "درجة الحرارة",
+            clinetel_cible: "العملاء المستهدفون",
+            addCategBoutton: "إضافة الفئة",
+
+        },
+        
         },
         magasinImport: {
           title:"استيراد المتاجر",
@@ -2173,7 +2329,7 @@ i18n
 
           hideFormulaire: "إخفاء النموذج",
           showFormulaire: "إظهار النموذج",
-          addMagasinDesc: "أضف متجراً يدوياً",
+          addMagasinDesc: "أضف متجرا يدوياً",
           addMagasin: "أضف المتجر",
           requiredName: "اسم المتجر*",
           requiredNamePlaceholder: "اسم المتجر",
@@ -2240,7 +2396,26 @@ i18n
           zoneNomError:"اسم المنطقة مطلوب",
           zoneImporter:"تم استيراد المناطق",
           listeZones:"قائمة المناطق التي تم استيرادها بنجاح",
+          zoneName:"اسم المنطقة",
+          headers: {
+            zone_id: "معرف المنطقة",
+            nom_zone: "اسم المنطقة",
+            magasin_id: "معرف المتجر",
+            description: "الوصف",
+            emplacement: "الموقع",
+            date_creation: "تاريخ الإنشاء",
+            date_modification: "تاريخ التعديل"
+          },
+          formulaire: {
+            addZone: "إضافة منطقة يدويًا",
+            zone_idPlaceholder: "معرف فريد للمنطقة",
+            addZoneButton: "أضف المنطقة",
+            zoneNameDescription: "وصف المنطقة",
+            emplacement: "الموقع داخل المتجر"
 
+
+          }
+          
         },
         combinedManagement:{
           bienvenue: "مرحبًا بك في أداة الاستيراد",
@@ -2275,11 +2450,14 @@ i18n
           plusZones: "منطقة(مناطق)",
           sauvegardEnCours: "جارٍ الحفظ...",
           sauvegarderDansBD: "الحفظ في قاعدة البيانات",
+          sauvegardEnCours1: "... جاري تفريغ قاعدة البيانات ",
+          sauvegarderDansBD1: "إفراغ قاعدة البيانات",
           success: "نجاح",
           successSave: "تم حفظ البيانات بنجاح!",
           errorSave: "خطأ أثناء الحفظ",
           dataManagement: "إدارة البيانات",
-          commercialManagement: "استيراد وإدارة بياناتك التجارية"
+          commercialManagement: "استيراد وإدارة بياناتك التجارية",
+          seulMG:"المتجر",
         }
         ,
           productImport: {

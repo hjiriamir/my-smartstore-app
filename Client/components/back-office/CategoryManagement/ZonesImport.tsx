@@ -581,14 +581,14 @@ const handleCancelEdit = () => {
                             value={columnMapping[column] || ""}
                             onChange={(e) => updateColumnMapping(column, e.target.value)}
                           >
-                            <option value="">-- Ignorer cette colonne --</option>
+                            <option value="">{t("productImport.columnsStep.ignoreColumn")}</option>
                             <option value="zone_id">ID Zone</option>
-                            <option value="nom_zone">Nom de la zone</option>
-                            <option value="magasin_id">ID Magasin</option>
-                            <option value="description">Description</option>
-                            <option value="emplacement">Emplacement</option>
-                            <option value="date_creation">Date création</option>
-                            <option value="date_modification">Date modification</option>
+                            <option value="nom_zone">{t("zoneImport.zoneName")}</option>
+                            <option value="magasin_id">{t("categoryImport.headers.magasin_id")}</option>
+                            <option value="description">{t("furnitureEditor.description")}</option>
+                            <option value="emplacement">{t("furnitureEditor.emplacement")}</option>
+                            <option value="date_creation">{t("categoryImport.headers.date_creation")}</option>
+                            <option value="date_modification">{t("categoryImport.headers.date_modification")}</option>
                           </select>
                         </div>
                       ))}
@@ -597,45 +597,61 @@ const handleCancelEdit = () => {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
-                <ScrollArea className="h-[200px] border rounded-md">
-                  <div className="p-4">
-                    <table className="w-full text-sm">
-                      <thead className="border-b">
-                        <tr>
-                          {Object.values(columnMapping)
-                            .filter(Boolean)
-                            .map((mappedColumn, index) => (
-                              <th key={index} className="p-2 text-left font-medium">
-                                {mappedColumn}
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {parsedData.slice(0, 5).map((row, rowIndex) => (
-                          <tr key={rowIndex} className="border-b">
-                            {Object.entries(columnMapping)
-                              .filter(([_, mappedColumn]) => mappedColumn)
-                              .map(([originalColumn, _], colIndex) => (
-                                <td key={colIndex} className="p-2">
-                                  {row[originalColumn] !== undefined && row[originalColumn] !== null
-                                    ? <span className="font-mono">{String(row[originalColumn])}</span>
-                                    : ""}
-                                </td>
-                              ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {parsedData.length > 5 && (
-                      <div className="p-2 text-center text-muted-foreground">
-                        + {parsedData.length - 5} {t("zoneImport.moreZone")}
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
+  <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
+  <div className="border rounded-md overflow-auto">
+    <ScrollArea className="h-[200px] w-full" orientation="horizontal">
+      <div className="p-4 min-w-max">
+        <table className={`w-full text-sm ${isRTL ? 'rtl-table' : 'ltr-table'}`}>
+          <thead className="border-b">
+            <tr>
+              {Object.values(columnMapping)
+                .filter(Boolean)
+                .map((mappedColumn, index) => (
+                  <th 
+                    key={index} 
+                    className="p-2 text-left font-medium whitespace-nowrap"
+                    style={{ 
+                      textAlign: isRTL ? 'right' : 'left',
+                      direction: isRTL ? 'rtl' : 'ltr'
+                    }}
+                  >
+                    {t(`zoneImport.headers.${mappedColumn}`)}
+                  </th>
+                ))}
+            </tr>
+          </thead>
+          <tbody>
+            {parsedData.slice(0, 5).map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b">
+                {Object.entries(columnMapping)
+                  .filter(([_, mappedColumn]) => mappedColumn)
+                  .map(([originalColumn, _], colIndex) => (
+                    <td 
+                      key={colIndex} 
+                      className="p-2 whitespace-nowrap"
+                      style={{
+                        textAlign: isRTL ? 'right' : 'left',
+                        direction: isRTL ? 'rtl' : 'ltr'
+                      }}
+                    >
+                      {row[originalColumn] !== undefined && row[originalColumn] !== null
+                        ? <span className="font-mono">{String(row[originalColumn])}</span>
+                        : ""}
+                    </td>
+                  ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {parsedData.length > 5 && (
+          <div className="p-2 text-center text-muted-foreground">
+            + {parsedData.length - 5} {t("productImport.moreProducts")}
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  </div>
+</div>
 
               {validationErrors.length > 0 && (
                 <Alert variant="destructive">
@@ -761,7 +777,7 @@ const handleCancelEdit = () => {
         onClick={() => setShowAddForm(!showAddForm)}
         className="mb-4"
       >
-        {showAddForm ? "Masquer le formulaire" : "Afficher le formulaire"}
+       {showAddForm ? t("magasinImport.hideFormulaire") : t("magasinImport.showFormulaire")}
       </Button>
     </div>
 
@@ -769,32 +785,32 @@ const handleCancelEdit = () => {
     {showAddForm && (
       <Card>
         <CardHeader>
-          <CardTitle>Ajouter une zone manuellement</CardTitle>
+          <CardTitle>{t("zoneImport.formulaire.addZone")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">ID Zone*</label>
+              <label className="text-sm font-medium">{t("zoneImport.headers.zone_id")}*</label>
               <Input
                 name="zone_id"
                 value={newZone.zone_id}
                 onChange={handleNewZoneChange}
-                placeholder="ID unique de la zone"
+                placeholder={t("zoneImport.formulaire.zone_idPlaceholder")}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nom de la zone*</label>
+              <label className="text-sm font-medium">{t("zoneImport.headers.nom_zone")}*</label>
               <Input
                 name="nom_zone"
                 value={newZone.nom_zone}
                 onChange={handleNewZoneChange}
-                placeholder="Nom de la zone"
+                placeholder={t("zoneImport.headers.nom_zone")}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">ID Magasin*</label>
+              <label className="text-sm font-medium">{t("categoryImport.headers.magasin_id")}*</label>
               <div className="flex gap-2">
               <select
                 name="magasin_id"
@@ -802,7 +818,7 @@ const handleCancelEdit = () => {
                 onChange={handleNewZoneChange}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="">Sélectionner un magasin</option>
+                <option value="">{t("categoryImport.formulaire.selectMagasin")}</option>
                 {importedMagasins.map((magasin) => (
                   <option key={magasin.magasin_id} value={magasin.magasin_id}>
                     {magasin.nom_magasin} (ID: {magasin.magasin_id})
@@ -813,33 +829,33 @@ const handleCancelEdit = () => {
                 name="magasin_id"
                 value={newZone.magasin_id || ""}
                 onChange={handleNewZoneChange}
-                placeholder="Ou saisir un ID"
+                placeholder={t("categoryImport.formulaire.orPutID")}
                 className="w-full"
                 required
               />
             </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
+              <label className="text-sm font-medium">{t("zoneImport.formulaire.zoneNameDescription")}</label>
               <Input
                 name="description"
                 value={newZone.description}
                 onChange={handleNewZoneChange}
-                placeholder="Description de la zone"
+                placeholder={t("zoneImport.formulaire.zoneNameDescription")}
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium">Emplacement</label>
+              <label className="text-sm font-medium">{t("locationTitle")}</label>
               <Input
                 name="emplacement"
                 value={newZone.emplacement}
                 onChange={handleNewZoneChange}
-                placeholder="Emplacement dans le magasin"
+                placeholder={t("zoneImport.formulaire.emplacement")}
               />
             </div>
           </div>
           <Button onClick={handleAddZone} className="mt-4">
-            Ajouter la zone
+          {t("zoneImport.formulaire.addZoneButton")}
           </Button>
         </CardContent>
       </Card>
@@ -847,17 +863,17 @@ const handleCancelEdit = () => {
 
     {/* Liste des zones avec fonctionnalités de modification/suppression */}
     <div className="space-y-2">
-      <h4 className="font-medium">Zones importées</h4>
+      <h4 className="font-medium">{t("zoneImport.zoneImporter")}</h4>
       <div className="relative">
         <div className="w-full overflow-x-auto">
           <table className="w-full text-sm" style={{ minWidth: "max-content" }}>
             <thead className="border-b">
               <tr>
-                <th className="p-2 text-left font-medium">Actions</th>
+                <th className="p-2 text-left font-medium">{t("Tactions")}</th>
                 {Object.keys(importedZones[0] || {}).map((key) => (
-                  <th key={key} className="p-2 text-left font-medium capitalize">
-                    {key.split('_').join(' ')}
-                  </th>
+                  <th key={key} className="fpreviewTitlep-2 text-left font-medium">
+                  {t(`zoneImport.headers.${key}`)}
+                </th>
                 ))}
               </tr>
             </thead>
@@ -871,12 +887,12 @@ const handleCancelEdit = () => {
                       size="sm"
                       onClick={() => handleDeleteZone(zone.zone_id)}
                     >
-                      Supprimer
+                      {t("productImport.delete")}
                     </Button>
                     {editingZone?.zone_id === zone.zone_id ? (
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveEdit}>Valider</Button>
-                        <Button variant="outline" size="sm" onClick={handleCancelEdit}>Annuler</Button>
+                        <Button size="sm" onClick={handleSaveEdit}> {t("magasinImport.valider1")}</Button>
+                        <Button variant="outline" size="sm" onClick={handleCancelEdit}>{t("cancel")}</Button>
                       </div>
                     ) : (
                       <Button 
@@ -884,7 +900,7 @@ const handleCancelEdit = () => {
                         size="sm"
                         onClick={() => handleStartEdit(zone)}
                       >
-                        Modifier
+                        {t("modifier")}
                       </Button>
                     )}
                   </td>

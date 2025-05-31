@@ -1,51 +1,71 @@
-export default (sequelize, DataTypes) => {
-    const Categorie1= sequelize.define('Categorie1', {
-      categorie_id: {
-        type: DataTypes.STRING,
+import { DataTypes } from 'sequelize';
+import sequelize from '../Config/database1.js';
+import magasin1 from './magasin1.js';
+
+const Categorie1 = sequelize.define('Categorie', {
+    // Clé primaire auto-incrémentée
+    id: {
+        type: DataTypes.INTEGER,
         primaryKey: true,
-      },
-      nom: {
+        autoIncrement: true,
+    },
+    // Identifiant unique fourni par l'utilisateur
+    categorie_id: {
         type: DataTypes.STRING,
         allowNull: false,
-      },
-      parent_id: {
+        unique: true,
+    },
+    nom: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    parent_id: {
         type: DataTypes.STRING,
         allowNull: true,
-        references: {
-          model: 'Categorie1',
-          key: 'categorie_id',
-        },
-        onDelete: 'SET NULL',
-        onUpdate: 'CASCADE',
+    },
+    niveau: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    saisonnalite: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    priorite: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    zone_exposition_preferee: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    temperature_exposition: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    conditionnement: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    clientele_ciblee: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    magasin_id: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      references: {         // déclaration FK
+        model: magasin1,    // table référencée
+        key: 'magasin_id',         // colonne référencée (clé primaire Magasin)
       },
-      niveau: DataTypes.STRING,
-      saisonnalite: DataTypes.STRING,
-      priorite: DataTypes.STRING,
-      zone_exposition_preferee: DataTypes.STRING,
-      temperature_exposition: DataTypes.STRING,
-      conditionnement: DataTypes.STRING,
-      clientele_ciblee: DataTypes.STRING,
-      magasin_id: DataTypes.STRING,
-      date_creation: DataTypes.DATE,
-      date_modification: DataTypes.DATE,
-    }, {
-      tableName: 'categorie1',
-      timestamps: false, 
-    });
-  
-    // ajouter des associations avec d'autres modèles :
-    Categorie.associate = (models) => {
-      Categorie.belongsTo(models.Categorie, {
-        foreignKey: 'parent_id',
-        as: 'parent',
-      });
-  
-      Categorie.hasMany(models.Categorie, {
-        foreignKey: 'parent_id',
-        as: 'subcategories',
-      });
-    };
-  
-    return Categorie1;
-  };
-  
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    }
+}, {
+    tableName: 'categories',
+    timestamps: true,
+    createdAt: 'date_creation',
+    updatedAt: 'date_modification',
+});
+
+export default Categorie1;

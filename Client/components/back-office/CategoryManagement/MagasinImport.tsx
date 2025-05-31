@@ -615,7 +615,7 @@ const handleCancelEdit = () => {
                             value={columnMapping[column] || ""}
                             onChange={(e) => updateColumnMapping(column, e.target.value)}
                           >
-                            <option value="">-- {t("productImport.columnsStep.ignoreColumn")} --</option>
+                            <option value=""> {t("productImport.columnsStep.ignoreColumn")}</option>
                             <option value="magasin_id">ID Magasin</option>
                             <option value="nom_magasin">{t("magasinImport.requiredNamePlaceholder")}</option>
                             <option value="surface">{t("magasinImport.surface")}</option>
@@ -632,46 +632,56 @@ const handleCancelEdit = () => {
                 </ScrollArea>
               </div>
 
+              
               <div className="space-y-4">
-                <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
-                <ScrollArea className="h-[200px] border rounded-md">
-                  <div className="p-4">
-                    <table className="w-full text-sm">
-                      <thead className="border-b">
-                        <tr>
-                          {Object.values(columnMapping)
-                            .filter(Boolean)
-                            .map((mappedColumn, index) => (
-                              <th key={index} className="p-2 text-left font-medium">
-                                {mappedColumn}
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {parsedData.slice(0, 5).map((row, rowIndex) => (
-                          <tr key={rowIndex} className="border-b">
-                            {Object.entries(columnMapping)
-                              .filter(([_, mappedColumn]) => mappedColumn)
-                              .map(([originalColumn, _], colIndex) => (
-                                <td key={colIndex} className="p-2">
-                                  {row[originalColumn] !== undefined && row[originalColumn] !== null
-                                    ? <span className="font-mono">{String(row[originalColumn])}</span>
-                                    : ""}
-                                </td>
-                              ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {parsedData.length > 5 && (
-                      <div className="p-2 text-center text-muted-foreground">
-                        + {parsedData.length - 5} {t("magasinImport.otherStores")}
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
+  <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
+  <div className="border rounded-md overflow-auto">
+    <ScrollArea className="h-[200px] w-full" orientation="horizontal">
+      <div className="p-4 min-w-max">
+        <table className={`w-full text-sm ${isRTL ? 'rtl-table' : 'ltr-table'}`}>
+          <thead className="border-b">
+            <tr>
+              {Object.values(columnMapping)
+                .filter(Boolean)
+                .map((mappedColumn, index) => (
+                  <th 
+                    key={index} 
+                    className="p-2 text-left font-medium whitespace-nowrap"
+                    style={{ 
+                      textAlign: isRTL ? 'right' : 'left',
+                      direction: isRTL ? 'rtl' : 'ltr'
+                    }}
+                  >
+                    {t(`magasinImport.headers.${mappedColumn}`)}
+                  </th>
+                ))}
+            </tr>
+          </thead>
+          <tbody>
+            {parsedData.slice(0, 5).map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b">
+                {Object.entries(columnMapping)
+                  .filter(([_, mappedColumn]) => mappedColumn)
+                  .map(([originalColumn, _], colIndex) => (
+                    <td key={colIndex} className="p-2 whitespace-nowrap">
+                      {row[originalColumn] !== undefined && row[originalColumn] !== null
+                        ? <span className="font-mono">{String(row[originalColumn])}</span>
+                        : ""}
+                    </td>
+                  ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {parsedData.length > 5 && (
+          <div className="p-2 text-center text-muted-foreground">
+            + {parsedData.length - 5} {t("magasinImport.otherStores")}
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  </div>
+</div>
 
               {validationErrors.length > 0 && (
                 <Alert variant="destructive">
@@ -893,15 +903,15 @@ const handleCancelEdit = () => {
         <div className="w-full overflow-x-auto">
           <table className="w-full text-sm" style={{ minWidth: "max-content" }}>
           <thead className="border-b">
-            <tr>
-              <th className="p-2 text-left font-medium">{t("Tactions")}</th>
-              {Object.keys(importedStores[0] || {}).map((key) => (
-                <th key={key} className="p-2 text-left font-medium">
-                  {t(`magasinImport.headers.${key}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
+          <tr>
+            <th className="p-2 text-left font-medium">{t("Tactions")}</th>
+            {Object.keys(importedStores[0] || {}).map((key) => (
+              <th key={key} className="fpreviewTitlep-2 text-left font-medium">
+                {t(`magasinImport.headers.${key}`)}
+              </th>
+            ))}
+          </tr>
+        </thead>
             <tbody>
               {importedStores.map((store, index) => (
                 <tr key={index} className="border-b hover:bg-muted/50">

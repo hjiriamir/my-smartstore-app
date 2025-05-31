@@ -682,9 +682,9 @@ const handleCancelEdit = () => {
           {step === 2 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">{t("categoryImport.columnsStep.title")}</h3>
+                <h3 className="text-lg font-medium">{t("productImport.columnsStep.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {t("categoryImport.columnsStep.description")}
+                  {t("productImport.columnsStep.description")}
                 </p>
               </div>
 
@@ -704,20 +704,20 @@ const handleCancelEdit = () => {
                             value={columnMapping[column] || ""}
                             onChange={(e) => updateColumnMapping(column, e.target.value)}
                           >
-                            <option value="">-- Ignorer cette colonne --</option>
+                            <option value="">-- {t("productImport.columnsStep.ignoreColumn")} --</option>
                             <option value="categorie_id">ID Catégorie</option>
-                            <option value="nom">Nom</option>
-                            <option value="parent_id">ID Parent</option>
-                            <option value="niveau">Niveau</option>
-                            <option value="saisonnalite">Saisonnalité</option>
-                            <option value="priorite">Priorité</option>
-                            <option value="zone_exposition_preferee">Zone exposition préférée</option>
-                            <option value="temperature_exposition">Température exposition</option>
-                            <option value="conditionnement">Conditionnement</option>
-                            <option value="clientele_ciblee">Clientèle ciblée</option>
-                            <option value="magasin_id">ID Magasin</option>
-                            <option value="date_creation">Date création</option>
-                            <option value="date_modification">Date modification</option>
+                            <option value="nom">{t("categoryImport.headers.nom")}</option>
+                            <option value="parent_id">{t("categoryImport.headers.parent_id")}</option>
+                            <option value="niveau">{t("categoryImport.headers.niveau")}</option>
+                            <option value="saisonnalite">{t("categoryImport.headers.saisonnalite")}</option>
+                            <option value="priorite">{t("categoryImport.headers.priorite")}</option>
+                            <option value="zone_exposition_preferee">{t("categoryImport.headers.zone_exposition_preferee")}</option>
+                            <option value="temperature_exposition">{t("categoryImport.headers.clientele_ciblee")}</option>
+                            <option value="conditionnement">{t("categoryImport.headers.temperature_exposition")}</option>
+                            <option value="clientele_ciblee">{t("categoryImport.headers.conditionnement")}</option>
+                            <option value="magasin_id">{t("categoryImport.headers.magasin_id")}</option>
+                            <option value="date_creation">{t("categoryImport.headers.date_creation")}</option>
+                            <option value="date_modification">{t("categoryImport.headers.date_modification")}</option>
                           </select>
                         </div>
                       ))}
@@ -726,45 +726,55 @@ const handleCancelEdit = () => {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
-                <ScrollArea className="h-[200px] border rounded-md">
-                  <div className="p-4">
-                    <table className="w-full text-sm">
-                      <thead className="border-b">
-                        <tr>
-                          {Object.values(columnMapping)
-                            .filter(Boolean)
-                            .map((mappedColumn, index) => (
-                              <th key={index} className="p-2 text-left font-medium">
-                                {mappedColumn}
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-  {parsedData.slice(0, 5).map((row, rowIndex) => (
-    <tr key={rowIndex} className="border-b">
-      {Object.entries(columnMapping)
-        .filter(([_, mappedColumn]) => mappedColumn)
-        .map(([originalColumn, _], colIndex) => (
-          <td key={colIndex} className="p-2">
-            {row[originalColumn] !== undefined && row[originalColumn] !== null
-              ? <span className="font-mono">{String(row[originalColumn])}</span>
-              : ""}
-          </td>
-        ))}
-    </tr>
-  ))}
-</tbody>
-                    </table>
-                    {parsedData.length > 5 && (
-                      <div className="p-2 text-center text-muted-foreground">
-                        + {parsedData.length - 5} {t("categoryImport.columnsStep.otherCategories")}
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
+  <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
+  <div className="border rounded-md overflow-auto">
+    <ScrollArea className="h-[200px] w-full" orientation="horizontal">
+      <div className="p-4 min-w-max">
+        <table className={`w-full text-sm ${isRTL ? 'rtl-table' : 'ltr-table'}`}>
+          <thead className="border-b">
+            <tr>
+              {Object.values(columnMapping)
+                .filter(Boolean)
+                .map((mappedColumn, index) => (
+                  <th
+                    key={index}
+                    className="p-2 text-left font-medium whitespace-nowrap"
+                    style={{
+                      textAlign: isRTL ? 'right' : 'left',
+                      direction: isRTL ? 'rtl' : 'ltr'
+                    }}
+                  >
+                    {t(`categoryImport.headers.${mappedColumn}`)}
+                  </th>
+                ))}
+            </tr>
+          </thead>
+          <tbody>
+            {parsedData.slice(0, 5).map((row, rowIndex) => (
+              <tr key={rowIndex} className="border-b">
+                {Object.entries(columnMapping)
+                  .filter(([_, mappedColumn]) => mappedColumn)
+                  .map(([originalColumn, _], colIndex) => (
+                    <td key={colIndex} className="p-2 whitespace-nowrap">
+                      {row[originalColumn] !== undefined && row[originalColumn] !== null
+                        ? <span className="font-mono">{String(row[originalColumn])}</span>
+                        : ""}
+                    </td>
+                  ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {parsedData.length > 5 && (
+          <div className="p-2 text-center text-muted-foreground">
+            + {parsedData.length - 5} {t("categoryImport.columnsStep.otherCategories")}
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  </div>
+</div>
+
 
               {validationErrors.length > 0 && (
                 <Alert variant="destructive">
@@ -888,7 +898,7 @@ const handleCancelEdit = () => {
         onClick={() => setShowAddForm(!showAddForm)}
         className="mb-4"
       >
-        {showAddForm ? "Masquer le formulaire" : "Afficher le formulaire"}
+         {showAddForm ? t("magasinImport.hideFormulaire") : t("magasinImport.showFormulaire")}
       </Button>
     </div>
 
@@ -896,32 +906,32 @@ const handleCancelEdit = () => {
     {showAddForm && (
     <Card>
       <CardHeader>
-        <CardTitle>Ajouter une catégorie manuellement</CardTitle>
+        <CardTitle>{t("categoryImport.formulaire.addCategorie")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">ID Catégorie*</label>
+            <label className="text-sm font-medium">{t("categoryImport.headers.categorie_id")}*</label>
             <Input
               name="categorie_id"
               value={newCategory.categorie_id}
               onChange={handleNewCategoryChange}
-              placeholder="ID unique de la catégorie"
+              placeholder={t("categoryImport.formulaire.idCategoriePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nom*</label>
+            <label className="text-sm font-medium">{t("categoryImport.headers.nom")}*</label>
             <Input
               name="nom"
               value={newCategory.nom}
               onChange={handleNewCategoryChange}
-              placeholder="Nom de la catégorie"
+              placeholder={t("categoryImport.formulaire.namePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-    <label className="text-sm font-medium">ID Magasin</label>
+    <label className="text-sm font-medium">{t("magasinImport.headers.magasin_id")}</label>
     <div className="flex gap-2">
               <select
                 name="magasin_id"
@@ -929,10 +939,10 @@ const handleCancelEdit = () => {
                 onChange={handleNewCategoryChange}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="">Sélectionner un magasin</option>
+                <option value="">{t("categoryImport.formulaire.selectMagasin")}</option>
                 {importedMagasins.map((magasin) => (
                   <option key={magasin.magasin_id} value={magasin.magasin_id}>
-                    {magasin.nom_magasin} (ID: {magasin.magasin_id})
+                    {magasin.nom_magasin} ({t("productImport.id")}: {magasin.magasin_id})
                   </option>
                 ))}
               </select>
@@ -940,20 +950,20 @@ const handleCancelEdit = () => {
                 name="magasin_id"
                 value={newCategory.magasin_id || ""}
                 onChange={handleNewCategoryChange}
-                placeholder="Ou saisir un ID"
+                placeholder={t("categoryImport.formulaire.orPutID")}
                 className="w-full"
               />
             </div>
   </div>
           <div className="space-y-2">
-  <label className="text-sm font-medium">ID Parent</label>
+  <label className="text-sm font-medium">{t("categoryImport.headers.parent_id")}</label>
   <select
     name="parent_id"
     value={newCategory.parent_id || ""}
     onChange={handleNewCategoryChange}
     className="w-full p-2 border rounded-md"
   >
-    <option value="">Aucun parent (catégorie racine)</option>
+    <option value="">{t("categoryImport.formulaire.noParent")}</option>
     {existingCategories && existingCategories.length > 0 ? (
       existingCategories.map((category) => (
         <option key={category.categorie_id} value={category.categorie_id}>
@@ -961,19 +971,19 @@ const handleCancelEdit = () => {
         </option>
       ))
     ) : (
-      <option disabled>Aucune catégorie disponible</option>
+      <option disabled>{t("categoryImport.formulaire.noCategorie")}</option>
     )}
   </select>
 </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Niveau</label>
+            <label className="text-sm font-medium">{t("categoryImport.headers.niveau")}</label>
             <select
               name="niveau"
               value={newCategory.niveau}
               onChange={handleNewCategoryChange}
               className="w-full p-2 border rounded-md"
             >
-              <option value="">Sélectionner un niveau</option>
+              <option value="">{t("categoryImport.formulaire.selectNiveau")}</option>
               {niveauOptions.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -982,14 +992,14 @@ const handleCancelEdit = () => {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Priorité</label>
+            <label className="text-sm font-medium">{t("categoryImport.headers.priorite")}</label>
             <select
               name="priorite"
               value={newCategory.priorite}
               onChange={handleNewCategoryChange}
               className="w-full p-2 border rounded-md"
             >
-              <option value="">Sélectionner une priorité</option>
+              <option value="">{t("categoryImport.formulaire.selectPriorite")}</option>
               {prioriteOptions.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -998,300 +1008,146 @@ const handleCancelEdit = () => {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Saisonnalité</label>
+            <label className="text-sm font-medium">{t("categoryImport.formulaire.saisonnalite")}</label>
             <Input
               name="saisonnalite"
               value={newCategory.saisonnalite}
               onChange={handleNewCategoryChange}
-              placeholder="Saisonnalité"
+              placeholder={t("categoryImport.formulaire.saisonnalite")}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Zone exposition préférée</label>
+            <label className="text-sm font-medium">{t("categoryImport.formulaire.zone_preferee")}</label>
             <Input
               name="zone_exposition_preferee"
               value={newCategory.zone_exposition_preferee}
               onChange={handleNewCategoryChange}
-              placeholder="Zone d'exposition"
+              placeholder={t("categoryImport.formulaire.zone_preferee_placeholder")}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Température exposition</label>
+            <label className="text-sm font-medium">{t("categoryImport.formulaire.temperature")}</label>
             <Input
               name="temperature_exposition"
               value={newCategory.temperature_exposition}
               onChange={handleNewCategoryChange}
-              placeholder="Température"
+              placeholder={t("categoryImport.formulaire.temperaturePlaceholder")}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Conditionnement</label>
+            <label className="text-sm font-medium">{t("categoryImport.headers.conditionnement")}</label>
             <Input
               name="conditionnement"
               value={newCategory.conditionnement}
               onChange={handleNewCategoryChange}
-              placeholder="Conditionnement"
+              placeholder={t("categoryImport.headers.conditionnement")}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Clientèle ciblée</label>
+            <label className="text-sm font-medium">{t("categoryImport.formulaire.clinetel_cible")}</label>
             <Input
               name="clientele_ciblee"
               value={newCategory.clientele_ciblee}
               onChange={handleNewCategoryChange}
-              placeholder="Clientèle cible"
+              placeholder={t("categoryImport.formulaire.clinetel_cible")}
             />
           </div>
           
         </div>
         <Button onClick={handleAddCategory} className="mt-4">
-          Ajouter la catégorie
+        {t("categoryImport.formulaire.addCategBoutton")}
         </Button>
       </CardContent>
     </Card>
  )}
     {/* Liste des catégories existantes */}
     <div className="space-y-2">
-  <h4 className="font-medium">Catégories importées</h4>
+  <h4 className="font-medium">{t("categoryImport.validCategoryImport")}</h4>
   <div className="relative">
-    {/* Conteneur avec scroll horizontal seulement */}
     <div className="w-full overflow-x-auto">
-      {/* Tableau avec largeur adaptée au contenu */}
       <table className="w-full text-sm" style={{ minWidth: "max-content" }}>
         <thead className="border-b">
           <tr>
-          <th className="p-2 text-left font-medium">Actions</th>
-            <th className="p-2 text-left font-medium">ID Catégorie</th>
-            <th className="p-2 text-left font-medium">Nom</th>
-            <th className="p-2 text-left font-medium">ID Parent</th>
-            <th className="p-2 text-left font-medium">Niveau</th>
-            <th className="p-2 text-left font-medium">Saisonnalité</th>
-            <th className="p-2 text-left font-medium">Priorité</th>
-            <th className="p-2 text-left font-medium">Zone exposition</th>
-            <th className="p-2 text-left font-medium">Température</th>
-            <th className="p-2 text-left font-medium">Conditionnement</th>
-            <th className="p-2 text-left font-medium">Clientèle</th>
-            <th className="p-2 text-left font-medium">ID Magasin</th>
-            <th className="p-2 text-left font-medium">Date création</th>
-           
+            <th className="p-2 text-left font-medium">{t("Tactions")}</th>
+            {Object.keys(importedCategories[0] || {}).map((key) => (
+              <th key={key} className="p-2 text-left font-medium">
+                {t(`categoryImport.headers.${key}`)}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
-  {importedCategories.map((category, index) => (
-    <tr key={index} className="border-b hover:bg-muted/50">
-      {/* Colonne Actions */}
-      <td className="p-2 flex gap-2">
-        <Button 
-          variant="destructive" 
-          size="sm"
-          onClick={() => handleDeleteCategory(category.categorie_id)}
-        >
-          Supprimer
-        </Button>
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleSaveEdit}>Valider</Button>
-            <Button variant="outline" size="sm" onClick={handleCancelEdit}>Annuler</Button>
-          </div>
-        ) : (
-          <Button 
-            variant="secondary" 
-            size="sm"
-            onClick={() => handleStartEdit(category)}
-          >
-            Modifier
-          </Button>
-        )}
-      </td>
+          {importedCategories.map((category, index) => (
+            <tr key={index} className="border-b hover:bg-muted/50">
+              {/* Colonne Actions */}
+              <td className="p-2 flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => handleDeleteCategory(category.categorie_id)}
+                >
+                  {t("productImport.delete")}
+                </Button>
+                {editingCategory?.categorie_id === category.categorie_id ? (
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSaveEdit}>{t("magasinImport.valider1")}</Button>
+                    <Button variant="outline" size="sm" onClick={handleCancelEdit}>{t("cancel")}</Button>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => handleStartEdit(category)}
+                  >
+                    {t("modifier")}
+                  </Button>
+                )}
+              </td>
 
-      {/* ID Catégorie */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'categorie_id' ? editField.value : category.categorie_id}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'categorie_id', category.categorie_id)}
-            onChange={(e) => setEditField({key: 'categorie_id', value: e.target.value})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'categorie_id', category.categorie_id)}>
-            {category.categorie_id || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Nom */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'nom' ? editField.value : category.nom}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'nom', category.nom)}
-            onChange={(e) => setEditField({key: 'nom', value: e.target.value})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'nom', category.nom)}>
-            {category.nom || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* ID Parent */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'parent_id' ? editField.value : category.parent_id || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'parent_id', category.parent_id)}
-            onChange={(e) => setEditField({key: 'parent_id', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'parent_id', category.parent_id)}>
-            {category.parent_id || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Niveau */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id && editField?.key === 'niveau' ? (
-          <select
-            value={editField.value || ""}
-            onChange={(e) => setEditField({key: 'niveau', value: e.target.value ? parseInt(e.target.value) : undefined})}
-            className="w-full p-2 border rounded-md"
-          >
-            <option value="">-</option>
-            {niveauOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'niveau', category.niveau)}>
-            {getNiveauLabel(category.niveau)}
-          </span>
-        )}
-      </td>
-
-      {/* Saisonnalité */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'saisonnalite' ? editField.value : category.saisonnalite || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'saisonnalite', category.saisonnalite)}
-            onChange={(e) => setEditField({key: 'saisonnalite', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'saisonnalite', category.saisonnalite)}>
-            {category.saisonnalite || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Priorité */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id && editField?.key === 'priorite' ? (
-          <select
-            value={editField.value || ""}
-            onChange={(e) => setEditField({key: 'priorite', value: e.target.value ? parseInt(e.target.value) : undefined})}
-            className="w-full p-2 border rounded-md"
-          >
-            <option value="">-</option>
-            {prioriteOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'priorite', category.priorite)}>
-            {getPrioriteLabel(category.priorite)}
-          </span>
-        )}
-      </td>
-
-      {/* Zone exposition préférée */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'zone_exposition_preferee' ? editField.value : category.zone_exposition_preferee || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'zone_exposition_preferee', category.zone_exposition_preferee)}
-            onChange={(e) => setEditField({key: 'zone_exposition_preferee', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'zone_exposition_preferee', category.zone_exposition_preferee)}>
-            {category.zone_exposition_preferee || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Température exposition */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'temperature_exposition' ? editField.value : category.temperature_exposition || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'temperature_exposition', category.temperature_exposition)}
-            onChange={(e) => setEditField({key: 'temperature_exposition', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'temperature_exposition', category.temperature_exposition)}>
-            {category.temperature_exposition || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Conditionnement */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'conditionnement' ? editField.value : category.conditionnement || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'conditionnement', category.conditionnement)}
-            onChange={(e) => setEditField({key: 'conditionnement', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'conditionnement', category.conditionnement)}>
-            {category.conditionnement || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Clientèle ciblée */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'clientele_ciblee' ? editField.value : category.clientele_ciblee || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'clientele_ciblee', category.clientele_ciblee)}
-            onChange={(e) => setEditField({key: 'clientele_ciblee', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'clientele_ciblee', category.clientele_ciblee)}>
-            {category.clientele_ciblee || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* ID Magasin */}
-      <td className="p-2">
-        {editingCategory?.categorie_id === category.categorie_id ? (
-          <Input
-            value={editField?.key === 'magasin_id' ? editField.value : category.magasin_id || ""}
-            onDoubleClick={() => handleFieldDoubleClick(category, 'magasin_id', category.magasin_id)}
-            onChange={(e) => setEditField({key: 'magasin_id', value: e.target.value || undefined})}
-          />
-        ) : (
-          <span onDoubleClick={() => handleFieldDoubleClick(category, 'magasin_id', category.magasin_id)}>
-            {category.magasin_id || "-"}
-          </span>
-        )}
-      </td>
-
-      {/* Date création (non éditable) */}
-      <td className="p-2">
-        {category.date_creation 
-          ? new Date(category.date_creation).toLocaleString() 
-          : "-"}
-      </td>
-    </tr>
-  ))}
-</tbody>
+              {/* Autres colonnes */}
+              {Object.entries(category).map(([key, value]) => (
+                <td key={key} className="p-2">
+                  {editingCategory?.categorie_id === category.categorie_id && editField?.key === key ? (
+                    key === 'niveau' || key === 'priorite' ? (
+                      <select
+                        value={editField.value || ""}
+                        onChange={(e) => {
+                          const val = e.target.value ? parseInt(e.target.value) : undefined;
+                          setEditField({key, value: val});
+                        }}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="">-</option>
+                        {(key === 'niveau' ? niveauOptions : prioriteOptions).map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        value={editField.value || ""}
+                        onChange={(e) => setEditField({key, value: e.target.value})}
+                      />
+                    )
+                  ) : (
+                    <span onDoubleClick={() => handleFieldDoubleClick(category, key, value)}>
+                      {value === undefined || value === null || value === "" 
+                        ? "-" 
+                        : key === 'niveau'
+                          ? getNiveauLabel(value)
+                          : key === 'priorite'
+                            ? getPrioriteLabel(value)
+                            : key === 'date_creation'
+                              ? new Date(value).toLocaleString()
+                              : String(value)}
+                    </span>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
   </div>

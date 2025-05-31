@@ -118,3 +118,25 @@
 .flipped {
   transform: scaleX(-1);
 }
+.rtl-table {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Tahoma', 'Arial', sans-serif;
+}
+.rtl-table th, .rtl-table td {
+  text-align: right;
+  padding: 8px 12px;
+}
+
+.ltr-table {
+  direction: ltr;
+  text-align: left;
+}
+
+.rtl-cell {
+  text-align: right;
+  font-family: 'Tahoma', 'Arial', sans-serif;
+}
+[data-radix-scroll-area-viewport] {
+  overflow: auto !important;
+}

@@ -24,3 +24,24 @@ export const createmagasins = (magasins, callback) => {
     
     db.query(sql, [values], callback);
 };
+
+export const getAllMagasin = (callback) => {
+    const sql = "SELECT * FROM magasin";
+    db.query(sql, callback);
+};
+
+export const updateMagasin = (id, fieldsToUpdate, callback) => {
+    // Extraire les colonnes et les valeurs à mettre à jour
+    const columns = Object.keys(fieldsToUpdate);
+    const values = Object.values(fieldsToUpdate);
+
+    // Construire dynamiquement la clause SET
+    const setClause = columns.map(column => `${column} = ?`).join(', ');
+
+    const sql = `UPDATE magasin SET ${setClause} WHERE id = ?`;
+
+    // Ajoute l'id à la fin du tableau des valeurs
+    const params = [...values, id];
+
+    db.query(sql, params, callback);
+};

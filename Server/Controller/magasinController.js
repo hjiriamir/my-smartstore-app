@@ -1,4 +1,4 @@
-import { createmagasin, createmagasins } from '../Model/magasin.js';
+import { createmagasin, createmagasins, getAllMagasin, updateMagasin } from '../Model/magasin.js';
 
 
 
@@ -29,5 +29,47 @@ export const createNewMagasins = (req, res) => {
             return res.status(500).json({ Error: "Erreur lors de l'ajout des magasins" });
         }
         return res.json({ status: "Success magasins ajoutées", result });
+    });
+};
+
+export const getAllMagasinsController = (req, res) => {
+    getAllMagasin((err, results) => {
+        if (err) {
+            console.error("Erreur lors de la récupération des magasins :", err);
+            return res.status(500).json({ error: 'Erreur lors de la récupération des magasins' });
+        }
+        res.status(200).json(results);
+    });
+};
+
+/*export const updateMagasinController = (req, res) => {
+    const id = req.params.id; 
+    const magasin = req.body;
+    magasin.id = id; 
+
+    updateMagasin(magasin, (err, result) => {
+        if (err) {
+            console.error("Erreur lors de la mise à jour du magasin :", err);
+            return res.status(500).json({ error: "Erreur lors de la mise à jour du magasin" });
+        }
+
+        res.status(200).json({ message: "Magasin mis à jour avec succès", result });
+    });
+};*/
+export const updateMagasinController = (req, res) => {
+    const id = req.params.id; 
+    const fieldsToUpdate = req.body;
+
+    if (Object.keys(fieldsToUpdate).length === 0) {
+        return res.status(400).json({ error: "Aucun champ à mettre à jour" });
+    }
+
+    updateMagasin(id, fieldsToUpdate, (err, result) => {
+        if (err) {
+            console.error("Erreur lors de la mise à jour du magasin :", err);
+            return res.status(500).json({ error: "Erreur lors de la mise à jour du magasin" });
+        }
+
+        res.status(200).json({ message: "Magasin mis à jour avec succès", result });
     });
 };

@@ -43,6 +43,7 @@
     "@react-three/drei": "latest",
     "@react-three/fiber": "latest",
     "@types/hoist-non-react-statics": "latest",
+    "@vitejs/plugin-react": "^4.5.0",
     "antd": "^5.25.2",
     "autoprefixer": "^10.4.20",
     "axios": "^1.8.3",

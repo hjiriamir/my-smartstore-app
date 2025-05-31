@@ -1,0 +1,136 @@
+/* Conteneur principal */
+.display-data-container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 50px;
+  }
+  
+  /* Titre principal */
+  .display-data-container h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 32px;
+    color: #333;
+  }
+  
+  /* Sous-sections (Stores, Categories, Zones) */
+  .section {
+    background-color: #f9fafb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .section-header h2 {
+    font-size: 1.5rem;
+    color: #0070f3;
+    text-align: center;
+  }
+  
+  .section-header button {
+    border: none;
+    background-color: transparent;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  
+  .section-header button:hover {
+    color: #1890ff;
+  }
+  
+  /* Table avec des bordures modernes */
+  .ant-table {
+    border-radius: 8px !important;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+  }
+  
+  .ant-table-thead > tr > th {
+    background-color: #0070f3;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .ant-table-tbody > tr:hover {
+    background-color: #f0f8ff;
+    cursor: pointer;
+  }
+  
+  /* Cellule en édition */
+  .editing-cell input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #1890ff;
+    border-radius: 4px;
+  }
+  
+  /* Boutons d'action */
+  button.ant-btn {
+    margin-right: 8px;
+  }
+  
+  .ant-btn-dangerous {
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+  }
+  
+  .ant-btn-dangerous:hover {
+    background-color: #ff7875;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .display-data-container h1 {
+      font-size: 1.5rem;
+    }
+  
+    .section-header h2 {
+      font-size: 1.2rem;
+    }
+  
+    .ant-table {
+      font-size: 0.85rem;
+    }
+  }
+  .main-title {
+    text-align: center;
+    font-size: 2.5rem; /* Taille plus grande */
+    margin-bottom: 32px;
+    color: #1a202c; /* Couleur sombre et élégante */
+    font-weight: 700;
+    letter-spacing: 1px; /* Espacement subtil */
+    text-transform: uppercase; /* Optionnel pour effet pro */
+    position: relative;
+    padding-bottom: 12px;
+  }
+  
+  .main-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background-color: #0070f3; /* Ligne colorée sous le titre */
+    border-radius: 2px;
+  }
+  

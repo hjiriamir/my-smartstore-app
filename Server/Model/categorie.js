@@ -58,3 +58,47 @@ export const createcategories = (categories, callback) => {
         });
     });
 };
+export const getAllCategories = (callback) => {
+    const sql = "SELECT * FROM categorie";
+    db.query(sql, callback);
+};
+
+/*export const updateCategorie = (categorie, callback) => {
+    const { id, categorie_id , nom , parent_id , niveau , saisonnalite , priorite , zone_exposition_preferee, temperature_exposition, conditionnement, clientele_ciblee, magasin_id, date_creation, date_modification } = categorie;
+
+    const sql = `
+        UPDATE categorie
+        SET 
+            categorie_id = ?,
+            nom = ?, 
+            parent_id = ?, 
+            niveau = ?, 
+            saisonnalite = ?, 
+            priorite = ?, 
+            zone_exposition_preferee = ?, 
+            temperature_exposition = ?,
+            conditionnement = ?,
+            clientele_ciblee = ?,
+            magasin_id = ?,
+            date_creation = ?, 
+            date_modification = ?
+        WHERE id = ?
+    `;
+
+    db.query(sql, [categorie_id , nom , parent_id , niveau , saisonnalite , priorite , zone_exposition_preferee, temperature_exposition, conditionnement, clientele_ciblee, magasin_id, date_creation, date_modification, id], callback);
+};*/
+export const updateCategorie = (id, fieldsToUpdate, callback) => {
+    // Extraire les colonnes et les valeurs à mettre à jour
+    const columns = Object.keys(fieldsToUpdate);
+    const values = Object.values(fieldsToUpdate);
+
+    // Construire dynamiquement la clause SET
+    const setClause = columns.map(column => `${column} = ?`).join(', ');
+
+    const sql = `UPDATE categorie SET ${setClause} WHERE id = ?`;
+
+    // Ajoute l'id à la fin du tableau des valeurs
+    const params = [...values, id];
+
+    db.query(sql, params, callback);
+};

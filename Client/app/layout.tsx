@@ -45,6 +45,7 @@ const noHeaderFooterRoutes = [
   '/magasin-management',
   '/zones-management',
   '/combined-management',
+  '/display-data',
 ];
 
 const topBannerRoutes = [
@@ -63,7 +64,7 @@ const topBannerRoutes = [
   '/magasin-management',
   '/zones-management',
   '/combined-management',
-  // Ajoute ici les routes concernées
+  '/display-data',
 ];
 
 // Define props type for RootLayout

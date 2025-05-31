@@ -4,7 +4,7 @@ import { CategoryImport } from './CategoryImport';
 import { ZonesImport } from './ZonesImport';
 import './CombinedPage.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, X, Zap, Save, Database } from 'lucide-react';
+import { CheckCircle, X, Zap, Save, Database, Trash2 } from 'lucide-react';
 import '@/components/multilingue/i18n.js';
 import { useTranslation } from 'react-i18next';
 
@@ -47,7 +47,7 @@ const handleSaveData = async () => {
   
     try {
       // Sauvegarde des catégories
-      const categoriesResponse = await fetch('http://localhost:8081/api/management/createCategories', {
+      const categoriesResponse = await fetch('http://localhost:8081/api/categories/createCategorieList', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ const handleSaveData = async () => {
       }
   
       // Sauvegarde des magasins
-      const magasinsResponse = await fetch('http://localhost:8081/api/management/createMagasins', {
+      const magasinsResponse = await fetch('http://localhost:8081/api/magasins/createMagasinsList', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ const handleSaveData = async () => {
       }
   
       // Sauvegarde des zones
-      const zonesResponse = await fetch('http://localhost:8081/api/management/createZones', {
+      const zonesResponse = await fetch('http://localhost:8081/api/zones/createZonesList', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,16 +173,33 @@ const DataSummary = () => {
         </div>
   
         {/* Section Sauvegarde */}
+        
         <div className="save-section">
-          <button 
-            onClick={handleSaveData} 
-            disabled={isSaving || !allStepsCompleted}
-            className={`save-button ${!allStepsCompleted ? 'disabled' : ''}`}
-          >
-            <Save size={18} className="mr-2" />
-            {isSaving ? t('combinedManagement.sauvegardEnCours') : t('combinedManagement.sauvegarderDansBD')}
-          </button>
-  
+        <div className="flex items-center justify-center gap-4 fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white p-4 rounded-lg shadow-md z-10">
+  <button 
+    onClick={handleSaveData} 
+    disabled={isSaving || !allStepsCompleted}
+    className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+      !allStepsCompleted ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 
+      'bg-blue-600 text-white hover:bg-blue-700'
+    }`}
+  >
+    <Save size={18} className="mr-2" />
+    {isSaving ? t('combinedManagement.sauvegardEnCours') : t('combinedManagement.sauvegarderDansBD')}
+  </button>
+
+  <button 
+    //onClick={handleClearDatabase} 
+    disabled={isSaving}
+    className={`flex items-center px-4 py-2 rounded-md transition-colors ${
+      isSaving ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 
+      'bg-red-600 text-white hover:bg-red-700'
+    }`}
+  >
+    <Trash2 size={18} className="mr-2" />
+    {t('combinedManagement.sauvegarderDansBD1')}
+  </button>
+</div>
           {saveStatus === t('combinedManagement.success') && (
   <div className="save-status success">
     <CheckCircle size={16} className="mr-2" />

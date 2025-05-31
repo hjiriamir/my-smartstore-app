@@ -22,3 +22,42 @@ export const createzones = (zones, callback) => {
     
     db.query(sql, [values], callback);
 };
+
+export const getAllZones = (callback) => {
+    const sql = "SELECT * FROM zone";
+    db.query(sql, callback);
+};
+
+/*export const updateZone = (zone, callback) => {
+    const { id, zone_id , nom_zone , magasin_id , description , emplacement , date_creation , date_modification } = zone;
+
+    const sql = `
+        UPDATE zone
+        SET 
+            zone_id = ?,
+            nom_zone = ?, 
+            magasin_id = ?, 
+            description = ?, 
+            emplacement = ?, 
+            date_creation = ?, 
+            date_modification = ?
+        WHERE id = ?
+    `;
+
+    db.query(sql, [zone_id , nom_zone , magasin_id , description , emplacement , date_creation , date_modification, id], callback);
+};*/
+
+export const updateZone = (id, fieldsToUpdate, callback) => {
+    // Extraire les colonnes et les valeurs à mettre à jour
+    const columns = Object.keys(fieldsToUpdate);
+    const values = Object.values(fieldsToUpdate);
+
+    // Construire dynamiquement la clause SET
+    const setClause = columns.map(column => `${column} = ?`).join(', ');
+
+    const sql = `UPDATE zone SET ${setClause} WHERE id = ?`;
+
+    // Ajoute l'id à la fin du tableau des valeurs
+    const params = [...values, id];
+    db.query(sql, params, callback);
+};
