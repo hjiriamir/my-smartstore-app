@@ -29,6 +29,10 @@ interface Categorie {
   saisonnalite: string;
   priorite: string;
   zone_exposition_preferee?: string;
+  temperature_exposition?: string;
+  conditionnement?: string;
+  clientele_ciblee?: string;
+  magasin_id ?: string;
   date_modification: string;
 }
 
@@ -48,6 +52,23 @@ const DisplayData: React.FC = () => {
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   
+
+// Ajoutez ces styles constants en haut du composant
+const tableStyle: React.CSSProperties = {
+  width: '100%',
+  overflowX: 'auto',
+  border: '1px solid #f0f0f0',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  marginBottom: '24px',
+};
+
+const tableContainerStyle: React.CSSProperties = {
+  maxHeight: '500px',
+  overflowY: 'auto',
+};
+
+
   // États pour la visibilité des sections
   const [showMagasins, setShowMagasins] = useState(true);
   const [showCategories, setShowCategories] = useState(true);
@@ -357,48 +378,27 @@ const DisplayData: React.FC = () => {
   };
 
   const handleDelete = async (type: 'magasin' | 'categorie' | 'zone', id: number) => {
-    Modal.confirm({
-      title: 'Confirmer la suppression',
-      content: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
-      okText: 'Oui',
-      cancelText: 'Non',
-      onOk: async () => {
-        try {
-          let endpoint = '';
-          let updateFunction = null;
-
-          switch (type) {
-            case 'magasin':
-              endpoint = `http://localhost:8081/api/magasins/deleteMagasin/${id}`;
-              updateFunction = setMagasins;
-              break;
-            case 'categorie':
-              endpoint = `http://localhost:8081/api/categories/deleteCategorie/${id}`;
-              updateFunction = setCategories;
-              break;
-            case 'zone':
-              endpoint = `http://localhost:8081/api/zones/deleteZone/${id}`;
-              updateFunction = setZones;
-              break;
-          }
-
-          await axios.delete(endpoint);
-
-          updateFunction(prev => prev.filter(item => item.id !== id));
-
-          notification.success({
-            message: 'Succès',
-            description: 'Suppression effectuée avec succès'
-          });
-        } catch (error) {
-          notification.error({
-            message: 'Erreur',
-            description: 'Échec de la suppression'
-          });
-          console.error('Error deleting data:', error);
-        }
+    // Confirmation native du navigateur
+    const isConfirmed = window.confirm("Êtes-vous sûr de vouloir supprimer cet élément ?");
+    if (!isConfirmed) return;
+  
+    try {
+      const endpoint = `http://localhost:8081/api/${type}s/delete${type.charAt(0).toUpperCase() + type.slice(1)}/${id}`;
+      await axios.delete(endpoint);
+  
+      // Mise à jour de l'état
+      switch (type) {
+        case 'magasin': setMagasins(prev => prev.filter(m => m.id !== id)); break;
+        case 'categorie': setCategories(prev => prev.filter(c => c.id !== id)); break;
+        case 'zone': setZones(prev => prev.filter(z => z.id !== id)); break;
       }
-    });
+  
+      // Remplacement de notification.success (optionnel)
+      alert("Suppression réussie !");
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Échec de la suppression");
+    }
   };
 
   const toggleEditMode = () => {
@@ -457,30 +457,13 @@ const DisplayData: React.FC = () => {
             icon={<EditOutlined />}
             onClick={() => openEditModal('magasin', record)}
           />
-          <Button
-      danger
-      icon={
-        <motion.div
-          whileHover={{ scale: 1.3, rotate: 20 }}
-          whileTap={{ scale: 0.9 }}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          style={{
-            backgroundColor: '#ff4d4f',
-            color: 'white',
-            padding: '6px',
-            borderRadius: '50%',
-            fontSize: '16px'
-          }}
-        >
-          <DeleteOutlined />
-        </motion.div>
-      }
-      onClick={() => handleDelete('magasin', record.id)}
-    >
-      Supprimer
-    </Button>
+        <Button
+  danger
+  onClick={() => handleDelete('magasin', record.id)}
+  icon={<DeleteOutlined />} 
+>
+  Supprimer
+</Button>
         </Space>
       ),
     },
@@ -537,25 +520,8 @@ const DisplayData: React.FC = () => {
           />
           <Button
   danger
-  icon={
-    <motion.div
-      whileHover={{ scale: 1.3, rotate: 20 }}
-      whileTap={{ scale: 0.9 }}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      style={{
-        backgroundColor: '#ff4d4f',
-        color: 'white',
-        padding: '6px',
-        borderRadius: '50%',
-        fontSize: '16px'
-      }}
-    >
-      <DeleteOutlined />
-    </motion.div>
-  }
   onClick={() => handleDelete('categorie', record.id)}
+  icon={<DeleteOutlined />} 
 >
   Supprimer
 </Button>
@@ -613,27 +579,10 @@ const DisplayData: React.FC = () => {
             icon={<EditOutlined />}
             onClick={() => openEditModal('zone', record)}
           />
-          <Button
+         <Button
   danger
-  icon={
-    <motion.div
-      whileHover={{ scale: 1.3, rotate: 20 }}
-      whileTap={{ scale: 0.9 }}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      style={{
-        backgroundColor: '#ff4d4f',
-        color: 'white',
-        padding: '6px',
-        borderRadius: '50%',
-        fontSize: '16px'
-      }}
-    >
-      <DeleteOutlined />
-    </motion.div>
-  }
   onClick={() => handleDelete('zone', record.id)}
+  icon={<DeleteOutlined />} 
 >
   Supprimer
 </Button>
@@ -780,6 +729,25 @@ const DisplayData: React.FC = () => {
             <Form.Item label="Zone Exposition Préférée" name="zone_exposition_preferee">
               <Input />
             </Form.Item>
+            <Form.Item label="témperature d'exposition" name="temperature_exposition">
+              <Input />
+            </Form.Item>
+            <Form.Item label="Conditionnement" name="conditionnement">
+              <Input />
+            </Form.Item>
+            <Form.Item label="Clientèle ciblée" name="clientele_ciblee">
+              <Input />
+            </Form.Item>
+            <Form.Item label="Catégorie parente" name="parent_id">
+              <Select>
+                <Select.Option value="">Aucune</Select.Option>
+                {magasins.map(mag => (
+                  <Select.Option key={mag.magasin_id} value={mag.magasin_id}>
+                    {mag.nom_magasin}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
           </>
         );
       case 'zone':
@@ -853,14 +821,19 @@ const DisplayData: React.FC = () => {
           </div>
         </div>
         {showMagasins && (
-          <Table
-            columns={magasinsColumns}
-            dataSource={magasins}
-            rowKey="id"
-            bordered
-            scroll={{ x: 'max-content' }}
-            pagination={{ pageSize: 5, showSizeChanger: true }}
-          />
+          <div style={tableContainerStyle}>
+            <div style={tableStyle}>
+              <Table
+                columns={magasinsColumns}
+                dataSource={magasins}
+                rowKey="id"
+                bordered
+                scroll={{ x: 'max-content', y: 400 }}
+                pagination={{ pageSize: 5, showSizeChanger: true }}
+                style={{ minWidth: '100%' }}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -889,14 +862,19 @@ const DisplayData: React.FC = () => {
           </div>
         </div>
         {showCategories && (
-          <Table
-            columns={categoriesColumns}
-            dataSource={categories}
-            rowKey="id"
-            bordered
-            scroll={{ x: 'max-content' }}
-            pagination={{ pageSize: 5, showSizeChanger: true }}
-          />
+          <div style={tableContainerStyle}>
+            <div style={tableStyle}>
+              <Table
+                columns={categoriesColumns}
+                dataSource={categories}
+                rowKey="id"
+                bordered
+                scroll={{ x: 'max-content', y: 400 }}
+                pagination={{ pageSize: 5, showSizeChanger: true }}
+                style={{ minWidth: '100%' }}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -925,14 +903,19 @@ const DisplayData: React.FC = () => {
           </div>
         </div>
         {showZones && (
-          <Table
-            columns={zonesColumns}
-            dataSource={zones}
-            rowKey="id"
-            bordered
-            scroll={{ x: 'max-content' }}
-            pagination={{ pageSize: 5, showSizeChanger: true }}
-          />
+          <div style={tableContainerStyle}>
+            <div style={tableStyle}>
+              <Table
+                columns={zonesColumns}
+                dataSource={zones}
+                rowKey="id"
+                bordered
+                scroll={{ x: 'max-content', y: 400 }}
+                pagination={{ pageSize: 5, showSizeChanger: true }}
+                style={{ minWidth: '100%' }}
+              />
+            </div>
+          </div>
         )}
       </div>
 
