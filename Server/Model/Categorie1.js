@@ -43,10 +43,6 @@ const Categorie1 = sequelize.define('Categorie', {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    conditionnement: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
     clientele_ciblee: {
         type: DataTypes.STRING,
         allowNull: true,

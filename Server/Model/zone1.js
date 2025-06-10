@@ -36,6 +36,31 @@ const Zone1 = sequelize.define('Zone1', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  longueur: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    comment: 'Longueur de la zone (en mètres)',
+  },
+  largeur: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    comment: 'Largeur de la zone (en mètres)',
+  },
+  hauteur: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    comment: 'Hauteur de la zone (en mètres)',
+  },
+  temperature: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    comment: 'Température de la zone (en degrés Celsius)',
+  },
+  eclairage: {
+    type: DataTypes.ENUM('LED', 'Incandescence', 'Fluorescent', 'Naturel', 'Halogène', 'Spot', 'Projecteur'),
+    allowNull: true,
+    comment: 'Type d\'éclairage',
+  },
 }, {
   tableName: 'zones',
   timestamps: true,
