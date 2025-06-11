@@ -1218,9 +1218,9 @@ export function PlanogramEditor() {
   const suppliers = [...new Set(products.map((product) => product.supplier))].filter(Boolean).sort()
   //const categories = [ ...new Set( products.flatMap((product) => [product.category1_id, product.category2_id,product.category3_id])) ].filter(Boolean).sort()
   const { categories: allCategories } = useProductStore()
-  const categoryIds = [...new Set(products.flatMap((product) => [product.category1_id, product.category2_id, product.category3_id]))].filter(Boolean)
-  const categories = allCategories.filter(cat => categoryIds.includes(cat.id)).sort((a, b) => a.name.localeCompare(b.name))
- 
+  const categoryIds = [...new Set(products.flatMap((product) => product.category_id))].filter(Boolean)
+  //const categories = allCategories.filter(cat => categoryIds.includes(cat.id)).sort((a, b) => a.name.localeCompare(b.name))
+  const categories = [...new Set(products.map((product) => product.category_id))].filter(Boolean).sort()
   
   
   // Initialize planogram cells
@@ -1345,25 +1345,23 @@ export function PlanogramEditor() {
 
   // Filter products
   const filteredProducts = products.filter((product) => {
-    // Search term filter
+    // Vérifie que product.primary_Id existe avant d'utiliser toLowerCase()
+    const primaryId = product.primary_Id ? product.primary_Id.toLowerCase() : '';
+    const supplier = product.supplier ? product.supplier.toLowerCase() : '';
+    
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.primary_Id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.supplier && product.supplier.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (product.supplier && product.supplier.toLowerCase().includes(searchTerm.toLowerCase()))
-
+      primaryId.includes(searchTerm.toLowerCase()) ||
+      supplier.includes(searchTerm.toLowerCase());
+  
     // Category filter
-    const matchesCategory =
-      !selectedCategory ||
-      product.category1_id === selectedCategory ||
-      product.category2_id === selectedCategory ||
-      product.category3_id === selectedCategory
-
+    const matchesCategory = !selectedCategory || product.category_id === selectedCategory;
+  
     // Supplier filter
-    const matchesSupplier = !selectedSupplier || product.supplier === selectedSupplier
-
-    return matchesSearch && matchesCategory && matchesSupplier
-  })
+    const matchesSupplier = !selectedSupplier || product.supplier === selectedSupplier;
+  
+    return matchesSearch && matchesCategory && matchesSupplier;
+  });
 
   // Generate a unique instance ID
   const generateInstanceId = () => {
@@ -1890,17 +1888,17 @@ export function PlanogramEditor() {
 
                             <div className="grid grid-cols-2 gap-2">
                             <select
-  className="p-2 border rounded-md text-sm"
-  value={selectedCategory || ""}
-  onChange={(e) => setSelectedCategory(e.target.value || null)}
->
-  <option value="">{t("productImport.allCategories")}</option>
-  {categories.map((category) => (
-    <option key={category.id} value={category.id}>
-      {category.name}
-    </option>
-  ))}
-</select>
+                                  className="p-2 border rounded-md text-sm"
+                                  value={selectedCategory || ""}
+                                  onChange={(e) => setSelectedCategory(e.target.value || null)}
+                                >
+                                        <option value="">{t("productImport.allCategories")}</option>
+                                        {categories.map((category) => (
+                                          <option key={category} value={category}>
+                                            {category}
+                                          </option>
+                                        ))}
+                                      </select>
 
                               <select
                                 className="p-2 border rounded-md text-sm"
@@ -1923,9 +1921,9 @@ export function PlanogramEditor() {
 
                           <ScrollArea className="h-[calc(100vh-300px)]">
                             <div className="grid grid-cols-2 gap-2 p-1">
-                              {filteredProducts.map((product) => (
-                                <ProductItem key={product.primary_Id} product={product} />
-                              ))}
+                            {filteredProducts.map((product, index) => (
+                              <ProductItem key={`${product.primary_Id}-${index}`} product={product} />
+                            ))}
                               {filteredProducts.length === 0 && (
                                 <div className="col-span-2 text-center py-8 text-muted-foreground">
                                   {t("productImport.noProductsFound")}

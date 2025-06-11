@@ -2,12 +2,21 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import Papa from "papaparse"
-import { FileSpreadsheet, ImageIcon, CheckCircle2, AlertCircle, ChevronRight, FolderTree, ArrowLeft } from "lucide-react"
-import { useTranslation } from 'react-i18next';
+import {
+  FileSpreadsheet,
+  ImageIcon,
+  CheckCircle2,
+  AlertCircle,
+  ChevronRight,
+  FolderTree,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,41 +27,44 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import { useProductStore } from "@/lib/product-store"
 import { CategoryManager } from "@/components/editor2D/category-manager"
-import  TopBanner  from "@/components/back-office/TopBanner"
-import  '@/components/multilingue/i18n.js';
-
-
+import "@/components/multilingue/i18n.js"
 
 interface ProductData {
-  primary_Id: string
+  primary_id: string
   name: string
   supplier: string
-  category1_id?: string
-  category2_id?: string
-  category3_id?: string
-  category1_name?: string // Ajouté pour référence
-  category2_name?: string // Ajouté pour référence
-  category3_name?: string // Ajouté pour référence
-  width_cm?: number
-  height_cm?: number
-  depth_cm?: number
+  category_id?: string
+  width?: number
+  height?: number
+  depth?: number
+  category_name?: string // Ajouté automatiquement après matching
   [key: string]: any
 }
 
-// Ajoutez cette interface pour le type de catégorie
 interface Category {
   id: string
-  name: string
-  color: string
-  parentId: string | null
+  categorie_id: string
+  nom: string
+  parent_id: string | null
+  niveau: string
+  saisonnalite: string
+  priorite: string
+  zone_exposition_preferee: string
+  temperature_exposition: string
+  clientele_ciblee: string
+  magasin_id: string
+  date_creation: string
+  date_modification: string
+  name?: string
+  color?: string
+  parentId?: string | null
   children?: Category[]
 }
 
-
 export function ProductImport() {
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === 'ar'; // RTL pour l'arabe, sinon LTR
-  const textDirection = isRTL ? 'rtl' : 'ltr';
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
   const router = useRouter()
   const { toast } = useToast()
   const { addProducts, updateProductImage, products, categories, setActiveTab } = useProductStore()
@@ -66,10 +78,57 @@ export function ProductImport() {
   const [importProgress, setImportProgress] = useState<number>(0)
   const [showCategoryManager, setShowCategoryManager] = useState<boolean>(false)
   const [rawData, setRawData] = useState<any[]>([])
+  const [categoriesWithIds, setCategoriesWithIds] = useState<Category[]>([])
+  const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
+  const [categoryMatchingStats, setCategoryMatchingStats] = useState({
+    matched: 0,
+    unmatched: 0,
+    total: 0,
+  })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
-  const [categoriesWithIds, setCategoriesWithIds] = useState<Category[]>([])
+
+  // Fonction pour récupérer les catégories depuis l'API
+  const fetchCategories = async () => {
+    setLoadingCategories(true)
+    try {
+      const response = await fetch("http://localhost:8081/api/categories/getAllCategories")
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des catégories")
+      }
+      const data = await response.json()
+
+      // Transformer les données pour correspondre à l'interface Category
+      const transformedCategories: Category[] = data.map((cat: any) => ({
+        ...cat,
+        name: cat.nom, // Mapper nom vers name pour compatibilité
+        color: "#3B82F6", // Couleur par défaut
+        parentId: cat.parent_id,
+        children: [],
+      }))
+
+      setCategoriesWithIds(transformedCategories)
+      toast({
+        title: "Catégories chargées",
+        description: `${transformedCategories.length} catégories ont été récupérées avec succès.`,
+      })
+    } catch (error) {
+      console.error("Erreur lors de la récupération des catégories:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les catégories depuis l'API.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
+
+  // Charger les catégories au montage du composant
+  useEffect(() => {
+    fetchCategories()
+  }, [])
 
   // Handle file selection for product data
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +146,7 @@ export function ProductImport() {
     if (fileExtension === "csv") {
       Papa.parse(file, {
         header: true,
-        skipEmptyLines: true, // Ignorer les lignes vides
+        skipEmptyLines: true,
         complete: (results) => {
           setRawData(results.data)
           handleParsedData(results.data as ProductData[])
@@ -140,24 +199,23 @@ export function ProductImport() {
       return
     }
 
-    // Filtrer les lignes vides ou qui ne contiennent que des valeurs vides
     const filteredData = data.filter((row) => {
       return Object.values(row).some((value) => value !== undefined && value !== null && value !== "")
     })
 
     setParsedData(filteredData)
 
-    // Auto-detect columns
+    // Auto-detect columns avec les nouvelles colonnes simplifiées
     const firstRow = data[0]
     const mapping: Record<string, string> = {}
 
-    // Détection plus intelligente des colonnes
     Object.keys(firstRow).forEach((column) => {
       const lowerColumn = column.toLowerCase().trim()
 
-      // Détection de l'ID primaire - plus flexible
+      // Détection de l'ID primaire
       if (
         lowerColumn === "primary_id" ||
+        lowerColumn === "primaryid" ||
         (lowerColumn.includes("id") &&
           (lowerColumn.includes("primary") ||
             lowerColumn.includes("principal") ||
@@ -168,9 +226,9 @@ export function ProductImport() {
             lowerColumn === "sku" ||
             lowerColumn === "article"))
       ) {
-        mapping[column] = "primary_Id"
+        mapping[column] = "primary_id"
       }
-      // Détection du nom - plus flexible
+      // Détection du nom
       else if (
         lowerColumn === "name" ||
         lowerColumn.includes("nom") ||
@@ -183,16 +241,6 @@ export function ProductImport() {
       ) {
         mapping[column] = "name"
       }
-      // Si on trouve une colonne qui pourrait être un nom de produit (comme "SkinGlow" dans l'exemple)
-      else if (
-        !mapping["name"] &&
-        typeof firstRow[column] === "string" &&
-        !lowerColumn.includes("supplier") &&
-        !lowerColumn.includes("fournisseur") &&
-        !lowerColumn.includes("categor")
-      ) {
-        mapping[column] = "name"
-      }
       // Détection du fournisseur
       else if (
         lowerColumn === "supplier" ||
@@ -202,80 +250,52 @@ export function ProductImport() {
       ) {
         mapping[column] = "supplier"
       }
-      // Détection des catégories
+      // Détection de l'ID de catégorie (simplifié)
       else if (
-        lowerColumn === "category1_id" ||
-        (lowerColumn.includes("cat") &&
-          (lowerColumn.includes("1") || lowerColumn.includes("one") || lowerColumn.includes("principale")))
+        lowerColumn === "category_id" ||
+        lowerColumn === "categoryid" ||
+        lowerColumn.includes("category") ||
+        lowerColumn.includes("categorie")
       ) {
-        mapping[column] = "category1_id"
-      } else if (
-        lowerColumn === "category2_id" ||
-        (lowerColumn.includes("cat") &&
-          (lowerColumn.includes("2") || lowerColumn.includes("two") || lowerColumn.includes("secondaire")))
-      ) {
-        mapping[column] = "category2_id"
-      } else if (
-        lowerColumn === "category3_id" ||
-        (lowerColumn.includes("cat") &&
-          (lowerColumn.includes("3") || lowerColumn.includes("three") || lowerColumn.includes("tertiaire")))
-      ) {
-        mapping[column] = "category3_id"
-      }
-      else if (
-        lowerColumn === "category1_name" ||
-        (lowerColumn.includes("cat") && lowerColumn.includes("1") && lowerColumn.includes("name"))
-      ) {
-        mapping[column] = "category1_name"
-      } else if (
-        lowerColumn === "category2_name" ||
-        (lowerColumn.includes("cat") && lowerColumn.includes("2") && lowerColumn.includes("name"))
-      ) {
-        mapping[column] = "category2_name"
-      } else if (
-        lowerColumn === "category3_name" ||
-        (lowerColumn.includes("cat") && lowerColumn.includes("3") && lowerColumn.includes("name"))
-      ) {
-        mapping[column] = "category3_name"
+        mapping[column] = "category_id"
       }
       // Détection des dimensions
       else if (
-        lowerColumn === "width_cm" ||
+        lowerColumn === "width" ||
         lowerColumn.includes("larg") ||
         lowerColumn.includes("width") ||
         lowerColumn === "l"
       ) {
-        mapping[column] = "width_cm"
+        mapping[column] = "width"
       } else if (
-        lowerColumn === "height_cm" ||
+        lowerColumn === "height" ||
         lowerColumn.includes("haut") ||
         lowerColumn.includes("height") ||
         lowerColumn === "h"
       ) {
-        mapping[column] = "height_cm"
+        mapping[column] = "height"
       } else if (
-        lowerColumn === "depth_cm" ||
+        lowerColumn === "depth" ||
         lowerColumn.includes("prof") ||
         lowerColumn.includes("depth") ||
         lowerColumn === "p"
       ) {
-        mapping[column] = "depth_cm"
+        mapping[column] = "depth"
       }
     })
 
-    // Si aucun ID primaire n'a été trouvé, essayons de prendre la première colonne numérique
-    if (!Object.values(mapping).includes("primary_Id")) {
+    // Auto-mapping fallback
+    if (!Object.values(mapping).includes("primary_id")) {
       const firstNumericColumn = Object.keys(firstRow).find(
         (column) =>
           typeof firstRow[column] === "number" ||
           (typeof firstRow[column] === "string" && !isNaN(Number(firstRow[column]))),
       )
       if (firstNumericColumn) {
-        mapping[firstNumericColumn] = "primary_Id"
+        mapping[firstNumericColumn] = "primary_id"
       }
     }
 
-    // Si aucun nom n'a été trouvé, prenons la première colonne de texte qui n'est pas déjà mappée
     if (!Object.values(mapping).includes("name")) {
       const firstTextColumn = Object.keys(firstRow).find(
         (column) => typeof firstRow[column] === "string" && !Object.values(mapping).includes(column),
@@ -288,19 +308,12 @@ export function ProductImport() {
     setColumnMapping(mapping)
     setStep(2)
   }
-  const findCategoryById = (id: string): Category | undefined => {
-    const findInTree = (categories: Category[]): Category | undefined => {
-      for (const category of categories) {
-        if (category.id === id) return category
-        if (category.children) {
-          const found = findInTree(category.children)
-          if (found) return found
-        }
-      }
-      return undefined
-    }
-    return findInTree(categoriesWithIds)
+
+  // Fonction pour trouver une catégorie par son ID
+  const findCategoryById = (categoryId: string): Category | undefined => {
+    return categoriesWithIds.find((cat) => cat.categorie_id === categoryId)
   }
+
   // Update column mapping
   const updateColumnMapping = (originalColumn: string, mappedColumn: string) => {
     setColumnMapping((prev) => ({
@@ -313,22 +326,23 @@ export function ProductImport() {
   const validateData = () => {
     const errors: string[] = []
 
-    // Check if required columns are mapped
-    if (!Object.values(columnMapping).includes("primary_Id")) {
-      errors.push("L'identifiant primaire (primary_Id) est requis - veuillez sélectionner une colonne pour l'ID")
+    if (!Object.values(columnMapping).includes("primary_id")) {
+      errors.push("L'identifiant primaire (primary_id) est requis - veuillez sélectionner une colonne pour l'ID")
     }
 
     if (!Object.values(columnMapping).includes("name")) {
       errors.push("Le nom du produit (name) est requis - veuillez sélectionner une colonne pour le nom")
     }
 
-    // Validate data in each row with more flexibility
-    parsedData.forEach((row, index) => {
-      // Trouver les colonnes correspondant à primary_Id et name
-      const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_Id")?.[0]
-      const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
+    // Validation des données avec matching des catégories
+    let matchedCategories = 0
+    let unmatchedCategories = 0
 
-      // Vérifier si l'ID est présent et non vide
+    parsedData.forEach((row, index) => {
+      const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_id")?.[0]
+      const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
+      const categoryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "category_id")?.[0]
+
       if (primaryIdColumn) {
         const primaryIdValue = row[primaryIdColumn]
         if (primaryIdValue === undefined || primaryIdValue === null || primaryIdValue === "") {
@@ -336,13 +350,32 @@ export function ProductImport() {
         }
       }
 
-      // Vérifier si le nom est présent et non vide
       if (nameColumn) {
         const nameValue = row[nameColumn]
         if (nameValue === undefined || nameValue === null || nameValue === "") {
           errors.push(`Ligne ${index + 1}: Nom du produit manquant`)
         }
       }
+
+      // Vérification du matching des catégories
+      if (categoryIdColumn && row[categoryIdColumn]) {
+        const categoryId = row[categoryIdColumn]
+        const category = findCategoryById(categoryId)
+        if (category) {
+          matchedCategories++
+        } else {
+          unmatchedCategories++
+        }
+      } else {
+        unmatchedCategories++
+      }
+    })
+
+    // Mise à jour des statistiques de matching
+    setCategoryMatchingStats({
+      matched: matchedCategories,
+      unmatched: unmatchedCategories,
+      total: parsedData.length,
     })
 
     setValidationErrors(errors)
@@ -355,14 +388,13 @@ export function ProductImport() {
   // Map a row using the column mapping
   const mapRow = (row: ProductData): ProductData => {
     const mappedRow: ProductData = {
-      primary_Id: "",
+      primary_id: "",
       name: "",
       supplier: "",
     }
 
     Object.entries(columnMapping).forEach(([originalColumn, mappedColumn]) => {
       if (mappedColumn) {
-        // Convertir les valeurs undefined ou null en chaînes vides pour éviter les erreurs
         mappedRow[mappedColumn] =
           row[originalColumn] !== undefined && row[originalColumn] !== null ? row[originalColumn] : ""
       }
@@ -378,56 +410,28 @@ export function ProductImport() {
       setImageFiles(Array.from(files))
     }
   }
-  const mapCategories = (product: ProductData) => {
+
+  // Fonction pour mapper automatiquement les catégories
+  const mapCategories = (product: ProductData): ProductData => {
     const mappedProduct = { ...product }
-    
-    // Si category1_id est fourni, trouver la catégorie correspondante
-    if (product.category1_id) {
-      const category = findCategoryById(product.category1_id)
+
+    // Matching automatique via category_id
+    if (product.category_id) {
+      const category = findCategoryById(product.category_id)
       if (category) {
-        mappedProduct.category1_name = category.name
+        mappedProduct.category_name = category.nom
       }
     }
-    
-    // Si category1_name est fourni mais pas category1_id, trouver par nom
-    else if (product.category1_name) {
-      const category = categoriesWithIds.find(c => c.name === product.category1_name)
-      if (category) {
-        mappedProduct.category1_id = category.id
-      }
-    }
-    
-    // Répéter pour les sous-catégories...
-    if (product.category2_id) {
-      const category = findCategoryById(product.category2_id)
-      if (category) {
-        mappedProduct.category2_name = category.name
-      }
-    } else if (product.category2_name) {
-      const category = categoriesWithIds.find(c => c.name === product.category2_name)
-      if (category) {
-        mappedProduct.category2_id = category.id
-      }
-    }
-    
-    if (product.category3_id) {
-      const category = findCategoryById(product.category3_id)
-      if (category) {
-        mappedProduct.category3_name = category.name
-      }
-    } else if (product.category3_name) {
-      const category = categoriesWithIds.find(c => c.name === product.category3_name)
-      if (category) {
-        mappedProduct.category3_id = category.id
-      }
-    }
-    
+
     return mappedProduct
   }
+
   // Import the products
   const importProducts = () => {
-    // Filtrer les produits qui ont un ID et un nom
-    const validProducts = parsedData.map(mapRow).map(mapCategories).filter((product) => product.primary_Id && product.name)
+    const validProducts = parsedData
+      .map(mapRow)
+      .map(mapCategories)
+      .filter((product) => product.primary_id && product.name)
 
     if (validProducts.length === 0) {
       toast({
@@ -438,10 +442,8 @@ export function ProductImport() {
       return
     }
 
-    // Start progress
     setImportProgress(0)
 
-    // Simulate progress
     const interval = setInterval(() => {
       setImportProgress((prev) => {
         if (prev >= 95) {
@@ -452,41 +454,49 @@ export function ProductImport() {
       })
     }, 100)
 
-    // Add products to store
-    addProducts(validProducts)
+    // Match images with products BEFORE adding products to store
+    const imageMap = new Map<string, string>()
 
-    // Match images with products
-    const imageMap = new Map<string, File>()
+    // Process images synchronously first
+    const processImages = async () => {
+      const imagePromises = imageFiles.map((file) => {
+        return new Promise<void>((resolve) => {
+          const fileName = file.name.split(".")[0]
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const imageUrl = e.target?.result as string
+            imageMap.set(fileName, imageUrl)
+            resolve()
+          }
+          reader.readAsDataURL(file)
+        })
+      })
 
-    imageFiles.forEach((file) => {
-      // Extract primary_Id from filename (remove extension)
-      const fileName = file.name.split(".")[0]
-      imageMap.set(fileName, file)
-    })
+      await Promise.all(imagePromises)
 
-    // Update products with images
-    validProducts.forEach((product) => {
-      const imageFile = imageMap.get(product.primary_Id)
-
-      if (imageFile) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string
-          updateProductImage(product.primary_Id, imageUrl)
+      // Now add products with images
+      const productsWithImages = validProducts.map((product) => {
+        const imageUrl = imageMap.get(product.primary_id)
+        return {
+          ...product,
+          image: imageUrl || undefined,
         }
-        reader.readAsDataURL(imageFile)
-      }
-    })
+      })
 
-    // Complete progress
-    setTimeout(() => {
-      clearInterval(interval)
-      setImportProgress(100)
+      addProducts(productsWithImages)
 
+      // Complete progress
       setTimeout(() => {
-        setStep(4)
-      }, 500)
-    }, 1000)
+        clearInterval(interval)
+        setImportProgress(100)
+
+        setTimeout(() => {
+          setStep(4)
+        }, 500)
+      }, 1000)
+    }
+
+    processImages()
   }
 
   // Go to planogram editor
@@ -495,96 +505,127 @@ export function ProductImport() {
     router.push("/planogram-editor")
   }
 
-  // Afficher les données brutes pour le débogage
   const debugData = () => {
     console.log("Données brutes:", rawData)
     console.log("Données parsées:", parsedData)
     console.log("Mapping des colonnes:", columnMapping)
+    console.log("Catégories:", categoriesWithIds)
+    console.log("Statistiques matching:", categoryMatchingStats)
 
-    // Vérifier chaque ligne pour les valeurs manquantes
     parsedData.forEach((row, index) => {
-      const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_Id")?.[0]
+      const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_id")?.[0]
       const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
+      const categoryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "category_id")?.[0]
 
       console.log(`Ligne ${index + 1}:`)
       console.log(`  ID (${primaryIdColumn}):`, row[primaryIdColumn])
       console.log(`  Nom (${nameColumn}):`, row[nameColumn])
+      if (categoryIdColumn) {
+        console.log(`  Category ID (${categoryIdColumn}):`, row[categoryIdColumn])
+        const category = findCategoryById(row[categoryIdColumn])
+        console.log(`  Category trouvée:`, category?.nom || "Non trouvée")
+      }
     })
   }
 
   return (
     <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
-      
-      <Button 
-  variant="outline" 
-  onClick={() => window.location.href = "/Editor"}
-  className={`flex items-center gap-2 mb-4 mt-14 ${isRTL ? 'flex-row-reverse' : ''}`}
-        
+      <Button
+        variant="outline"
+        onClick={() => (window.location.href = "/Editor")}
+        className={`flex items-center gap-2 mb-4 mt-14 ${isRTL ? "flex-row-reverse" : ""}`}
       >
         <ArrowLeft className="h-4 w-4" />
         {t("productImport.backToEditor")}
       </Button>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{t("productImport.title")}</CardTitle>
-          <CardDescription>
-          {t("productImport.description")}
-          </CardDescription>
+          <CardDescription>{t("productImport.description")}</CardDescription>
+          <div className="text-sm text-muted-foreground mt-2">
+            <p>
+              <strong>Format attendu :</strong> primary_id, name, supplier, category_id, width, height, depth
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
-        {showCategoryManager ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Gestion des catégories</h3>
-              <Button variant="ghost" onClick={() => setShowCategoryManager(false)}>
-                Retour à l'importation
-              </Button>
+          {showCategoryManager ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Gestion des catégories</h3>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={fetchCategories} disabled={loadingCategories}>
+                    {loadingCategories && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Actualiser les catégories
+                  </Button>
+                  <Button variant="ghost" onClick={() => setShowCategoryManager(false)}>
+                    Retour à l'importation
+                  </Button>
+                </div>
+              </div>
+              <CategoryManager
+                categories={categoriesWithIds}
+                onCategoriesChange={setCategoriesWithIds}
+                onCategoryAdd={(newCategory: Category) => {
+                  setCategoriesWithIds((prev) => [...prev, newCategory])
+                }}
+              />
             </div>
-            <CategoryManager 
-              categories={categoriesWithIds}
-              onCategoriesChange={setCategoriesWithIds}
-              onCategoryAdd={(newCategory: Category) => {
-                setCategoriesWithIds(prev => [...prev, newCategory])
-              }}
-            />
-          </div>
-         ) : (
+          ) : (
             <>
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center space-x-2">
                   <Badge variant={step >= 1 ? "default" : "outline"}>1</Badge>
-                  <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>{t("productImport.step1")}</span>
+                  <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>
+                    {t("productImport.step1")}
+                  </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
 
                   <Badge variant={step >= 2 ? "default" : "outline"}>2</Badge>
-                  <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>{t("productImport.step2")}</span>
+                  <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>
+                    {t("productImport.step2")}
+                  </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
 
                   <Badge variant={step >= 3 ? "default" : "outline"}>3</Badge>
-                  <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>{t("productImport.step3")}</span>
+                  <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>
+                    {t("productImport.step3")}
+                  </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
 
                   <Badge variant={step >= 4 ? "default" : "outline"}>4</Badge>
-                  <span className={step >= 4 ? "font-medium" : "text-muted-foreground"}>{t("productImport.manageCategories")}</span>
+                  <span className={step >= 4 ? "font-medium" : "text-muted-foreground"}>Terminé</span>
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCategoryManager(true)}
-                  className="flex items-center gap-2"
-                >
-                  <FolderTree className="h-4 w-4" />
-                  {t("productImport.manageCategories")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCategoryManager(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <FolderTree className="h-4 w-4" />
+                    {t("productImport.manageCategories")}
+                  </Button>
+
+                  {loadingCategories && (
+                    <Badge variant="secondary" className="flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Chargement des catégories...
+                    </Badge>
+                  )}
+
+                  {categoriesWithIds.length > 0 && (
+                    <Badge variant="secondary">{categoriesWithIds.length} catégories disponibles</Badge>
+                  )}
+                </div>
               </div>
 
               {step === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-medium"> {t("productImport.fileStep.title")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                    {t("productImport.fileStep.description")}
-                    </p>
+                    <h3 className="text-lg font-medium">{t("productImport.fileStep.title")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("productImport.fileStep.description")}</p>
                   </div>
 
                   <div
@@ -648,9 +689,7 @@ export function ProductImport() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">{t("productImport.columnsStep.title")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                    {t("productImport.columnsStep.description")}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t("productImport.columnsStep.description")}</p>
                   </div>
 
                   <div className="border rounded-md">
@@ -670,21 +709,40 @@ export function ProductImport() {
                                 onChange={(e) => updateColumnMapping(column, e.target.value)}
                               >
                                 <option value="">-- Ignorer cette colonne --</option>
-                                <option value="primary_Id">Identifiant (primary_Id)</option>
+                                <option value="primary_id">Identifiant (primary_id)</option>
                                 <option value="name">Nom du produit (name)</option>
                                 <option value="supplier">Fournisseur (supplier)</option>
-                                <option value="category1_id">Catégorie 1 (category1_id)</option>
-                                <option value="category2_id">Catégorie 2 (category2_id)</option>
-                                <option value="category3_id">Catégorie 3 (category3_id)</option>
-                                <option value="width_cm">Largeur en cm (width_cm)</option>
-                                <option value="height_cm">Hauteur en cm (height_cm)</option>
-                                <option value="depth_cm">Profondeur en cm (depth_cm)</option>
+                                <option value="category_id">ID Catégorie (category_id)</option>
+                                <option value="width">Largeur (width)</option>
+                                <option value="height">Hauteur (height)</option>
+                                <option value="depth">Profondeur (depth)</option>
                               </select>
                             </div>
                           ))}
                       </div>
                     </ScrollArea>
                   </div>
+
+                  {/* Statistiques de matching des catégories */}
+                  {categoryMatchingStats.total > 0 && (
+                    <div className="bg-muted/50 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">Matching automatique des catégories</h4>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">{categoryMatchingStats.matched}</div>
+                          <div className="text-muted-foreground">Catégories trouvées</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">{categoryMatchingStats.unmatched}</div>
+                          <div className="text-muted-foreground">Non trouvées</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">{categoryMatchingStats.total}</div>
+                          <div className="text-muted-foreground">Total produits</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
@@ -700,22 +758,43 @@ export function ProductImport() {
                                     {mappedColumn}
                                   </th>
                                 ))}
+                              <th className="p-2 text-left font-medium">Catégorie trouvée</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {parsedData.slice(0, 5).map((row, rowIndex) => (
-                              <tr key={rowIndex} className="border-b">
-                                {Object.entries(columnMapping)
-                                  .filter(([_, mappedColumn]) => mappedColumn)
-                                  .map(([originalColumn, _], colIndex) => (
-                                    <td key={colIndex} className="p-2">
-                                      {row[originalColumn] !== undefined && row[originalColumn] !== null
-                                        ? row[originalColumn]
-                                        : ""}
-                                    </td>
-                                  ))}
-                              </tr>
-                            ))}
+                            {parsedData.slice(0, 5).map((row, rowIndex) => {
+                              const mappedProduct = mapRow(row)
+                              const category = mappedProduct.category_id
+                                ? findCategoryById(mappedProduct.category_id)
+                                : null
+
+                              return (
+                                <tr key={rowIndex} className="border-b">
+                                  {Object.entries(columnMapping)
+                                    .filter(([_, mappedColumn]) => mappedColumn)
+                                    .map(([originalColumn, _], colIndex) => (
+                                      <td key={colIndex} className="p-2">
+                                        {row[originalColumn] !== undefined && row[originalColumn] !== null
+                                          ? row[originalColumn]
+                                          : ""}
+                                      </td>
+                                    ))}
+                                  <td className="p-2">
+                                    {category ? (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {category.nom}
+                                      </Badge>
+                                    ) : mappedProduct.category_id ? (
+                                      <Badge variant="destructive" className="text-xs">
+                                        Non trouvée
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs">Aucune</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
                           </tbody>
                         </table>
                         {parsedData.length > 5 && (
@@ -744,11 +823,11 @@ export function ProductImport() {
 
                   <div className="flex justify-between">
                     <Button variant="outline" onClick={() => setStep(1)}>
-                    {t("productImport.back")}
+                      {t("productImport.back")}
                     </Button>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={debugData}>
-                      {t("productImport.debug")}
+                        {t("productImport.debug")}
                       </Button>
                       <Button onClick={validateData}>{t("productImport.validateContinue")}</Button>
                     </div>
@@ -760,9 +839,7 @@ export function ProductImport() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">{t("productImport.imagesStep.title")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                    {t("productImport.imagesStep.description")}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t("productImport.imagesStep.description")}</p>
                   </div>
 
                   <div
@@ -779,7 +856,9 @@ export function ProductImport() {
                           <ImageIcon className="h-8 w-8 text-primary" />
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
                         </div>
-                        <p className="font-medium">{imageFiles.length} {t("productImport.imagesStep.imagesSelected")}</p>
+                        <p className="font-medium">
+                          {imageFiles.length} {t("productImport.imagesStep.imagesSelected")}
+                        </p>
                         <div className="flex flex-wrap justify-center gap-2 mt-4">
                           {imageFiles.slice(0, 5).map((file, index) => (
                             <div key={index} className="relative w-16 h-16 border rounded-md overflow-hidden">
@@ -815,11 +894,10 @@ export function ProductImport() {
                         <div className="flex justify-center">
                           <ImageIcon className="h-12 w-12 text-muted-foreground" />
                         </div>
-                        <p className="text-lg font-medium">{t("productImport.imagesStep.selectImages")}
-                        </p>
+                        <p className="text-lg font-medium">{t("productImport.imagesStep.selectImages")}</p>
                         <p className="text-sm text-muted-foreground">{t("productImport.imagesStep.dragDropImages")}</p>
                         <p className="text-xs text-muted-foreground mt-4">
-                        {t("productImport.imagesStep.namingConvention")}
+                          {t("productImport.imagesStep.namingConvention")}
                         </p>
                       </div>
                     )}
@@ -839,13 +917,21 @@ export function ProductImport() {
                       <div className="p-4 space-y-2">
                         {parsedData.slice(0, 10).map((product, index) => {
                           const mappedProduct = mapRow(product)
-                          const productId = mappedProduct.primary_Id
+                          const productId = mappedProduct.primary_id
                           const matchingImage = imageFiles.find((file) => file.name.split(".")[0] === productId)
+                          const category = mappedProduct.category_id
+                            ? findCategoryById(mappedProduct.category_id)
+                            : null
 
                           return (
                             <div key={index} className="flex items-center gap-4 p-2 border-b">
                               <div className="font-medium">{productId}</div>
                               <div className="flex-1 truncate">{mappedProduct.name}</div>
+                              {category && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {category.nom}
+                                </Badge>
+                              )}
                               {matchingImage ? (
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 border rounded-md overflow-hidden">
@@ -876,7 +962,7 @@ export function ProductImport() {
 
                   <div className="flex justify-between">
                     <Button variant="outline" onClick={() => setStep(2)}>
-                    {t("productImport.back")}
+                      {t("productImport.back")}
                     </Button>
                     <Button onClick={importProducts}>{t("productImport.importProducts")}</Button>
                   </div>
@@ -888,14 +974,16 @@ export function ProductImport() {
                   <Card className="w-[400px]">
                     <CardHeader>
                       <CardTitle>{t("productImport.importProgress.title")}</CardTitle>
-                      <CardDescription>
-                      {t("productImport.importProgress.description")}
-                      </CardDescription>
+                      <CardDescription>{t("productImport.importProgress.description")}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <Progress value={importProgress} className="h-2" />
                       <p className="text-center text-sm">
-                        {t(importProgress < 100 ? "productImport.importProgress.processing" : "productImport.importProgress.complete")}
+                        {t(
+                          importProgress < 100
+                            ? "productImport.importProgress.processing"
+                            : "productImport.importProgress.complete",
+                        )}
                       </p>
                     </CardContent>
                   </Card>
@@ -918,14 +1006,20 @@ export function ProductImport() {
 
                   <div className="space-y-4">
                     <h4 className="font-medium">{t("productImport.completeStep.summary")}</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="border rounded-md p-4 space-y-2">
-                        <p className="text-sm text-muted-foreground">{t("productImport.completeStep.importedProducts")}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {t("productImport.completeStep.importedProducts")}
+                        </p>
                         <p className="text-2xl font-bold">{parsedData.length}</p>
                       </div>
                       <div className="border rounded-md p-4 space-y-2">
                         <p className="text-sm text-muted-foreground">{t("productImport.completeStep.matchedImages")}</p>
                         <p className="text-2xl font-bold">{imageFiles.length}</p>
+                      </div>
+                      <div className="border rounded-md p-4 space-y-2">
+                        <p className="text-sm text-muted-foreground">Catégories matchées</p>
+                        <p className="text-2xl font-bold text-green-600">{categoryMatchingStats.matched}</p>
                       </div>
                     </div>
                   </div>
@@ -941,6 +1035,7 @@ export function ProductImport() {
                         setColumnMapping({})
                         setValidationErrors([])
                         setImportProgress(0)
+                        setCategoryMatchingStats({ matched: 0, unmatched: 0, total: 0 })
                       }}
                     >
                       {t("productImport.completeStep.importMore")}
