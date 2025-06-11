@@ -1,6 +1,7 @@
 import Vente from '../Model/Ventes.js';
 import sequelize from '../Config/database1.js';
 import Stock from '../Model/Stock.js';
+import { createStockMovement } from './stockMovementController.js';
 
 // Mise a jour du stock 
 async function updateStock(produit_id, magasin_id, quantite) {
@@ -36,21 +37,34 @@ export const createVente = async (req, res) => {
       }
   
       const vente = await Vente.create(req.body);
-  
-      // Mise à jour du stock avec gestion d'erreurs
-      try {
-        await updateStock(vente.produit_id, vente.magasin_id, vente.quantite); // quantité négative pour sortie
-      } catch (stockError) {
-        console.error('Erreur mise à jour du stock:', stockError);
-        // Si la vente est déjà enregistrée mais le stock échoue, tu peux :  
-        // - soit annuler la vente (rollback), mais Sequelize simple n'a pas de transaction automatique  
-        // - soit signaler le problème tout en gardant la vente enregistrée  
-        return res.status(500).json({
-          error: "Vente enregistrée mais échec mise à jour stock",
-          vente,
-          details: stockError.message
-        });
+      // Appel de la création du mouvement de stock correspondant (sortie)
+    const fakeReq = {
+      body: {
+        produit_id: vente.produit_id,
+        magasin_id: vente.magasin_id,
+        quantite: vente.quantite,
+        cout_unitaire: vente.prix_unitaire,
+        valeur_mouvement: vente.montant_total,
+        type_mouvement: 'sortie', // ici on précise que c'est une sortie
+        date_mouvement: new Date() // date actuelle
       }
+    };
+    const fakeRes = {
+      status: (code) => ({
+        json: (data) => console.log(`[StockMovement] Status ${code}`, data)
+      })
+    };
+    try {
+      await createStockMovement(fakeReq, fakeRes);
+    } catch (stockError) {
+      console.error('Erreur création mouvement stock:', stockError);
+      return res.status(500).json({
+        error: "Vente enregistrée, mais échec mouvement stock",
+        vente,
+        details: stockError.message
+      });
+    }
+      
   
       res.status(201).json(vente);
     } catch (error) {
