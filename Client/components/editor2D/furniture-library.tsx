@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { Canvas } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
-import { ConfirmationModal } from "./ConfirmationModal";
 import { useTranslation } from "react-i18next"
 import "@/components/multilingue/i18n.js"
 import {
@@ -19,7 +18,8 @@ import {
   Shirt,
   ArrowUpDown,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Store,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -135,9 +135,40 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
             <h3 className="font-medium truncate">{furniture.furniture.name}</h3>
           </div>
           <div className="text-xs text-muted-foreground">
-            {furniture.furniture.sections} {t("furnitureEditor.sections")}, {furniture.furniture.slots} {t("furnitureEditor.emplacement")}
+            {furniture.furniture.sections} {t("furnitureEditor.sections")}, {furniture.furniture.slots}{" "}
+            {t("furnitureEditor.emplacement")}
           </div>
-          <div className="text-xs text-muted-foreground">{furniture.products.length} {t("productImport.produitPlacerIA")}</div>
+          <div className="text-xs text-muted-foreground">
+            {furniture.products.length} {t("productImport.produitPlacerIA")}
+          </div>
+
+          {/* Affichage du magasin */}
+          {(furniture.storeName || furniture.furniture.storeName) && (
+            <div className="text-xs flex items-center text-blue-600">
+              <Store className="h-3 w-3 mr-1" />
+              <span className="truncate">{furniture.storeName || furniture.furniture.storeName}</span>
+            </div>
+          )}
+          {!furniture.storeName &&
+            !furniture.furniture.storeName &&
+            (furniture.storeId || furniture.furniture.storeId) && (
+              <div className="text-xs flex items-center text-blue-600">
+                <Store className="h-3 w-3 mr-1" />
+                <span className="truncate">
+                  {t("furnitureEditor.magasinId", { id: furniture.storeId || furniture.furniture.storeId })}
+                </span>
+              </div>
+            )}
+          {!furniture.storeName &&
+            !furniture.furniture.storeName &&
+            !furniture.storeId &&
+            !furniture.furniture.storeId && (
+              <div className="text-xs flex items-center text-gray-400 italic">
+                <Store className="h-3 w-3 mr-1" />
+                <span>{t("furnitureEditor.aucunMagasin")}</span>
+              </div>
+            )}
+
           {furniture.description && (
             <div className="text-xs text-muted-foreground truncate">{furniture.description}</div>
           )}
@@ -171,15 +202,16 @@ const DeleteConfirmationDialog = ({ isOpen, onClose, onConfirm, furnitureName })
         <DialogHeader>
           <DialogTitle>{t("productImport.floorPlan.deleteFurniture")}</DialogTitle>
           <DialogDescription>
-          {t("productImport.floorPlan.confirmDeleteFurniture")} "{furnitureName}" {t("productImport.floorPlan.confirmDeleteFurnitureAfter")}
+            {t("productImport.floorPlan.confirmDeleteFurniture")} "{furnitureName}"{" "}
+            {t("productImport.floorPlan.confirmDeleteFurnitureAfter")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-          {t("cancel")}
+            {t("cancel")}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-          {t("productImport.delete")}
+            {t("productImport.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -193,9 +225,8 @@ export function FurnitureLibrary() {
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
   const { toast } = useToast()
-  const { savedFurniture, clearAllFurniture, deleteFurniture  } = useFurnitureStore()
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const { savedFurniture, clearAllFurniture, deleteFurniture } = useFurnitureStore()
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const [searchTerm, setSearchTerm] = useState("")
   const [sortField, setSortField] = useState<"name" | "type" | "products">("name")
@@ -205,6 +236,7 @@ export function FurnitureLibrary() {
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [furnitureToDelete, setFurnitureToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [clearLibraryDialogOpen, setClearLibraryDialogOpen] = useState(false)
 
   // Filter furniture
   const filteredFurniture = savedFurniture.filter((furniture) => {
@@ -218,11 +250,17 @@ export function FurnitureLibrary() {
 
     return matchesSearch && matchesType
   })
+
+  // Handle clear library
   const handleClearLibrary = () => {
-    if (confirm("Êtes-vous sûr de vouloir vider toute la bibliothèque ?")) {
-      clearAllFurniture()
-    }
+    clearAllFurniture()
+    toast({
+      title: t("productImport.libraryCleared") || "Bibliothèque vidée",
+      description: t("productImport.allFurnitureRemoved") || "Tous les meubles ont été supprimés.",
+    })
+    setClearLibraryDialogOpen(false)
   }
+
   // Sort furniture
   const sortedFurniture = [...filteredFurniture].sort((a, b) => {
     let valueA, valueB
@@ -297,27 +335,33 @@ export function FurnitureLibrary() {
   }
 
   return (
-    <div className="container max-w-6xl mx-auto py-6 mt-12"
-    dir={textDirection} // Applique RTL/LTR au conteneur principal
-  >
+    <div
+      className="container max-w-6xl mx-auto py-6 mt-12"
+      dir={textDirection} // Applique RTL/LTR au conteneur principal
+    >
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">{t("furnitureLibrary")}</h1>
-          <Button 
-        variant="outline" 
-        onClick={() => window.location.href = "/Editor"}
-        className="flex items-center gap-2 mb-4"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t("productImport.backToEditor")}
-      </Button>
-          <Button asChild>
-            <Link href="/furniture-editor">
-              <Plus className="h-4 w-4 mr-2" />
-              {t("productImport.floorPlan.creerMeuble")}
-
-            </Link>
+          <Button
+            variant="outline"
+            onClick={() => (window.location.href = "/Editor")}
+            className="flex items-center gap-2 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t("productImport.backToEditor")}
           </Button>
+          <div className="flex space-x-2">
+            <Button variant="destructive" onClick={() => setClearLibraryDialogOpen(true)}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t("productImport.clearLibrary") || "Vider la bibliothèque"}
+            </Button>
+            <Button asChild>
+              <Link href="/furniture-editor">
+                <Plus className="h-4 w-4 mr-2" />
+                {t("productImport.floorPlan.creerMeuble")}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col space-y-4">
@@ -354,19 +398,19 @@ export function FurnitureLibrary() {
           <div className="flex items-center space-x-2 text-sm">
             <span className="text-muted-foreground">{t("productImport.sortBy")}:</span>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("name")}>
-            {t("productImport.name")}
+              {t("productImport.name")}
               {sortField === "name" && (
                 <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
               )}
             </Button>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("type")}>
-            {t("productImport.type")}
+              {t("productImport.type")}
               {sortField === "type" && (
                 <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
               )}
             </Button>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("products")}>
-            {t("productImport.produits")}
+              {t("productImport.produits")}
               {sortField === "products" && (
                 <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
               )}
@@ -374,7 +418,9 @@ export function FurnitureLibrary() {
           </div>
 
           {/* Results count */}
-          <div className="text-sm text-muted-foreground">{filteredFurniture.length} {t("productImport.meubletrouve")}</div>
+          <div className="text-sm text-muted-foreground">
+            {filteredFurniture.length} {t("productImport.meubletrouve")}
+          </div>
 
           {/* Furniture grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -406,6 +452,27 @@ export function FurnitureLibrary() {
           furnitureName={furnitureToDelete.name}
         />
       )}
+
+      {/* Clear library confirmation dialog */}
+      <Dialog open={clearLibraryDialogOpen} onOpenChange={setClearLibraryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("productImport.clearLibrary") || "Vider la bibliothèque"}</DialogTitle>
+            <DialogDescription>
+              {t("productImport.confirmClearLibrary") ||
+                "Êtes-vous sûr de vouloir supprimer tous les meubles de la bibliothèque ? Cette action est irréversible."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClearLibraryDialogOpen(false)}>
+              {t("cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleClearLibrary}>
+              {t("productImport.clearLibrary") || "Vider la bibliothèque"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

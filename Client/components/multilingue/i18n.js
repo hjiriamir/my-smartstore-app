@@ -572,6 +572,8 @@ i18n
           }
           ,
           productImport: {
+            filterByStore:"Filter by Store",
+            allStores:"All Store",
             title: "Product Import",
             title1:"Importing Categories",
             description: "Import your products from an Excel or CSV file and associate them with images",
@@ -1516,6 +1518,8 @@ i18n
 
           },
           productImport: {
+            filterByStore:"Filtrer par magasin",
+            allStores:"Tous les magasins",
             title: "Importation de Produits",
             title1:"Importation de Categories",
             description: "Importez vos produits depuis un fichier Excel ou CSV et associez-les à des images",
@@ -2461,6 +2465,8 @@ i18n
         }
         ,
           productImport: {
+            filterByStore:"تصفية حسب المتجر",
+            allStores:"كل المتاجر",
             title: "استيراد المنتجات",
             title1:"استيراد الفئات",
             description: "قم باستيراد منتجاتك من ملف Excel أو CSV واربطها بالصور",

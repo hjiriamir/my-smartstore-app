@@ -29,6 +29,8 @@ export interface FurnitureItem {
   y: number
   z: number
   rotation: number
+  storeId?: string // Ajout de l'ID du magasin associé au meuble
+  storeName?: string // Ajout du nom du magasin pour l'affichage
 }
 
 export interface FurnitureProduct {
@@ -37,6 +39,7 @@ export interface FurnitureProduct {
   position: number
   quantity?: number
   side?: string // Add side property for 4-sided displays
+  storeId?: string // Ajout de l'ID du magasin pour chaque produit
 }
 
 export interface SavedFurniture {
@@ -45,6 +48,8 @@ export interface SavedFurniture {
   description?: string
   createdAt: number
   updatedAt: number
+  storeId?: string // Ajout de l'ID du magasin au niveau du meuble sauvegardé
+  storeName?: string // Ajout du nom du magasin pour l'affichage
 }
 
 export interface StoreLayout {
@@ -60,15 +65,37 @@ export interface StoreLayout {
   }[]
   createdAt: number
   updatedAt: number
+  storeId?: string // Ajout de l'ID du magasin pour le layout
+}
+
+// Interface pour représenter un magasin
+export interface Store {
+  id: string
+  name: string
+  address?: string
 }
 
 interface FurnitureStore {
   savedFurniture: SavedFurniture[]
   storeLayouts: StoreLayout[]
+  stores: Store[] // Ajout d'une liste de magasins en cache
 
   // Furniture actions
-  addFurniture: (furniture: FurnitureItem, products: FurnitureProduct[], description?: string) => void
-  updateFurniture: (id: string, furniture: FurnitureItem, products: FurnitureProduct[], description?: string) => void
+  addFurniture: (
+    furniture: FurnitureItem,
+    products: FurnitureProduct[],
+    description?: string,
+    storeId?: string,
+    storeName?: string,
+  ) => void
+  updateFurniture: (
+    id: string,
+    furniture: FurnitureItem,
+    products: FurnitureProduct[],
+    description?: string,
+    storeId?: string,
+    storeName?: string,
+  ) => void
   deleteFurniture: (id: string) => void
   clearAllFurniture: () => void
 
@@ -77,48 +104,80 @@ interface FurnitureStore {
     name: string,
     furniture: { furnitureId: string; x: number; y: number; z: number; rotation: number }[],
     description?: string,
+    storeId?: string,
   ) => void
   updateStoreLayout: (
     id: string,
     name: string,
     furniture: { furnitureId: string; x: number; y: number; z: number; rotation: number }[],
     description?: string,
+    storeId?: string,
   ) => void
   deleteStoreLayout: (id: string) => void
 
   // Planogram actions
-  addPlanogramFurniture: (furniture: FurnitureItem, products: FurnitureProduct[], description?: string) => void
+  addPlanogramFurniture: (
+    furniture: FurnitureItem,
+    products: FurnitureProduct[],
+    description?: string,
+    storeId?: string,
+    storeName?: string,
+  ) => void
+
+  // Store management
+  addStore: (store: Store) => void
+  updateStores: (stores: Store[]) => void
+  getStoreById: (id: string) => Store | undefined
 }
 
 export const useFurnitureStore = create<FurnitureStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       savedFurniture: [],
       storeLayouts: [],
+      stores: [], // Initialisation de la liste des magasins
 
       // Furniture actions
-      addFurniture: (furniture, products, description) =>
+      addFurniture: (furniture, products, description, storeId, storeName) =>
         set((state) => ({
           savedFurniture: [
             ...state.savedFurniture,
             {
-              furniture,
-              products,
+              furniture: {
+                ...furniture,
+                storeId, // Ajout de l'ID du magasin au meuble
+                storeName, // Ajout du nom du magasin
+              },
+              products: products.map((product) => ({
+                ...product,
+                storeId, // Ajout de l'ID du magasin à chaque produit
+              })),
               description,
+              storeId, // Ajout de l'ID du magasin au niveau du meuble sauvegardé
+              storeName, // Ajout du nom du magasin
               createdAt: Date.now(),
               updatedAt: Date.now(),
             },
           ],
         })),
 
-      updateFurniture: (id, furniture, products, description) =>
+      updateFurniture: (id, furniture, products, description, storeId, storeName) =>
         set((state) => ({
           savedFurniture: state.savedFurniture.map((item) =>
             item.furniture.id === id
               ? {
-                  furniture,
-                  products,
+                  furniture: {
+                    ...furniture,
+                    storeId, // Mise à jour de l'ID du magasin
+                    storeName, // Mise à jour du nom du magasin
+                  },
+                  products: products.map((product) => ({
+                    ...product,
+                    storeId, // Mise à jour de l'ID du magasin pour chaque produit
+                  })),
                   description,
+                  storeId, // Mise à jour de l'ID du magasin au niveau du meuble sauvegardé
+                  storeName, // Mise à jour du nom du magasin
                   createdAt: item.createdAt,
                   updatedAt: Date.now(),
                 }
@@ -135,7 +194,7 @@ export const useFurnitureStore = create<FurnitureStore>()(
       clearAllFurniture: () => set({ savedFurniture: [] }),
 
       // Store layout actions
-      addStoreLayout: (name, furniture, description) =>
+      addStoreLayout: (name, furniture, description, storeId) =>
         set((state) => ({
           storeLayouts: [
             ...state.storeLayouts,
@@ -144,13 +203,14 @@ export const useFurnitureStore = create<FurnitureStore>()(
               name,
               description,
               furniture,
+              storeId, // Ajout de l'ID du magasin
               createdAt: Date.now(),
               updatedAt: Date.now(),
             },
           ],
         })),
 
-      updateStoreLayout: (id, name, furniture, description) =>
+      updateStoreLayout: (id, name, furniture, description, storeId) =>
         set((state) => ({
           storeLayouts: state.storeLayouts.map((layout) =>
             layout.id === id
@@ -159,6 +219,7 @@ export const useFurnitureStore = create<FurnitureStore>()(
                   name,
                   description,
                   furniture,
+                  storeId, // Mise à jour de l'ID du magasin
                   updatedAt: Date.now(),
                 }
               : layout,
@@ -170,24 +231,45 @@ export const useFurnitureStore = create<FurnitureStore>()(
           storeLayouts: state.storeLayouts.filter((layout) => layout.id !== id),
         })),
 
-      // Planogram actions - Modified to preserve the original furniture type
-      addPlanogramFurniture: (furniture, products, description) =>
+      // Planogram actions - Modified to preserve the original furniture type and add store information
+      addPlanogramFurniture: (furniture, products, description, storeId, storeName) =>
         set((state) => ({
           savedFurniture: [
             ...state.savedFurniture,
             {
               furniture: {
                 ...furniture,
-                // Keep the original furniture type instead of forcing it to "planogram"
-                // This is the key change to fix the compatibility issue
+                storeId, // Ajout de l'ID du magasin
+                storeName, // Ajout du nom du magasin
               },
-              products,
+              products: products.map((product) => ({
+                ...product,
+                storeId, // Ajout de l'ID du magasin à chaque produit
+              })),
               description,
+              storeId, // Ajout de l'ID du magasin au niveau du meuble sauvegardé
+              storeName, // Ajout du nom du magasin
               createdAt: Date.now(),
               updatedAt: Date.now(),
             },
           ],
         })),
+
+      // Store management
+      addStore: (store) =>
+        set((state) => ({
+          stores: [...state.stores, store],
+        })),
+
+      updateStores: (stores) =>
+        set(() => ({
+          stores: stores,
+        })),
+
+      getStoreById: (id) => {
+        const state = get()
+        return state.stores.find((store) => store.id === id)
+      },
     }),
     {
       name: "furniture-store",

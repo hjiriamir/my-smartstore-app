@@ -758,7 +758,7 @@ export const WallDisplay = ({ furniture, displayItems, products, onRemove }) => 
         const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Calculate position based on slot, adjusting for RTL if needed
@@ -864,7 +864,7 @@ export const ClothingRack = ({ furniture, displayItems, products, onRemove }) =>
         const sectionY = (Number.parseInt(sectionIndex) + 1) * sectionSpacing
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Calculate position based on slot, adjusting for RTL if needed
@@ -956,7 +956,7 @@ export const AccessoryDisplay = ({ furniture, displayItems, products, onRemove }
         const sectionY = (Number.parseInt(sectionIndex) + 1) * sectionHeight
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Calculate position based on slot, adjusting for RTL if needed
@@ -1032,7 +1032,7 @@ export const ModularCube = ({ furniture, displayItems, products, onRemove }) => 
         const sectionY = Number.parseInt(sectionIndex) * cubeSize + cubeSize / 2
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           const row = Math.floor(item.position / slots)
@@ -1149,7 +1149,7 @@ export const GondolaDisplay = ({ furniture, displayItems, products, onRemove }) 
         const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Déterminer si c'est la face A ou B de la gondole
@@ -1247,7 +1247,7 @@ export const TableDisplay = ({ furniture, displayItems, products, onRemove }) =>
       {/* Display items on the table */}
       {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Calculate position on the table
@@ -1378,7 +1378,7 @@ export const RefrigeratorDisplay = ({ furniture, displayItems, products, onRemov
         const sectionY = (Number.parseInt(sectionIndex) + 1) * (height / (sections + 1))
         
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
           
           const itemX = (item.position - slots/2 + 0.5) * (width / slots)
@@ -1552,7 +1552,7 @@ export const Fridge3D = ({ furniture, displayItems, products, onRemove }) => {
       {Object.entries(itemsBySection).map(([sectionIndex, items]) => {
         const sectionY = parseInt(sectionIndex) * sectionHeight - height / 2 + sectionHeight / 2;
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId);
+          const product = products.find((p) => p.primary_id === item.productId);
           if (!product) return null;
 
           const itemX = isRTL
@@ -1719,7 +1719,7 @@ export const SupermarketFridge = ({
         return sectionItems.map((item, slotIndex) => {
           if (!item) return null;
           
-          const product = products.find((p) => p.primary_Id === item.productId);
+          const product = products.find((p) => p.primary_id === item.productId);
           if (!product) return null;
 
           // Calculate position based on slot and section
@@ -1867,7 +1867,7 @@ export const RefrigeratedShowcase = ({ furniture, displayItems, products, onRemo
         const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Calculate position based on slot, adjusting for RTL if needed
@@ -1994,7 +1994,7 @@ export const ClothingDisplay = ({ furniture, displayItems, products, onRemove })
 
               {/* Display items */}
               {itemsBySection[sectionIndex]?.map((item) => {
-                const product = products.find((p) => p.primary_Id === item.productId)
+                const product = products.find((p) => p.primary_id === item.productId)
                 if (!product) return null
 
                 // Calculate position based on slot, adjusting for RTL if needed
@@ -2040,7 +2040,7 @@ export const ClothingDisplay = ({ furniture, displayItems, products, onRemove })
 
               {/* Display items */}
               {itemsBySection[sectionIndex]?.map((item) => {
-                const product = products.find((p) => p.primary_Id === item.productId)
+                const product = products.find((p) => p.primary_id === item.productId)
                 if (!product) return null
 
                 // Calculate position based on slot, adjusting for RTL if needed
@@ -2099,7 +2099,7 @@ export const ClothingDisplay = ({ furniture, displayItems, products, onRemove })
 
               {/* Display items */}
               {itemsBySection[sectionIndex]?.map((item) => {
-                const product = products.find((p) => p.primary_Id === item.productId)
+                const product = products.find((p) => p.primary_id === item.productId)
                 if (!product) return null
 
                 // Calculate position based on slot, adjusting for RTL if needed
@@ -2241,7 +2241,7 @@ export const ClothingWallDisplay = ({ furniture, displayItems, products, onRemov
         const sectionY = Number.parseInt(sectionIndex) * sectionHeight + sectionHeight / 2
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) {
             console.warn("Product not found:", item.productId)
             return null
@@ -2418,7 +2418,7 @@ export const CashierDisplay = ({ furniture, displayItems, products, onRemove }) 
       {/* Display items from the furniture configuration */}
       {displayItems &&
         displayItems.map((item, index) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Position items on the counter
@@ -2562,7 +2562,7 @@ export const ShelvesDisplay = ({ furniture, displayItems, products, onRemove }) 
         const sectionY = Number(sectionIndex) * shelfSpacing + shelfSpacing / 2 + shelfThickness / 2
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           const quantity = Math.max(1, item.quantity || 1)
@@ -2736,7 +2736,7 @@ export const PlanogramDisplay = ({ furniture, displayItems, products, onRemove }
         const sectionY = Number(sectionIndex) * shelfSpacing + shelfSpacing / 2 + shelfThickness / 2 + 0.15
 
         return items.map((item) => {
-          const product = products.find((p) => p.primary_Id === item.productId)
+          const product = products.find((p) => p.primary_id === item.productId)
           if (!product) return null
 
           // Calculate position based on slot, adjusting for RTL if needed

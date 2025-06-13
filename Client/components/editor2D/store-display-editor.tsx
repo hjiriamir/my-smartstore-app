@@ -46,7 +46,6 @@ import {
   GondolaDisplay,
   TableDisplay,
   PlanogramDisplay,
-  RefrigeratorDisplay,
   RefrigeratedShowcase,
   CashierDisplay,
   ShelvesDisplay,
@@ -55,6 +54,7 @@ import {
   SupermarketFridge,
 } from "@/components/editor2D/furniture-3d-components"
 import { Wall, Window, Door } from "@/components/editor2D/structural-3d-components"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -73,6 +73,12 @@ import * as THREE from "three"
 import "@/components/multilingue/i18n.js"
 import { useTranslation } from "react-i18next"
 
+
+interface Magasin {
+  magasin_id: string; 
+  nom_magasin: string;
+ 
+}
 // Room configuration
 const ROOM_CONFIG = {
   width: 20,
@@ -88,8 +94,10 @@ const ItemTypes = {
   FURNITURE: "furniture",
   WALL: "wall",
   WINDOW: "window",
-  DOOR: "door"
+  DOOR: "door",
 }
+
+
 
 // Composant pour précharger les textures des produits
 const TexturePreloader = ({ products }) => {
@@ -368,7 +376,6 @@ const ManualMatchDialog = ({ open, onOpenChange, furnitureId, furnitureName, flo
 // Fonction pour créer des murs et des fenêtres après la fonction handleManualElementSelection
 // Ajouter cette fonction après handleManualElementSelection
 
-
 // Realistic Room Components
 const RealisticFloor = () => {
   const floorTextures = useTexture({
@@ -508,13 +515,13 @@ const DraggableFurnitureItem = ({
         ${
           isMatched
             ? `
-          border-cyan-400 bg-gradient-to-r from-cyan-50 to-cyan-100
-          shadow-lg shadow-cyan-500/40
-          ring-1 ring-cyan-300/70
-          hover:shadow-cyan-600/60
-          hover:scale-[1.02]
-          ${!isPlaced ? "animate-[pulse_2s_ease-in-out_infinite]" : ""}
-        `
+      border-cyan-400 bg-gradient-to-r from-cyan-50 to-cyan-100
+      shadow-lg shadow-cyan-500/40
+      ring-1 ring-cyan-300/70
+      hover:shadow-cyan-600/60
+      hover:scale-[1.02]
+      ${!isPlaced ? "animate-[pulse_2s_ease-in-out_infinite]" : ""}
+    `
             : ""
         }
         ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
@@ -563,30 +570,79 @@ const DraggableFurnitureItem = ({
 
       {/* Boutons d'action */}
       <div className="flex justify-between mt-2 w-full">
-        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setIsEditing(true)}>
-          {t("productImport.floorPlan.renommer")}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setIsEditing(true)}>
+                {t("productImport.floorPlan.renommer")}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("productImport.floorPlan.renameFurniture")}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {floorPlan && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-xs"
-            onClick={() => onManualPlacement(furniture.furniture.id, true)}
-          >
-            {t("productImport.floorPlan.matchFurniture")}
-          </Button>
+          <>
+            {isMatched ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs text-red-500 border-red-200 hover:bg-red-50"
+                      onClick={() => onManualPlacement(furniture.furniture.id, false, true)}
+                    >
+                      {t("cancel")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t("productImport.floorPlan.cancelMatching")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => onManualPlacement(furniture.furniture.id, true)}
+                    >
+                      {t("productImport.floorPlan.matchFurniture")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t("productImport.floorPlan.associateWithElement")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </>
         )}
 
         {isMatched && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-xs"
-            onClick={() => handleManualPlacement(furniture.furniture.id)}
-          >
-            {t("productImport.floorPlan.placer")}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => handleManualPlacement(furniture.furniture.id)}
+                >
+                  {t("productImport.floorPlan.placer")}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("productImport.floorPlan.placeInStore")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
 
@@ -634,32 +690,32 @@ const FurnitureControls = ({ selectedFurniture, onUpdate, onDelete }) => {
   }
 
   // Fonction pour mettre à jour les dimensions
-const handleDimensionChange = (dimension, value) => {
-  console.log(`Changing ${dimension} to ${value}`)
-  
-  // Pour les éléments structurels (mur, fenêtre, porte)
-  if (['wall', 'window', 'door'].includes(selectedFurniture.type)) {
-    onUpdate({
-      ...selectedFurniture,
-      [dimension]: Number.parseFloat(value),
-    })
-    return
-  }
+  const handleDimensionChange = (dimension, value) => {
+    console.log(`Changing ${dimension} to ${value}`)
 
-  // Pour les meubles normaux
-  if (selectedFurniture.savedFurniture && selectedFurniture.savedFurniture.furniture) {
-    onUpdate({
-      ...selectedFurniture,
-      savedFurniture: {
-        ...selectedFurniture.savedFurniture,
-        furniture: {
-          ...selectedFurniture.savedFurniture.furniture,
-          [dimension]: Number.parseFloat(value),
+    // Pour les éléments structurels (mur, fenêtre, porte)
+    if (["wall", "window", "door"].includes(selectedFurniture.type)) {
+      onUpdate({
+        ...selectedFurniture,
+        [dimension]: Number.parseFloat(value),
+      })
+      return
+    }
+
+    // Pour les meubles normaux
+    if (selectedFurniture.savedFurniture && selectedFurniture.savedFurniture.furniture) {
+      onUpdate({
+        ...selectedFurniture,
+        savedFurniture: {
+          ...selectedFurniture.savedFurniture,
+          furniture: {
+            ...selectedFurniture.savedFurniture.furniture,
+            [dimension]: Number.parseFloat(value),
+          },
         },
-      },
-    })
+      })
+    }
   }
-}
 
   // Fonction pour mettre à jour le nom
   const handleNameChange = (value) => {
@@ -707,91 +763,74 @@ const handleDimensionChange = (dimension, value) => {
           <Label htmlFor="furniture-name">{t("productImport.floorPlan.nomMeuble")}</Label>
           <Input
             id="furniture-name"
-            value={selectedFurniture?.savedFurniture?.furniture?.name || ""} 
+            value={selectedFurniture?.savedFurniture?.furniture?.name || ""}
             onChange={(e) => handleNameChange(e.target.value)}
           />
-
         </div>
 
         {/* Position Controls */}
         <div>
-  <h4 className="text-sm font-medium mb-2">{t("position")}</h4>
-  <div className="grid grid-cols-3 gap-2">
-    <div>
-      <Label htmlFor="position-x">{t("productImport.positionX")}</Label>
-      <Input
-        id="position-x"
-        type="number"
-        step="0.1"
-        value={selectedFurniture.x}
-        onChange={(e) => handlePositionChange("x", e.target.value)}
-      />
-    </div>
-    <div>
-      <Label htmlFor="position-y">{t("productImport.positionY")}</Label>
-      <Input
-        id="position-y"
-        type="number"
-        step="0.1"
-        value={selectedFurniture.y}
-        onChange={(e) => handlePositionChange("y", e.target.value)}
-      />
-    </div>
-    <div>
-      <Label htmlFor="position-z">{t("productImport.positionZ")}</Label>
-      <Input
-        id="position-z"
-        type="number"
-        step="0.1"
-        value={selectedFurniture.z}
-        onChange={(e) => handlePositionChange("z", e.target.value)}
-      />
-    </div>
-  </div>
+          <h4 className="text-sm font-medium mb-2">{t("position")}</h4>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label htmlFor="position-x">{t("productImport.positionX")}</Label>
+              <Input
+                id="position-x"
+                type="number"
+                step="0.1"
+                value={selectedFurniture.x}
+                onChange={(e) => handlePositionChange("x", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="position-y">{t("productImport.positionY")}</Label>
+              <Input
+                id="position-y"
+                type="number"
+                step="0.1"
+                value={selectedFurniture.y}
+                onChange={(e) => handlePositionChange("y", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="position-z">{t("productImport.positionZ")}</Label>
+              <Input
+                id="position-z"
+                type="number"
+                step="0.1"
+                value={selectedFurniture.z}
+                onChange={(e) => handlePositionChange("z", e.target.value)}
+              />
+            </div>
+          </div>
 
-  {/* Movement Controls */}
-  <div className="mt-2">
-    <Label className="text-sm mb-1 block">{t("productImport.deplacer")}</Label>
-    <div className="grid grid-cols-3 gap-1 w-full">
-      <div className="col-span-3 flex justify-center">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => handleMoveButton("y", 1)}
-        >
-          <ArrowUp className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="flex justify-end">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => handleMoveButton("x", isRTL ? 1 : -1)}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="flex justify-center">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => handleMoveButton("y", -1)}
-        >
-          <ArrowDown className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="flex justify-start">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => handleMoveButton("x", isRTL ? -1 : 1)}
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  </div>
-</div>
+          {/* Movement Controls */}
+          <div className="mt-2">
+            <Label className="text-sm mb-1 block">{t("productImport.deplacer")}</Label>
+            <div className="grid grid-cols-3 gap-1 w-full">
+              <div className="col-span-3 flex justify-center">
+                <Button size="sm" variant="outline" onClick={() => handleMoveButton("y", 1)}>
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" onClick={() => handleMoveButton("x", isRTL ? 1 : -1)}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex justify-center">
+                <Button size="sm" variant="outline" onClick={() => handleMoveButton("y", -1)}>
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex justify-start">
+                <Button size="sm" variant="outline" onClick={() => handleMoveButton("x", isRTL ? -1 : 1)}>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Rotation Controls */}
         <div>
@@ -818,55 +857,61 @@ const handleDimensionChange = (dimension, value) => {
 
         {/* Dimension Controls */}
         <div>
-        <h4 className="text-sm font-medium mb-2">{t("productImport.dimensions")}</h4>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="width">{t("productImport.width")}</Label>
-            <Input
-              id="width"
-              type="number"
-              step="0.1"
-              min="0.1"
-              value={
-                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window' || selectedFurniture.type === 'door'
-                  ? selectedFurniture.width
-                  : selectedFurniture?.savedFurniture?.furniture?.width || 0.1
-              }
-              onChange={(e) => handleDimensionChange("width", e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="height">{t("productImport.height")}</Label>
-            <Input
-              id="height"
-              type="number"
-              step="0.1"
-              min="0.1"
-              value={
-                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window' || selectedFurniture.type === 'door'
-                  ? selectedFurniture.height
-                  : selectedFurniture?.savedFurniture?.furniture?.height || 0.1
-              }
-              onChange={(e) => handleDimensionChange("height", e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="depth">{t("productImport.depth")}</Label>
-            <Input
-              id="depth"
-              type="number"
-              step="0.1"
-              min="0.1"
-              value={
-                selectedFurniture.type === 'wall' || selectedFurniture.type === 'window' || selectedFurniture.type === 'door'
-                  ? selectedFurniture.depth
-                  : selectedFurniture?.savedFurniture?.furniture?.depth || 0.1
-              }
-              onChange={(e) => handleDimensionChange("depth", e.target.value)}
-            />
+          <h4 className="text-sm font-medium mb-2">{t("productImport.dimensions")}</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="width">{t("productImport.width")}</Label>
+              <Input
+                id="width"
+                type="number"
+                step="0.1"
+                min="0.1"
+                value={
+                  selectedFurniture.type === "wall" ||
+                  selectedFurniture.type === "window" ||
+                  selectedFurniture.type === "door"
+                    ? selectedFurniture.width
+                    : selectedFurniture?.savedFurniture?.furniture?.width || 0.1
+                }
+                onChange={(e) => handleDimensionChange("width", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="height">{t("productImport.height")}</Label>
+              <Input
+                id="height"
+                type="number"
+                step="0.1"
+                min="0.1"
+                value={
+                  selectedFurniture.type === "wall" ||
+                  selectedFurniture.type === "window" ||
+                  selectedFurniture.type === "door"
+                    ? selectedFurniture.height
+                    : selectedFurniture?.savedFurniture?.furniture?.height || 0.1
+                }
+                onChange={(e) => handleDimensionChange("height", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="depth">{t("productImport.depth")}</Label>
+              <Input
+                id="depth"
+                type="number"
+                step="0.1"
+                min="0.1"
+                value={
+                  selectedFurniture.type === "wall" ||
+                  selectedFurniture.type === "window" ||
+                  selectedFurniture.type === "door"
+                    ? selectedFurniture.depth
+                    : selectedFurniture?.savedFurniture?.furniture?.depth || 0.1
+                }
+                onChange={(e) => handleDimensionChange("depth", e.target.value)}
+              />
+            </div>
           </div>
         </div>
-      </div>
         <div className="pt-2">
           <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
             <Trash2 className="h-4 w-4 mr-2" />
@@ -936,10 +981,10 @@ const StoreDisplayArea = ({
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
-   // Nouveau composant pour les contrôles améliorés
+  // Nouveau composant pour les contrôles améliorés
   const EnhancedControls = () => {
     const { camera, gl } = useThree()
-    
+
     useEffect(() => {
       // Configuration initiale de la caméra
       camera.position.set(ROOM_CONFIG.width / 2, ROOM_CONFIG.height * 1.5, ROOM_CONFIG.depth / 2)
@@ -1104,66 +1149,52 @@ const StoreDisplayArea = ({
           {placedFurniture.map((item) => {
             if (item.type === "door") {
               return (
-                <group 
-                  key={`door-${item.id}`} 
+                <group
+                  key={`door-${item.id}`}
                   onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectFurniture(item.id);
+                    e.stopPropagation()
+                    onSelectFurniture(item.id)
                   }}
                   userData-selected={item.id === selectedFurnitureId}
                   position={[item.x, item.y, item.z]}
                   rotation={[0, (item.rotation * Math.PI) / 180, 0]}
                 >
-                  <Door 
-                    width={item.width} 
-                    height={item.height} 
-                    depth={item.depth} 
-                  />
+                  <Door width={item.width} height={item.height} depth={item.depth} />
                 </group>
-              );
+              )
             }
             // Handle walls and windows
             if (item.type === "wall") {
               return (
-                <group 
-                    key={`wall-${item.id}`} 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelectFurniture(item.id)
-                    }}
-                    userData-selected={item.id === selectedFurnitureId}
-                    position={[item.x, item.y, item.z]}
-                    rotation={[0, (item.rotation * Math.PI) / 180, 0]}
-                  >
-                    <Wall 
-                      width={item.width} 
-                      height={item.height} 
-                      depth={item.depth} 
-                    />
-                  </group>
+                <group
+                  key={`wall-${item.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelectFurniture(item.id)
+                  }}
+                  userData-selected={item.id === selectedFurnitureId}
+                  position={[item.x, item.y, item.z]}
+                  rotation={[0, (item.rotation * Math.PI) / 180, 0]}
+                >
+                  <Wall width={item.width} height={item.height} depth={item.depth} />
+                </group>
+              )
+            }
 
-                                )
-                              }
-
-                              if (item.type === "window") {
-                                return (
-                                  <group 
-                    key={`window-${item.id}`} 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelectFurniture(item.id)
-                    }}
-                    userData-selected={item.id === selectedFurnitureId}
-                    position={[item.x, item.y, item.z]}
-                    rotation={[0, (item.rotation * Math.PI) / 180, 0]}
-                  >
-                    <Window 
-                      width={item.width} 
-                      height={item.height} 
-                      depth={item.depth} 
-                    />
-                  </group>
-
+            if (item.type === "window") {
+              return (
+                <group
+                  key={`window-${item.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSelectFurniture(item.id)
+                  }}
+                  userData-selected={item.id === selectedFurnitureId}
+                  position={[item.x, item.y, item.z]}
+                  rotation={[0, (item.rotation * Math.PI) / 180, 0]}
+                >
+                  <Window width={item.width} height={item.height} depth={item.depth} />
+                </group>
               )
             }
 
@@ -1407,6 +1438,9 @@ export function StoreDisplayEditor() {
   const { products } = useProductStore()
   const { savedFurniture } = useFurnitureStore()
 
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
+  const [selectedMagasin, setSelectedMagasin] = useState<string>("all");
+ 
   const [placedFurniture, setPlacedFurniture] = useState([])
   const [selectedFurnitureId, setSelectedFurnitureId] = useState(null)
   const [isExporting, setIsExporting] = useState(false)
@@ -1448,6 +1482,28 @@ export function StoreDisplayEditor() {
   // Obtenir le meuble sélectionné
   const selectedFurniture = placedFurniture.find((item) => item.id === selectedFurnitureId)
 
+  // fonction de recupération des agasins
+  const fetchMagasins = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:8081/api/magasins/getAllMagasins");
+      if (!response.ok) throw new Error("Erreur lors de la récupération des magasins");
+      const data: Magasin[] = await response.json(); // Typage ici
+      setMagasins(data);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger la liste des magasins",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+// Appelez cette fonction dans un useEffect
+useEffect(() => {
+  fetchMagasins();
+}, [fetchMagasins]);
+
   // Fonction pour obtenir les détails d'un produit à partir de son ID
   const getProductDetails = useCallback(
     (productId) => {
@@ -1467,10 +1523,10 @@ export function StoreDisplayEditor() {
       depth: depth,
       rotation: rotation,
     }
-  
+
     setPlacedFurniture((prev) => [...prev, newWall])
     setSelectedFurnitureId(newWall.id)
-  
+
     toast({
       title: "Mur ajouté",
       description: "Un nouveau mur a été ajouté à la scène.",
@@ -1487,16 +1543,16 @@ export function StoreDisplayEditor() {
       height: height,
       depth: depth,
       rotation: rotation,
-    };
-  
-    setPlacedFurniture((prev) => [...prev, newDoor]);
-    setSelectedFurnitureId(newDoor.id);
-  
+    }
+
+    setPlacedFurniture((prev) => [...prev, newDoor])
+    setSelectedFurnitureId(newDoor.id)
+
     toast({
       title: "Porte ajoutée",
       description: "Une nouvelle porte a été ajoutée à la scène.",
-    });
-  };
+    })
+  }
   const handleAddWindow = (x, z, width = 2, height = 1.5, depth = 0.1, rotation = 0) => {
     const newWindow = {
       id: `window-${Date.now()}`,
@@ -1509,10 +1565,10 @@ export function StoreDisplayEditor() {
       depth: depth,
       rotation: rotation,
     }
-  
+
     setPlacedFurniture((prev) => [...prev, newWindow])
     setSelectedFurnitureId(newWindow.id)
-  
+
     toast({
       title: "Fenêtre ajoutée",
       description: "Une nouvelle fenêtre a été ajoutée à la scène.",
@@ -1878,7 +1934,7 @@ export function StoreDisplayEditor() {
         }
       }
     }
-    onDrop(item.id, x, y, z);
+    onDrop(item.id, x, y, z)
   }
 
   // Handle element selection from dialog
@@ -2248,7 +2304,47 @@ export function StoreDisplayEditor() {
   }
 
   // Remplacer la fonction handleManualPlacement par celle-ci:
-  const handleManualPlacement = (furnitureId, showMatchDialog = false) => {
+  const handleManualPlacement = (furnitureId, showMatchDialog = false, cancelMatch = false) => {
+    // If we want to cancel the match
+    if (cancelMatch) {
+      // Find the element ID that is matched with this furniture
+      const elementId = Object.keys(matchedPlanElements).find(
+        (key) => matchedPlanElements[key].furnitureId === furnitureId,
+      )
+
+      if (elementId) {
+        // Create a new object without this match
+        const newMatchedElements = { ...matchedPlanElements }
+        delete newMatchedElements[elementId]
+
+        setMatchedPlanElements(newMatchedElements)
+
+        // Remove any placed furniture with this furnitureId
+        const furnitureToRemove = placedFurniture.filter((item) => item.savedFurnitureId === furnitureId)
+
+        if (furnitureToRemove.length > 0) {
+          // Remove the furniture from the scene
+          setPlacedFurniture((prev) => prev.filter((item) => item.savedFurnitureId !== furnitureId))
+
+          // If any of the removed furniture was selected, clear the selection
+          if (furnitureToRemove.some((item) => item.id === selectedFurnitureId)) {
+            setSelectedFurnitureId(null)
+          }
+
+          toast({
+            title: "Association et meubles supprimés",
+            description: `L'association a été annulée et ${furnitureToRemove.length} meuble(s) ont été supprimés de la scène.`,
+          })
+        } else {
+          toast({
+            title: "Association annulée",
+            description: "L'association entre le meuble et l'élément du plan a été annulée.",
+          })
+        }
+      }
+      return
+    }
+
     // Si on veut afficher le dialogue de matching manuel
     if (showMatchDialog) {
       const furniture =
@@ -2508,6 +2604,24 @@ export function StoreDisplayEditor() {
                             value="library"
                             className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
                           >
+                              <div className="mb-4 mt-4">
+                                <Label htmlFor="magasin-filter" className="block mb-2 text-sm font-medium mt-4">
+                                  {t("productImport.filterByStore")}
+                                </Label>
+                                <select
+                                  id="magasin-filter"
+                                  value={selectedMagasin}
+                                  onChange={(e) => setSelectedMagasin(e.target.value)}
+                                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                                >
+                                  <option value="all">{t("productImport.allStores")}</option>
+                                  {magasins.map((magasin) => (
+                                    <option key={magasin.magasin_id} value={magasin.magasin_id}>
+                                      {magasin.nom_magasin}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                             <div className="px-4 pb-4">
                               <Button asChild className="w-full mb-4 mt-4">
                                 <a href="/furniture-editor">
@@ -2525,66 +2639,65 @@ export function StoreDisplayEditor() {
                             </div>
 
                             <div className="flex-1 overflow-hidden px-4">
-                              <ScrollArea className="h-full pr-2" type="always">
-                                <div className="flex flex-col gap-3 pb-6">
-                                  {/* Caisse fixe toujours disponible */}
-                                  <DraggableFurnitureItem
-                                    key="fixed-cashier"
-                                    furniture={cashierFurniture}
-                                    onRename={handleRenameFurniture}
-                                    isMatchingPlan={
-                                      !floorPlan ||
-                                      floorPlan.elements.some(
-                                        (element) =>
-                                          element.type === "cashier" ||
-                                          (element.name && element.name.toLowerCase() === "caisse"),
-                                      )
-                                    }
-                                    disabled={
-                                      floorPlan &&
-                                      !floorPlan.elements.some(
-                                        (element) =>
-                                          element.type === "cashier" ||
-                                          (element.name && element.name.toLowerCase() === "caisse"),
-                                      )
-                                    }
-                                    onManualPlacement={handleManualPlacement}
-                                    floorPlan={floorPlan}
-                                    toast={toast}
-                                    matchedPlanElements={matchedPlanElements}
-                                    placedFurniture={placedFurniture}
-                                  />
+  <ScrollArea className="h-full pr-2" type="always">
+    <div className="flex flex-col gap-3 pb-6">
+      {/* Caisse fixe toujours disponible */}
+      <DraggableFurnitureItem
+        key="fixed-cashier"
+        furniture={cashierFurniture}
+        onRename={handleRenameFurniture}
+        isMatchingPlan={
+          !floorPlan ||
+          floorPlan.elements.some(
+            (element) =>
+              element.type === "cashier" ||
+              (element.name && element.name.toLowerCase() === "caisse"),
+          )
+        }
+        disabled={
+          floorPlan &&
+          !floorPlan.elements.some(
+            (element) =>
+              element.type === "cashier" ||
+              (element.name && element.name.toLowerCase() === "caisse"),
+          )
+        }
+        onManualPlacement={handleManualPlacement}
+        floorPlan={floorPlan}
+        toast={toast}
+        matchedPlanElements={matchedPlanElements}
+        placedFurniture={placedFurniture}
+      />
 
-                                  {/* Séparateur visuel */}
-                                  <div className="border-t my-2"></div>
+      {/* Séparateur visuel */}
+      <div className="border-t my-2"></div>
 
-                                  {/* Meubles existants de la bibliothèque */}
-                                  {savedFurniture.length > 0 ? (
-                                    savedFurniture.map((furniture) => {
-                                      const isInPlan = isFurnitureInPlan(furniture)
-                                      return (
-                                        <DraggableFurnitureItem
-                                          key={`${furniture.furniture.id}-${furniture.furniture.name}`}
-                                          furniture={furniture}
-                                          onRename={handleRenameFurniture}
-                                          isMatchingPlan={isInPlan}
-                                          disabled={floorPlan && !isInPlan}
-                                          onManualPlacement={handleManualPlacement}
-                                          floorPlan={floorPlan}
-                                          toast={toast}
-                                          matchedPlanElements={matchedPlanElements}
-                                          placedFurniture={placedFurniture}
-                                        />
-                                      )
-                                    })
-                                  ) : (
-                                    <div className="col-span-2 text-center py-4 text-muted-foreground">
-                                      {t("productImport.floorPlan.noMeuble")}
-                                    </div>
-                                  )}
-                                </div>
-                              </ScrollArea>
-                            </div>
+      {/* Meubles existants de la bibliothèque */}
+      {savedFurniture
+        .filter(furniture => 
+          selectedMagasin === "all" || 
+          furniture.storeId === selectedMagasin
+        )
+        .map((furniture) => {
+          const isInPlan = isFurnitureInPlan(furniture);
+          return (
+            <DraggableFurnitureItem
+              key={`${furniture.furniture.id}-${furniture.furniture.name}`}
+              furniture={furniture}
+              onRename={handleRenameFurniture}
+              isMatchingPlan={isInPlan}
+              disabled={floorPlan && !isInPlan}
+              onManualPlacement={handleManualPlacement}
+              floorPlan={floorPlan}
+              toast={toast}
+              matchedPlanElements={matchedPlanElements}
+              placedFurniture={placedFurniture}
+            />
+          );
+        })}
+    </div>
+  </ScrollArea>
+</div>
                           </TabsContent>
 
                           <TabsContent
@@ -2604,7 +2717,7 @@ export function StoreDisplayEditor() {
                                         onClick={() => setSelectedFurnitureId(item.id)}
                                         dir={textDirection}
                                       >
-                                       <div className="flex-1 truncate">
+                                        <div className="flex-1 truncate">
                                           {item.savedFurniture?.furniture?.name || t("furniture.unknown")}
                                         </div>
 
@@ -2690,59 +2803,58 @@ export function StoreDisplayEditor() {
                                     environmentPreset={environmentPreset}
                                     setEnvironmentPreset={setEnvironmentPreset}
                                     showShadows={showShadows}
-                                    setShowShadows={setShowShadows}
                                   />
                                 </div>
                               </ScrollArea>
                             </div>
                           </TabsContent>
                           <TabsContent
-  value="structural"
-  className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
->
-  <div className="flex-1 overflow-hidden px-4">
-    <ScrollArea className="h-full pr-2" type="always">
-      <div className="space-y-4 pb-6">
-        <h3 className="font-medium mt-4">
-          {t("productImport.floorPlan.structuralElements")}
-        </h3>
+                            value="structural"
+                            className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col"
+                          >
+                            <div className="flex-1 overflow-hidden px-4">
+                              <ScrollArea className="h-full pr-2" type="always">
+                                <div className="space-y-4 pb-6">
+                                  <h3 className="font-medium mt-4">
+                                    {t("productImport.floorPlan.structuralElements")}
+                                  </h3>
 
-        <div className="grid grid-cols-3 gap-2">
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => handleAddWall(0, 0)}
-          >
-            <div className="w-12 h-6 bg-gray-400 rounded-sm mb-2"></div>
-            <span className="text-xs">{t("productImport.floorPlan.wall")}</span>
-          </Button>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <Button
+                                      variant="outline"
+                                      className="h-20 flex flex-col items-center justify-center"
+                                      onClick={() => handleAddWall(0, 0)}
+                                    >
+                                      <div className="w-12 h-6 bg-gray-400 rounded-sm mb-2"></div>
+                                      <span className="text-xs">{t("productImport.floorPlan.wall")}</span>
+                                    </Button>
 
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => handleAddWindow(0, 0)}
-          >
-            <div className="w-12 h-6 bg-blue-200 border-2 border-gray-400 rounded-sm mb-2"></div>
-            <span className="text-xs">{t("productImport.floorPlan.window")}</span>
-          </Button>
+                                    <Button
+                                      variant="outline"
+                                      className="h-20 flex flex-col items-center justify-center"
+                                      onClick={() => handleAddWindow(0, 0)}
+                                    >
+                                      <div className="w-12 h-6 bg-blue-200 border-2 border-gray-400 rounded-sm mb-2"></div>
+                                      <span className="text-xs">{t("productImport.floorPlan.window")}</span>
+                                    </Button>
 
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center"
-            onClick={() => handleAddDoor(0, 0)}
-          >
-            <div className="w-12 h-6 bg-brown-400 border-2 border-gray-400 rounded-sm mb-2"></div>
-            <span className="text-xs">{t("productImport.floorPlan.door")}</span>
-          </Button>
-        </div>
+                                    <Button
+                                      variant="outline"
+                                      className="h-20 flex flex-col items-center justify-center"
+                                      onClick={() => handleAddDoor(0, 0)}
+                                    >
+                                      <div className="w-12 h-6 bg-brown-400 border-2 border-gray-400 rounded-sm mb-2"></div>
+                                      <span className="text-xs">{t("productImport.floorPlan.door")}</span>
+                                    </Button>
+                                  </div>
 
-        <div className="text-sm text-muted-foreground mt-4">
-          <p>{t("productImport.floorPlan.conseil")}</p>
-        </div>
-      </div>
-    </ScrollArea>
-  </div>
-</TabsContent>
+                                  <div className="text-sm text-muted-foreground mt-4">
+                                    <p>{t("productImport.floorPlan.conseil")}</p>
+                                  </div>
+                                </div>
+                              </ScrollArea>
+                            </div>
+                          </TabsContent>
                         </div>
                       </Tabs>
                     </CardContent>

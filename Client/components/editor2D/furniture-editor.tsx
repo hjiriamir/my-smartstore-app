@@ -44,7 +44,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useProductStore } from "@/lib/product-store"
 import { useFurnitureStore } from "@/lib/furniture-store"
 import type { Product } from "@/lib/product-store"
-import type { FurnitureType, FurnitureItem, FurnitureProduct } from "@/lib/furniture-store"
+import type { FurnitureType } from "@/lib/furniture-store"
 import {
   WallDisplay,
   ClothingRack,
@@ -52,16 +52,13 @@ import {
   ModularCube,
   GondolaDisplay,
   TableDisplay,
-  RefrigeratorDisplay,
   RefrigeratedShowcase,
   ClothingDisplay,
   ClothingWallDisplay,
-  Fridge3D,
   SupermarketFridge,
 } from "@/components/editor2D/furniture-3d-components"
 
-
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Drag item types
 const ItemTypes = {
@@ -69,11 +66,45 @@ const ItemTypes = {
   FURNITURE_PRODUCT: "furniture_product",
 }
 
+// Interface pour les magasins
+interface Magasin {
+  magasin_id: string
+  nom_magasin: string
+  adresse?: string
+}
+
+// FurnitureItem Interface
+type FurnitureItem = {
+  id: string
+  type: FurnitureType
+  name: string
+  sections: number
+  slots: number
+  width: number
+  height: number
+  depth: number
+  color?: string
+  x: number
+  y: number
+  z: number
+  rotation: number
+  storeId?: string // Ajouter l'ID du magasin
+  storeName?: string // Ajouter le nom du magasin
+}
+
+// FurnitureProduct Interface
+type FurnitureProduct = {
+  productId: string
+  section: number
+  position: number
+  storeId?: string // Ajouter l'ID du magasin
+}
+
 // Product Item Component (draggable from product list)
 const ProductItem = ({ product }: { product: Product }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.PRODUCT,
-    item: { id: product.primary_Id, type: ItemTypes.PRODUCT },
+    item: { id: product.primary_id, type: ItemTypes.PRODUCT },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -105,7 +136,7 @@ const ProductItem = ({ product }: { product: Product }) => {
       </div>
       <div className="mt-2 text-center" dir={textDirection}>
         <div className="text-xs font-medium truncate w-20">{product.name}</div>
-        <div className="text-[10px] text-muted-foreground truncate w-20">{product.primary_Id}</div>
+        <div className="text-[10px] text-muted-foreground truncate w-20">{product.primary_id}</div>
       </div>
     </div>
   )
@@ -129,7 +160,7 @@ const FurnitureCell = ({
   cellWidth: number
   cellHeight: number
 }) => {
-  const product = cell.productId ? products.find((p) => p.primary_Id === cell.productId) : null
+  const product = cell.productId ? products.find((p) => p.primary_id === cell.productId) : null
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: [ItemTypes.PRODUCT, ItemTypes.FURNITURE_PRODUCT],
@@ -393,8 +424,51 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
   const [description, setDescription] = useState("")
   const { toast } = useToast()
   const { addFurniture } = useFurnitureStore()
+  const [magasins, setMagasins] = useState<Magasin[]>([])
+  const [selectedMagasinId, setSelectedMagasinId] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Charger la liste des magasins au chargement du composant
+  useEffect(() => {
+    const fetchMagasins = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch("http://localhost:8081/api/magasins/getAllMagasins")
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`)
+        }
+        const data = await response.json()
+        setMagasins(data)
+
+        // Si des magasins sont disponibles, sélectionner le premier par défaut
+        if (data.length > 0) {
+          setSelectedMagasinId(data[0].magasin_id)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des magasins:", error)
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger la liste des magasins",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMagasins()
+  }, [toast])
 
   const handleSave = () => {
+    if (!selectedMagasinId) {
+      toast({
+        title: "Attention",
+        description: "Veuillez sélectionner un magasin",
+        variant: "destructive",
+      })
+      return
+    }
+
     // Get products from cells
     const furnitureProducts: FurnitureProduct[] = cells
       .filter((cell) => cell.productId !== null)
@@ -402,13 +476,20 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
         productId: cell.productId!,
         section: cell.y,
         position: cell.x,
+        storeId: selectedMagasinId, // Ajouter l'ID du magasin
       }))
+
+    // Find the selected store's name
+    const selectedStore = magasins.find((m) => m.magasin_id === selectedMagasinId)
+    const storeName = selectedStore ? selectedStore.nom_magasin : ""
 
     // Create furniture item to save
     const furnitureToSave: FurnitureItem = {
       ...furniture,
       id: `furniture-${Date.now()}`,
       name,
+      storeId: selectedMagasinId, // Ajouter l'ID du magasin
+      storeName: storeName, // Ajouter le nom du magasin
     }
 
     // Add to furniture store
@@ -416,7 +497,7 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
 
     toast({
       title: "Meuble enregistré",
-      description: `Le meuble "${name}" a été enregistré dans votre bibliothèque.`,
+      description: `Le meuble "${name}" a été enregistré dans votre bibliothèque pour le magasin "${storeName}".`,
     })
   }
 
@@ -445,6 +526,37 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
             <Input value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
           </div>
 
+          {/* Sélection du magasin */}
+          <div>
+            <label className="text-sm font-medium">Magasin</label>
+            <Select
+              value={selectedMagasinId}
+              onValueChange={setSelectedMagasinId}
+              disabled={isLoading || magasins.length === 0}
+            >
+              <SelectTrigger className="mt-1" dir={textDirection}>
+                <SelectValue placeholder="Sélectionner un magasin" />
+              </SelectTrigger>
+              <SelectContent>
+                {magasins.map((magasin) => (
+                  <SelectItem key={magasin.magasin_id} value={magasin.magasin_id}>
+                    {magasin.magasin_id} : {magasin.nom_magasin}
+                  </SelectItem>
+                ))}
+                {magasins.length === 0 && !isLoading && (
+                  <SelectItem value="no-stores" disabled>
+                    Aucun magasin disponible
+                  </SelectItem>
+                )}
+                {isLoading && (
+                  <SelectItem value="loading" disabled>
+                    Chargement...
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium">{t("savePlanogramDialog.previewLabel")}</label>
             <div className="border rounded-md p-4 bg-muted/20">
@@ -461,6 +573,12 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
                   <p className="text-sm text-muted-foreground">
                     {cells.filter((cell) => cell.productId !== null).length} {t("productImport.produitPlacerIA")}
                   </p>
+                  {/* Afficher le magasin sélectionné */}
+                  {selectedMagasinId && (
+                    <p className="text-sm text-muted-foreground">
+                      Magasin: {magasins.find((m) => m.magasin_id === selectedMagasinId)?.nom_magasin || ""}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -472,7 +590,9 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
             <Button variant="outline">{t("cancel")}</Button>
           </DialogClose>
           <DialogClose asChild>
-            <Button onClick={handleSave}>{t("save")}</Button>
+            <Button onClick={handleSave} disabled={!selectedMagasinId || isLoading}>
+              {t("save")}
+            </Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
@@ -554,22 +674,22 @@ export function FurnitureEditor() {
   // Filter products
   const filteredProducts = products.filter((product) => {
     // Vérifie que product.primary_Id existe avant d'utiliser toLowerCase()
-    const primaryId = product.primary_Id ? product.primary_Id.toLowerCase() : '';
-    const supplier = product.supplier ? product.supplier.toLowerCase() : '';
-    
+    const primaryId = product.primary_id ? product.primary_id.toLowerCase() : ""
+    const supplier = product.supplier ? product.supplier.toLowerCase() : ""
+
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       primaryId.includes(searchTerm.toLowerCase()) ||
-      supplier.includes(searchTerm.toLowerCase());
-  
+      supplier.includes(searchTerm.toLowerCase())
+
     // Category filter
-    const matchesCategory = !selectedCategory || product.category_id === selectedCategory;
-  
+    const matchesCategory = !selectedCategory || product.category_id === selectedCategory
+
     // Supplier filter
-    const matchesSupplier = !selectedSupplier || product.supplier === selectedSupplier;
-  
-    return matchesSearch && matchesCategory && matchesSupplier;
-  });
+    const matchesSupplier = !selectedSupplier || product.supplier === selectedSupplier
+
+    return matchesSearch && matchesCategory && matchesSupplier
+  })
   useEffect(() => {
     setCurrentFurniture((prev) => ({
       ...prev,
@@ -1457,9 +1577,9 @@ export function FurnitureEditor() {
 
                         <ScrollArea className="h-[calc(100vh-300px)]">
                           <div className="grid grid-cols-2 gap-2 p-1" style={{ direction: textDirection }}>
-                          {filteredProducts.map((product, index) => (
-                            <ProductItem key={`${product.primary_Id}-${index}`} product={product} />
-                          ))}
+                            {filteredProducts.map((product, index) => (
+                              <ProductItem key={`${product.primary_id}-${index}`} product={product} />
+                            ))}
                             {filteredProducts.length === 0 && (
                               <div className="col-span-2 text-center py-8 text-muted-foreground">
                                 {t("furnitureEditor.noProducts")}

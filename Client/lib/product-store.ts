@@ -3,12 +3,10 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { get, set, del } from "idb-keyval";
 
 export interface Product {
-  primary_Id: string;
+  primary_id: string;
   name: string;
   supplier: string;
-  category1_id?: string;
-  category2_id?: string;
-  category3_id?: string;
+  category_id?: string;
   width_cm?: number;
   height_cm?: number;
   depth_cm?: number;
@@ -128,20 +126,20 @@ export const useProductStore = create<ProductStore>()(
       updateProduct: (id, updates) =>
         set((state) => ({
           products: state.products.map((product) =>
-            product.primary_Id === id ? { ...product, ...updates } : product
+            product.primary_id === id ? { ...product, ...updates } : product
           ),
         })),
 
       updateProductImage: (id, imageUrl) =>
         set((state) => ({
           products: state.products.map((product) =>
-            product.primary_Id === id ? { ...product, image: imageUrl } : product
+            product.primary_id === id ? { ...product, image: imageUrl } : product
           ),
         })),
 
       deleteProduct: (id) =>
         set((state) => ({
-          products: state.products.filter((product) => product.primary_Id !== id),
+          products: state.products.filter((product) => product.primary_id !== id),
         })),
 
       clearLibrary: () =>
@@ -235,8 +233,3 @@ export const useProductStore = create<ProductStore>()(
     }
   )
 );
-
-// Exemple de produits (optionnel)
-
-
-// Fonction d'initialisation (optionnelle)

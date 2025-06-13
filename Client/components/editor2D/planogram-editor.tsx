@@ -99,7 +99,7 @@ const FurnitureTypes = {
 const ProductItem = ({ product }: { product: Product }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.PRODUCT,
-    item: { id: product.primary_Id, type: ItemTypes.PRODUCT, isNewInstance: true },
+    item: { id: product.primary_id, type: ItemTypes.PRODUCT, isNewInstance: true },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -127,7 +127,7 @@ const ProductItem = ({ product }: { product: Product }) => {
       </div>
       <div className="mt-2 text-center">
         <div className="text-xs font-medium truncate w-20">{product.name}</div>
-        <div className="text-[10px] text-muted-foreground truncate w-20">{product.primary_Id}</div>
+        <div className="text-[10px] text-muted-foreground truncate w-20">{product.primary_id}</div>
       </div>
     </div>
   )
@@ -163,7 +163,7 @@ const PlanogramCell = ({
     ? filteredProductInstances.find((pi) => pi.instanceId === cell.instanceId)
     : null
 
-  const product = productInstance ? products.find((p) => p.primary_Id === productInstance.productId) : null
+  const product = productInstance ? products.find((p) => p.primary_id === productInstance.productId) : null
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: [ItemTypes.PRODUCT, ItemTypes.PLANOGRAM_ITEM],
@@ -1048,7 +1048,7 @@ const PlanogramScene = ({
           const productInstance = filteredProductInstances.find((pi) => pi.instanceId === cell.instanceId)
           if (!productInstance) return null
 
-          const product = products.find((p) => p.primary_Id === productInstance.productId)
+          const product = products.find((p) => p.primary_id === productInstance.productId)
           if (!product) return null
 
           // Calculate position based on furniture type
@@ -1346,7 +1346,7 @@ export function PlanogramEditor() {
   // Filter products
   const filteredProducts = products.filter((product) => {
     // Vérifie que product.primary_Id existe avant d'utiliser toLowerCase()
-    const primaryId = product.primary_Id ? product.primary_Id.toLowerCase() : '';
+    const primaryId = product.primary_id ? product.primary_id.toLowerCase() : '';
     const supplier = product.supplier ? product.supplier.toLowerCase() : '';
     
     const matchesSearch =
@@ -1372,7 +1372,7 @@ export function PlanogramEditor() {
   useEffect(() => {
     //const exampleProducts = initializeExampleProducts()
     // Vérifier si les produits existent déjà pour éviter les doublons
-    const existingIds = products.map((p) => p.primary_Id)
+    const existingIds = products.map((p) => p.primary_id)
     //const newProducts = exampleProducts.filter((p) => !existingIds.includes(p.primary_Id))
 
     /* if (newProducts.length > 0) {
@@ -1922,7 +1922,7 @@ export function PlanogramEditor() {
                           <ScrollArea className="h-[calc(100vh-300px)]">
                             <div className="grid grid-cols-2 gap-2 p-1">
                             {filteredProducts.map((product, index) => (
-                              <ProductItem key={`${product.primary_Id}-${index}`} product={product} />
+                              <ProductItem key={`${product.primary_id}-${index}`} product={product} />
                             ))}
                               {filteredProducts.length === 0 && (
                                 <div className="col-span-2 text-center py-8 text-muted-foreground">
