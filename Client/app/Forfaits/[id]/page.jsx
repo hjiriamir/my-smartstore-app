@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { usePlans } from "../../../components/back-office/data/planse" // Import the custom hook
+import { usePlans } from "../../../components/back-office/data/planse"
 import ForfaitService from "../../../src/services/forfaitService"
 import Swal from "sweetalert2"
 import "../../../components/back-office/forfaits.css"
@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next"
 
 function DescriptionForfait({ params }) {
   const router = useRouter();
+  // Correction: déballage de params avec React.use()
   const { id } = React.use(params);
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ function DescriptionForfait({ params }) {
   })
 
   const { t, i18n } = useTranslation()
-  const plans = usePlans() // Use the custom hook to get translated plans
+  const plans = usePlans()
 
   // Find the plan by ID
   const plan = plans.find((p) => p.id === id)
@@ -32,15 +33,14 @@ function DescriptionForfait({ params }) {
     return <div className="error">{t("planNotFound")}</div>
   }
 
-  // Generate dates
-  const currentDate = new Date()
-  const dateDebut = currentDate.toISOString().split("T")[0] // YYYY-MM-DD
-  const dateFin = new Date(currentDate.setMonth(currentDate.getMonth() + 1)).toISOString().split("T")[0]
-
-  // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault()
-
+    e.preventDefault();
+  
+    // Générer les dates
+    const currentDate = new Date();
+    const dateDebut = currentDate.toISOString().split("T")[0];
+    const dateFin = new Date(currentDate.setMonth(currentDate.getMonth() + 1)).toISOString().split("T")[0];
+  
     const requestData = {
       nom: formData.lastName,
       prenom: formData.firstName,
@@ -53,20 +53,23 @@ function DescriptionForfait({ params }) {
       date_debut: dateDebut,
       date_fin: dateFin,
       forfait: plan.id,
-    }
-
+    };
+  
     try {
-      const response = await ForfaitService.createDemande(requestData)
-
-      if (response.status === "Success demande ajoutée") {
-        Swal.fire({
+      const response = await ForfaitService.createDemande(requestData);
+      
+      console.log("API Response:", response); // Debug log
+      
+      // Vérification basée sur la présence d'un ID dans la réponse
+      if (response && response.id) {
+        await Swal.fire({
           title: t("requestSuccessTitle"),
           text: t("requestSuccessText"),
           icon: "success",
-          confirmButtonText: t("okButton"),
+          confirmButtonText: t("productImport.floorPlan.ok"),
           confirmButtonColor: "#006d77",
-        })
-
+        });
+  
         // Reset form data
         setFormData({
           firstName: "",
@@ -76,21 +79,23 @@ function DescriptionForfait({ params }) {
           company: "",
           position: "",
           comment: "",
-        })
-
-        // Hide the form
-        setShowForm(false)
+        });
+  
+        setShowForm(false);
+      } else {
+        throw new Error(response?.message || "La réponse de l'API est incomplète");
       }
     } catch (error) {
-      Swal.fire({
+      console.error("Error submitting request:", error);
+      await Swal.fire({
         title: t("errorTitle"),
         text: t("errorText"),
         icon: "error",
-        confirmButtonText: t("okButton"),
+        confirmButtonText: t("productImport.floorPlan.ok"),
         confirmButtonColor: "#ff4444",
-      })
+      });
     }
-  }
+  };
 
   // Handle form input changes
   const handleChange = (e) => {

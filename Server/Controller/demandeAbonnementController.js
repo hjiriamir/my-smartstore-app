@@ -1,5 +1,5 @@
 import DemandeAbonnement from '../Model/demandeAbonnement.js';
-
+import { updateStatusAbonnement } from "../Services/demandeService.js";
 // Créer une nouvelle demande d'abonnement
 export const createDemande = async (req, res) => {
   try {
@@ -69,5 +69,22 @@ export const deleteDemande = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+export const updateDemandeStatus = async (req, res) => {
+  const { idDemande } = req.params;
+
+  try {
+    const result = await updateStatusAbonnement(idDemande);
+    res.status(200).json(result);
+  } catch (error) {
+    if (error.message === "Demande non trouvée") {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error.message === "La demande n'est pas en attente") {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };

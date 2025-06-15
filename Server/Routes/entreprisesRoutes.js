@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.post('/createEntreprice', createEntreprise);
 router.get('/entreprises', getAllEntreprises);
-router.get('/entreprise/:id', getEntrepriseById);
+router.get('/getEntrepriseById/:id', getEntrepriseById);
 router.put('/entreprises/:id', updateEntreprise);
 router.delete('/entreprises/:id', deleteEntreprise);
 

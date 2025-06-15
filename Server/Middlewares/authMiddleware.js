@@ -4,20 +4,28 @@ import jwt from 'jsonwebtoken';
 export const verifyToken = (req, res, next) => {
     const token = req.cookies.token;
     if (!token) {
-        return res.status(401).json({ Error: "Vous n'êtes pas authentifié" });
+        return res.status(401).json({ Error: "Token manquant" });
     }
+
     jwt.verify(token, "jwt-secret_key", (err, decoded) => {
         if (err) {
+            console.log("Contenu décodé du token:", decoded); // Déplacer avant le return
             return res.status(403).json({ Error: "Token invalide" });
         }
-        req.user = { // Stockez toutes les informations de l'utilisateur dans req.user
+    
+        req.user = {
             idUtilisateur: decoded.idUtilisateur,
             name: decoded.name,
             role: decoded.role,
+            entreprises_id: decoded.entreprises_id // Même nom que dans le token
         };
+    
+        console.log("Middleware - User attaché:", req.user);
         next();
     });
 };
+
+
 export const verifyRole = (role) => {
     return (req, res, next) => {
         if (!req.role) {

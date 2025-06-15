@@ -11,6 +11,11 @@ i18n
     resources: {
       en: {
         translation: {
+          requestInformation:"Request submission details",
+          requestSuccessTitle: "Request sent successfully", 
+          requestSuccessText: "Your request has been received. We will contact you as soon as possible.",
+          errorTitle: "Error while creating the request",
+          errorText: "An error occurred while submitting your request. Please try again later.",
           new:"New",
           retail:"Retail Platform",
           retailDescription: "Transform your merchandising with our smart tools for layout and product management",
@@ -179,6 +184,7 @@ i18n
           Tname: "Name",
           Temail: "Email",
           Trole: "Role",
+          Tmagasin:"Store",
           Tactions: "Actions",
           details: "Details",
           noUsers: "No users found.",
@@ -961,6 +967,11 @@ i18n
       },
       fr: {
         translation: {
+          requestInformation:"Détails de la soumission de la demande",
+          requestSuccessTitle: "Demande envoyée avec succès",
+          requestSuccessText: "Votre demande a été prise en compte. Nous vous contacterons dans les plus brefs délais.",
+          errorTitle: "Erreur lors de la création de la demande",
+          errorText: "Une erreur est survenue pendant l’envoi de votre demande. Veuillez réessayer plus tard.",
           new:"Nouveau",
           retail:"Plateforme de vente au détail",
           retailDescription:"Transformez votre merchandising avec nos outils intelligents d'agencement et de gestion de produits",
@@ -1129,6 +1140,7 @@ i18n
           Tname: "Nom",
           Temail: "E-mail",
           Trole: "Rôle",
+          Tmagasin:"Magasin",
           Tactions: "Actions",
           details: "Détails ",
           noUsers: "Aucun utilisateur trouvé.",
@@ -1909,6 +1921,11 @@ i18n
       },
       ar: {
         translation: {
+          requestInformation:"تفاصيل تقديم الطلب",
+          requestSuccessTitle: "تم إرسال الطلب بنجاح",
+          requestSuccessText: "تم استلام طلبك بنجاح. سنقوم بالتواصل معك في أقرب وقت ممكن.",
+          errorTitle: "حدث خطأ أثناء إنشاء الطلب",
+          errorText: "حدث خطأ أثناء إرسال طلبك. يرجى المحاولة مرة أخرى لاحقًا.",
           new:"جديد",
           retail:"منصة البيع بالتفصيل",
           retailDescription: "حوّل إدارة عرض منتجاتك باستخدام أدواتنا الذكية للتخطيط وإدارة المنتجات",
@@ -2077,6 +2094,7 @@ i18n
           Tname: "الاسم",
           Temail: "البريد الإلكتروني",
           Trole: "الدور",
+          Tmagasin:"محل",
           Tactions: "الإجراءات",
           details: "التفاصيل",
           noUsers: "لم يتم العثور على مستخدمين.",

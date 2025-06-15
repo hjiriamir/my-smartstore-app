@@ -37,6 +37,26 @@ export const getMagasinById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+export const getMagasinsByEntrepriseId = async (req, res) => {
+  try {
+    const { id } = req.params;  // id de l'entreprise
+
+    // Trouver tous les magasins avec entreprise_id = id
+    const magasins = await Magasin.findAll({
+      where: { entreprise_id: id }
+    });
+
+    if (magasins.length === 0) {
+      return res.status(404).json({ error: 'Aucun magasin trouvé pour cette entreprise' });
+    }
+
+    res.status(200).json(magasins);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des magasins :', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 // Mettre à jour un magasin par ID
 export const updateMagasin = async (req, res) => {

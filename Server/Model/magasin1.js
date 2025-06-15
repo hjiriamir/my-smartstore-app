@@ -1,6 +1,7 @@
 // Model/Magasin.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../Config/database1.js';
+import Entreprises from './Entreprises.js';
 
 const magasin1 = sequelize.define('magasin1', {
   id: {
@@ -36,7 +37,17 @@ const magasin1 = sequelize.define('magasin1', {
   adresse: {
     type: DataTypes.STRING,
     allowNull: true,
-  }
+  },
+  entreprise_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Entreprises',
+      key: 'id',
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  },
 }, {
   tableName: 'magasins',
   timestamps: true,

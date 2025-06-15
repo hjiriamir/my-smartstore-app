@@ -17,7 +17,7 @@ const saltRounds = 10;
 
 export const createUser = async (req, res) => {
   try {
-    const { name, email, password, role, entreprises_id } = req.body;
+    const { name, email, password, role, entreprises_id, magasin_id  } = req.body;
 
     // Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -29,6 +29,7 @@ export const createUser = async (req, res) => {
       password: hashedPassword,
       role,
       entreprises_id,
+      magasin_id ,
     });
 
     res.status(201).json(user);
@@ -39,7 +40,15 @@ export const createUser = async (req, res) => {
 };
 
 // Trouver un utilisateur par email
-export const findUserByEmail = async (req, res) => {
+export const findUserByEmail = async (email) => {
+  try {
+    const user = await Users.findOne({ where: { email } });
+    return user;
+  } catch (error) {
+    throw error; // La fonction appelante gère l'erreur
+  }
+};
+/*export const findUserByEmail = async (req, res) => {
     try {
         const { email } = req.params;
         const user = await Users.findOne({ where: { email } });
@@ -48,10 +57,32 @@ export const findUserByEmail = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de la recherche.' });
     }
-};
+};*/
 
 // Récupérer tous les utilisateurs sauf Admin
 export const getAllUsersExcludingAdmin = async (req, res) => {
+  const entreprises_id = parseInt(req.params.id, 10);
+  if (isNaN(entreprises_id)) {
+    return res.status(400).json({ error: "entreprises_id invalide" });
+  }
+
+  try {
+    const users = await Users.findAll({
+      where: {
+        role: { [Op.not]: 'Admin' },
+        entreprises_id: entreprises_id
+      },
+      attributes: { exclude: ['password'] }
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Erreur dans getAllUsersExcludingAdmin:", error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
+  }
+};
+
+/*export const getAllUsersExcludingAdmin = async (req, res) => {
     try {
       const users = await Users.findAll({
         where: {
@@ -65,7 +96,7 @@ export const getAllUsersExcludingAdmin = async (req, res) => {
       console.error(error);
       res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
     }
-  };
+  };*/
 // Obtenir un utilisateur par ID
 export const getUserById = async (req, res) => {
     try {

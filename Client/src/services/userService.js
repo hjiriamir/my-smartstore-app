@@ -5,7 +5,9 @@ export const fetchDemandes = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/demande/getAllDemandes`);
         if (!response.ok) throw new Error("Erreur lors de la récupération des demandes");
-        return await response.json();
+        const data = await response.json();
+        // Si l'API retourne un tableau directement
+        return Array.isArray(data) ? data : [data];
     } catch (error) {
         console.error(error);
         throw error;
@@ -69,7 +71,7 @@ export const sendEmail = async (emailData) => {
 // 🔹 Mettre à jour le statut de la demande
 export const updateDemandeStatus = async (idDemande) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/demande/updateStatus/${idDemande}`, {
+        const response = await fetch(`${API_BASE_URL}/demande/updateDemandeStatus/${idDemande}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
         });
@@ -84,7 +86,7 @@ export const updateDemandeStatus = async (idDemande) => {
 };
 export const fetchCompanyName = async (entrepriseId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/demande/entreprise/${entrepriseId}`);
+        const response = await fetch(`${API_BASE_URL}/demande/getEntrepriseById/${entrepriseId}`);
         if (!response.ok) throw new Error("Erreur lors de la récupération du nom de l'entreprise");
         return await response.json();
     } catch (error) {
@@ -92,9 +94,9 @@ export const fetchCompanyName = async (entrepriseId) => {
         return null;
     }
 };
-export const fetchUsers = async () => {
+export const fetchUsers = async (entreprises_id) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/users/excluding-admin`);
+        const response = await fetch(`${API_BASE_URL}/auth/users/excluding-admin/${entreprises_id}`);
         if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs");
         return await response.json();
     } catch (error) {

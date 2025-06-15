@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/newUser', createUser);
 router.get('/users/email/:email', findUserByEmail);
-router.get('/users/excluding-admin', getAllUsersExcludingAdmin);
-router.get('/users/:id', getUserById);
+router.get('/users/excluding-admin/:entreprises_id', getAllUsersExcludingAdmin);
+router.get('/getUserById/:id', getUserById);
 
 export default router;

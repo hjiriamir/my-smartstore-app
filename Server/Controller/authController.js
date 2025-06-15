@@ -1,9 +1,10 @@
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { createUser, findUserByEmail, getUserById  } from '../Model/User.js';
+import {createUser,findUserByEmail, getUserById} from './usersController.js'
 import transporter from '../Config/transporter.js'
 import db from '../Config/database.js';
+import Users from '../Model/Users.js';
 // Charger les variables d'environnement
 dotenv.config();
 const saltRounds = 10;
@@ -41,7 +42,59 @@ export const register = (req, res) => {
     });
 };
 
-export const login = (req, res) => {
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await Users.findOne({ 
+            where: { email } ,
+            raw: true 
+        });
+
+        if (!user) return res.status(401).json({ Error: "Email incorrect" });
+        // Debug: Vérifiez la valeur avant création du token
+        console.log("Données user avant token:", {
+            id: user.id,
+            entreprises_id: user.entreprises_id // ← Vérifiez cette valeur
+        });
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(401).json({ Error: "Mot de passe incorrect" });
+
+        // ⚠️ Correction cruciale ici :
+        console.log("User object before token creation:", {
+            id: user.id,
+            name: user.name,
+            role: user.role,
+            entreprises_id: user.entreprises_id
+        });
+        
+        const tokenPayload = {
+            idUtilisateur: user.id,
+            name: user.name,
+            role: user.role,
+            entreprises_id: user.entreprises_id
+        };
+        console.log("Token payload:", tokenPayload);
+        
+        const token = jwt.sign(
+            tokenPayload, 
+            "jwt-secret_key",
+            { expiresIn: '1d' }
+        );
+
+        res.cookie('token', token, { httpOnly: true });
+        return res.json({
+            status: "Success",
+            role: user.role,
+            name: user.name
+        });
+    } catch (err) {
+        console.error("Erreur login:", err);
+        res.status(500).json({ Error: "Erreur serveur" });
+    }
+};
+  
+/*export const login = (req, res) => {
     const { email, password } = req.body;
 
     findUserByEmail(email, (err, data) => {
@@ -74,29 +127,51 @@ export const login = (req, res) => {
             return res.json({ status: "Success", role: user.role , name: user.name , entreprise_id: user.entreprise_id });
         });
     });
-};
+};*/
 
 export const logout = (req, res) => {
     res.clearCookie('token');
     return res.json({ Status: "Success" });
 };
 
-export const getMe = (req, res) => {
-    const userId = req.user.idUtilisateur; // Supposons que l'ID de l'utilisateur est stocké dans le token
-    console.log("ID de l'utilisateur :", userId); // Debug
-    getUserById(userId, (err, user) => {
-        if (err) {
-            console.error("Erreur lors de la récupération de l'utilisateur :", err);
-            return res.status(500).json({ Error: "Erreur interne du serveur" });
+export const getMe = async (req, res) => {
+    try {
+        // ⚠️ Vérification renforcée
+        if (!req.user || !req.user.idUtilisateur) {
+            console.error("Erreur: req.user non défini", req.user);
+            return res.status(400).json({ Error: "Données utilisateur manquantes" });
         }
+
+        console.log("Données reçues dans getMe:", {
+            userId: req.user.idUtilisateur,
+            fullUser: req.user
+        });
+
+        const user = await Users.findByPk(req.user.idUtilisateur, {
+            attributes: { 
+                exclude: ['password']
+            }
+        });
+        console.log("User brut de la base:", user.get({ plain: true }));
+
         if (!user) {
             return res.status(404).json({ Error: "Utilisateur non trouvé" });
         }
 
-        // Renvoyer les informations de l'utilisateur (sans le mot de passe)
-        const { password, ...userInfo } = user;
-        res.json({ status: "Success", user: userInfo });
-    });
+        res.json({
+            status: "Success",
+            user: {
+                idUtilisateur: user.id,
+                name: user.name,
+                role: user.role,
+                entreprises_id: user.entreprises_id 
+            }
+        });
+
+    } catch (err) {
+        console.error("Erreur dans getMe:", err);
+        res.status(500).json({ Error: "Erreur serveur" });
+    }
 };
 
 export const forgotPassword = (req, res) => {

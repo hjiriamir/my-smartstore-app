@@ -63,7 +63,7 @@ app.use(cors({
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
-//app.use('/api/auth', usersRoutes);
+app.use('/api/auth1', usersRoutes);
 app.use('/api/demande', demandeAbonnementRoutes);
 app.use('/api/demande', entreprisesRoutes);
 app.use("/api/emails", emailRoutes);
@@ -95,7 +95,7 @@ app.use('/api/categories', categorieRoutes);
 app.use('/api/magasins', magasinRoutes);
 app.use('/api/zones', zoneRoutes);
 // Synchroniser Sequelize avec la base
-sequelize.sync({  alter: true }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
+sequelize.sync({ force : false }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
     .then(() => {
         console.log('Base synchronisée');
     })

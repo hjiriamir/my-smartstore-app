@@ -1,6 +1,8 @@
 // Model/Utilisateur.js
 import { DataTypes } from 'sequelize';
-import sequelize from '../Config/database1.js'; // adapte selon ton chemin
+import sequelize from '../Config/database1.js';
+import magasin1 from './magasin1.js';
+
 
 const Users = sequelize.define('Users', {
   id: {
@@ -29,6 +31,16 @@ const Users = sequelize.define('Users', {
   entreprises_id: {
     type: DataTypes.INTEGER,
     allowNull: true
+  },
+  magasin_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    references: {         
+      model: magasin1,   
+      key: 'magasin_id',         
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
   },
   resetPasswordToken: {
     type: DataTypes.STRING,
