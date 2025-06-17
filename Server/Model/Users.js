@@ -24,9 +24,18 @@ const Users = sequelize.define('Users', {
     allowNull: false,
   },
   role: {
-    type: DataTypes.ENUM('admin', 'user', 'seller', 'cashier'),
+    type: DataTypes.ENUM(
+      'admin',
+      'store_manager',
+      'chef de rayon',
+      'back_office_user',
+      'seller',
+      'cashier',
+      'support_technician'
+    ),
     allowNull: false,
-  },
+  }
+  ,
   
   entreprises_id: {
     type: DataTypes.INTEGER,

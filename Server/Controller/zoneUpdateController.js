@@ -22,6 +22,20 @@ export const getAllZones = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+// Récupérer toutes les zones par magasin
+export const getAllZonesMagasin = async (req, res) => {
+  try {
+    const { idMagasin } = req.params;
+
+    const storeZones = await Zone.findAll({
+      where: { magasin_id: idMagasin }
+    });
+    res.status(200).json(storeZones);
+  } catch (error) {
+    console.error('Erreur récupération zones :', error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // Récupérer une zone par ID (clé primaire technique "id")
 export const getZoneById = async (req, res) => {

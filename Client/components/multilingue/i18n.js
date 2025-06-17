@@ -307,6 +307,7 @@ i18n
           save: "Save",
           
           furnitureEditor: {
+            aucunMagasin:"No Store",
             editeur:"Furniture Editor",
             optimisation: "Optimize layout",
             synchronisation:"Synchroniser les vues",
@@ -1264,6 +1265,7 @@ i18n
           cancel: "Annuler",
           save: "Enregistrer",
           furnitureEditor: {
+            aucunMagasin:"Aucun magasin",
             editeur:"Éditeur de Meuble",
             optimisation:"Optimiser l'agencement",
             synchronisation: "Synchronize views",
@@ -2215,6 +2217,7 @@ i18n
         cancel: "إلغاء",
         save: "حفظ",
         furnitureEditor: {
+          aucunMagasin:"لا يوجد متجر",
           editeur:"محرر الأثاث",
           optimisation: "تحسين الترتيب",
           synchronisation: "مزامنة العروض",

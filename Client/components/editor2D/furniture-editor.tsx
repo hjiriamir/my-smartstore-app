@@ -424,11 +424,87 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
   const [description, setDescription] = useState("")
   const { toast } = useToast()
   const { addFurniture } = useFurnitureStore()
+
+  // États pour tous les champs requis
   const [magasins, setMagasins] = useState<Magasin[]>([])
   const [selectedMagasinId, setSelectedMagasinId] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [zones, setZones] = useState<Zone[]>([])
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("")
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [furnitureTypes, setFurnitureTypes] = useState<FurnitureType[]>([])
+  const [selectedFurnitureTypeId, setSelectedFurnitureTypeId] = useState<string>("")
+  const [selectedPlanogramStatus, setSelectedPlanogramStatus] = useState<string>("brouillon")
+  const [selectedTaskType, setSelectedTaskType] = useState<string>("mise_en_place")
 
-  // Charger la liste des magasins au chargement du composant
+  // Définition des interfaces manquantes
+  interface Zone {
+    zone_id: string
+    nom_zone: string
+  }
+
+  interface User {
+    id: number
+    idUtilisateur: number
+    username: string
+    email: string
+    role: string
+  }
+
+  // États de chargement
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingZones, setIsLoadingZones] = useState(false)
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const [isLoadingFurnitureTypes, setIsLoadingFurnitureTypes] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+
+  const taskTypes = [
+    { value: "mise_en_place", label: "Mise en place" },
+    { value: "controle", label: "Contrôle" },
+    { value: "audit", label: "Audit" },
+    { value: "reapprovisionnement", label: "Réapprovisionnement" },
+    { value: "nettoyage", label: "Nettoyage" },
+    { value: "formation", label: "Formation" },
+    { value: "promotion", label: "Promotion" },
+    { value: "maintenance", label: "Maintenance" },
+    { value: "remplacement_produit", label: "Remplacement produit" },
+    { value: "inspection", label: "Inspection" },
+    { value: "autre", label: "Autre" },
+  ]
+
+  const planogramStatusOptions = [
+    { value: "brouillon", label: "Brouillon" },
+    { value: "actif", label: "Actif" },
+    { value: "inactif", label: "Inactif" },
+    { value: "en cours", label: "En cours" },
+  ]
+
+  // Récupérer l'utilisateur connecté
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch("http://localhost:8081/api/auth/me", {
+          credentials: "include",
+        })
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`)
+        }
+        const responseData = await response.json()
+        const userData = responseData.user || responseData
+        setCurrentUser(userData)
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur:", error)
+        toast({
+          title: "Erreur",
+          description: "Impossible de récupérer les informations de l'utilisateur",
+          variant: "destructive",
+        })
+      }
+    }
+    fetchCurrentUser()
+  }, [toast])
+
+  // Charger les magasins
   useEffect(() => {
     const fetchMagasins = async () => {
       setIsLoading(true)
@@ -439,8 +515,6 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
         }
         const data = await response.json()
         setMagasins(data)
-
-        // Si des magasins sont disponibles, sélectionner le premier par défaut
         if (data.length > 0) {
           setSelectedMagasinId(data[0].magasin_id)
         }
@@ -455,50 +529,250 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
         setIsLoading(false)
       }
     }
-
     fetchMagasins()
   }, [toast])
 
-  const handleSave = () => {
-    if (!selectedMagasinId) {
+  // Charger les zones selon le magasin
+  useEffect(() => {
+    if (selectedMagasinId) {
+      const fetchZones = async () => {
+        setIsLoadingZones(true)
+        try {
+          const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinId}`)
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`)
+          }
+          const data = await response.json()
+          setZones(data)
+          setSelectedZoneId("")
+        } catch (error) {
+          console.error("Erreur lors du chargement des zones:", error)
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger la liste des zones pour ce magasin",
+            variant: "destructive",
+          })
+        } finally {
+          setIsLoadingZones(false)
+        }
+      }
+      fetchZones()
+    } else {
+      setZones([])
+      setSelectedZoneId("")
+    }
+  }, [selectedMagasinId, toast])
+
+  // Charger les utilisateurs selon le magasin
+  useEffect(() => {
+    if (selectedMagasinId) {
+      const fetchUsers = async () => {
+        setIsLoadingUsers(true)
+        try {
+          const response = await fetch(`http://localhost:8081/api/auth1/users/store/${selectedMagasinId}`)
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`)
+          }
+          const data = await response.json()
+          setUsers(data)
+          setSelectedUserId(null)
+        } catch (error) {
+          console.error("Erreur lors du chargement des utilisateurs:", error)
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger la liste des utilisateurs pour ce magasin",
+            variant: "destructive",
+          })
+        } finally {
+          setIsLoadingUsers(false)
+        }
+      }
+      fetchUsers()
+    } else {
+      setUsers([])
+      setSelectedUserId(null)
+    }
+  }, [selectedMagasinId, toast])
+
+  // Charger les types de meubles
+  useEffect(() => {
+    const fetchFurnitureTypes = async () => {
+      setIsLoadingFurnitureTypes(true)
+      try {
+        const response = await fetch("http://localhost:8081/api/furnitureType/getAllFurnitureTypes")
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`)
+        }
+        const data = await response.json()
+        setFurnitureTypes(data)
+        if (data.length > 0) {
+          setSelectedFurnitureTypeId(data[0].furniture_type_id)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des types de meubles:", error)
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger la liste des types de meubles",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingFurnitureTypes(false)
+      }
+    }
+    fetchFurnitureTypes()
+  }, [toast])
+
+  const placedProductsCount = cells.filter((cell) => cell.productId !== null).length
+
+  const handleSave = async () => {
+    console.log("=== DEBUT handleSave ===")
+    console.log("selectedMagasinId:", selectedMagasinId)
+    console.log("selectedZoneId:", selectedZoneId)
+    console.log("name:", name)
+    console.log("currentUser:", currentUser)
+    console.log(
+      "cells with products:",
+      cells.filter((cell) => cell.productId !== null),
+    )
+    console.log("placedProductsCount:", placedProductsCount)
+
+    // Validation des champs obligatoires
+    if (!selectedMagasinId || !selectedZoneId || !name || !currentUser) {
+      console.log("❌ Validation échouée - champs manquants:")
+      console.log("- selectedMagasinId:", !!selectedMagasinId)
+      console.log("- selectedZoneId:", !!selectedZoneId)
+      console.log("- name:", !!name)
+      console.log("- currentUser:", !!currentUser)
+
       toast({
-        title: "Attention",
-        description: "Veuillez sélectionner un magasin",
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires",
         variant: "destructive",
       })
       return
     }
 
-    // Get products from cells
-    const furnitureProducts: FurnitureProduct[] = cells
-      .filter((cell) => cell.productId !== null)
-      .map((cell) => ({
-        productId: cell.productId!,
-        section: cell.y,
-        position: cell.x,
-        storeId: selectedMagasinId, // Ajouter l'ID du magasin
-      }))
+    console.log("✅ Validation des champs obligatoires réussie")
+    setIsLoading(true)
 
-    // Find the selected store's name
-    const selectedStore = magasins.find((m) => m.magasin_id === selectedMagasinId)
-    const storeName = selectedStore ? selectedStore.nom_magasin : ""
+    try {
+      // Construire les positions de produits
+      const productPositions = cells
+        .filter((cell) => cell.productId !== null)
+        .map((cell) => {
+          const product = products.find((p) => p.primary_id === cell.productId)
+          console.log("Processing cell:", cell, "found product:", product)
+          if (!product) return null
 
-    // Create furniture item to save
-    const furnitureToSave: FurnitureItem = {
-      ...furniture,
-      id: `furniture-${Date.now()}`,
-      name,
-      storeId: selectedMagasinId, // Ajouter l'ID du magasin
-      storeName: storeName, // Ajouter le nom du magasin
+          let face = "front"
+          if (furniture.type === "gondola") {
+            face = cell.x < furniture.slots / 2 ? "front" : "back"
+          } else if (furniture.type === "shelves-display") {
+            const quarterWidth = furniture.slots / 4
+            if (cell.x < quarterWidth) {
+              face = "left"
+            } else if (cell.x < quarterWidth * 2) {
+              face = "front"
+            } else if (cell.x < quarterWidth * 3) {
+              face = "back"
+            } else {
+              face = "right"
+            }
+          }
+
+          return {
+            product_id: product.primary_id,
+            face: face,
+            etagere: cell.y + 1,
+            colonne: cell.x + 1,
+            quantite: cell.quantity || 1,
+          }
+        })
+        .filter(Boolean)
+
+      console.log("productPositions construites:", productPositions)
+
+      // Ajouter cette validation avant la construction de requestBody :
+      if (productPositions.length === 0) {
+        console.log("❌ Aucun produit placé")
+        toast({
+          title: "Attention",
+          description: "Veuillez placer au moins un produit avant de sauvegarder le meuble",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      console.log("✅ Produits trouvés, construction de la requête...")
+
+      // Construire l'objet furniture
+      const furnitureData = {
+        furniture_type_id: Number.parseInt(selectedFurnitureTypeId),
+        largeur: furniture.width,
+        hauteur: furniture.height,
+        profondeur: furniture.depth,
+        // Tous les meubles dans furniture-editor sont à une seule face
+        nb_colonnes_unique_face: furniture.slots,
+        nb_etageres_unique_face: furniture.sections,
+        productPositions: productPositions,
+      }
+
+      console.log("furnitureData construite:", furnitureData)
+
+      // Construire la requête complète
+      const requestBody = {
+        magasin_id: selectedMagasinId,
+        zone_id: selectedZoneId,
+        nom: name,
+        description: description || `Meuble créé le ${new Date().toLocaleDateString()}`,
+        created_by: currentUser.id || currentUser.idUtilisateur,
+        statut: selectedPlanogramStatus,
+        furnitures: [furnitureData],
+        tache: selectedUserId
+          ? {
+              idUser: selectedUserId,
+              statut: "à faire",
+              date_debut: new Date().toISOString(),
+              date_fin_prevue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              type: selectedTaskType,
+              commentaire: `Tâche liée au meuble ${name}`,
+            }
+          : null,
+      }
+
+      console.log("RequestBody à envoyer:", JSON.stringify(requestBody, null, 2))
+
+      const response = await fetch("http://localhost:8081/api/planogram/createFullPlanogram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.details || data.error || "Erreur inconnue")
+      }
+
+      toast({
+        title: "Succès",
+        description: `Meuble créé avec succès (ID: ${data.planogram_id})`,
+        variant: "default",
+      })
+
+      if (onSave) onSave(data.planogram_id)
+    } catch (error) {
+      console.error("Erreur lors de la création du meuble:", error)
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de la création du meuble",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
-
-    // Add to furniture store
-    addFurniture(furnitureToSave, furnitureProducts, description)
-
-    toast({
-      title: "Meuble enregistré",
-      description: `Le meuble "${name}" a été enregistré dans votre bibliothèque pour le magasin "${storeName}".`,
-    })
   }
 
   return (
@@ -509,91 +783,348 @@ const SaveFurnitureDialog = ({ furniture, products, cells, onSave }) => {
           {t("save")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className={`sm:max-w-[500px] max-h-[90vh] overflow-hidden ${isRTL ? "text-right rtl" : ""}`}>
         <DialogHeader>
-          <DialogTitle>{t("furnitureEditor.enregistrerMeuble")}</DialogTitle>
-          <DialogDescription>{t("furnitureEditor.enregistrerDescription")}</DialogDescription>
+          <DialogTitle>Save furniture</DialogTitle>
+          <DialogDescription>Save this furniture to your library to reuse it in your layouts.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          <div>
-            <label className="text-sm font-medium">{t("productImport.floorPlan.nomMeuble")}</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
-          </div>
+        <div className="overflow-y-auto max-h-[calc(90vh-150px)] pr-2">
+          <div className="space-y-4 mt-4">
+            {/* Nom du meuble */}
+            <div>
+              <label className="text-sm font-medium">name of the furniture</label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1"
+                placeholder="Enter furniture name"
+                dir={textDirection}
+              />
+            </div>
 
-          <div>
-            <label className="text-sm font-medium">{t("furnitureEditor.description")}</label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
-          </div>
+            {/* Description */}
+            <div>
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mt-1"
+                placeholder="Enter description"
+                dir={textDirection}
+              />
+            </div>
 
-          {/* Sélection du magasin */}
-          <div>
-            <label className="text-sm font-medium">Magasin</label>
-            <Select
-              value={selectedMagasinId}
-              onValueChange={setSelectedMagasinId}
-              disabled={isLoading || magasins.length === 0}
-            >
-              <SelectTrigger className="mt-1" dir={textDirection}>
-                <SelectValue placeholder="Sélectionner un magasin" />
-              </SelectTrigger>
-              <SelectContent>
-                {magasins.map((magasin) => (
-                  <SelectItem key={magasin.magasin_id} value={magasin.magasin_id}>
-                    {magasin.magasin_id} : {magasin.nom_magasin}
-                  </SelectItem>
-                ))}
-                {magasins.length === 0 && !isLoading && (
-                  <SelectItem value="no-stores" disabled>
-                    Aucun magasin disponible
-                  </SelectItem>
-                )}
-                {isLoading && (
-                  <SelectItem value="loading" disabled>
-                    Chargement...
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t("savePlanogramDialog.previewLabel")}</label>
-            <div className="border rounded-md p-4 bg-muted/20">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-muted/30 rounded-md flex items-center justify-center">
-                  {getFurnitureIcon(furniture.type)}
-                </div>
-                <div>
-                  <h4 className="font-medium">{name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {furniture.sections} {t("furnitureEditor.sections")}, {furniture.slots}{" "}
-                    {t("furnitureEditor.emplacement")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {cells.filter((cell) => cell.productId !== null).length} {t("productImport.produitPlacerIA")}
-                  </p>
-                  {/* Afficher le magasin sélectionné */}
-                  {selectedMagasinId && (
-                    <p className="text-sm text-muted-foreground">
-                      Magasin: {magasins.find((m) => m.magasin_id === selectedMagasinId)?.nom_magasin || ""}
-                    </p>
+            {/* Magasin */}
+            <div>
+              <label className="text-sm font-medium">Magasin</label>
+              <Select
+                value={selectedMagasinId}
+                onValueChange={setSelectedMagasinId}
+                disabled={isLoading || magasins.length === 0}
+              >
+                <SelectTrigger className="mt-1" dir={textDirection}>
+                  <SelectValue placeholder="Sélectionner un magasin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {magasins.map((magasin) => (
+                    <SelectItem key={magasin.magasin_id} value={magasin.magasin_id}>
+                      {magasin.magasin_id} - {magasin.nom_magasin}
+                    </SelectItem>
+                  ))}
+                  {magasins.length === 0 && !isLoading && (
+                    <SelectItem value="no-stores" disabled>
+                      Aucun magasin disponible
+                    </SelectItem>
                   )}
+                  {isLoading && (
+                    <SelectItem value="loading" disabled>
+                      Chargement...
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Zone */}
+            <div>
+              <label className="text-sm font-medium">Zone</label>
+              <Select
+                value={selectedZoneId}
+                onValueChange={setSelectedZoneId}
+                disabled={isLoadingZones || !selectedMagasinId || zones.length === 0}
+              >
+                <SelectTrigger className="mt-1" dir={textDirection}>
+                  <SelectValue
+                    placeholder={selectedMagasinId ? "Sélectionner une zone" : "Sélectionnez d'abord un magasin"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {zones.map((zone) => (
+                    <SelectItem key={zone.zone_id} value={zone.zone_id}>
+                      {zone.nom_zone}
+                    </SelectItem>
+                  ))}
+                  {zones.length === 0 && !isLoadingZones && selectedMagasinId && (
+                    <SelectItem value="no-zones" disabled>
+                      Aucune zone disponible pour ce magasin
+                    </SelectItem>
+                  )}
+                  {isLoadingZones && (
+                    <SelectItem value="loading-zones" disabled>
+                      Chargement des zones...
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Utilisateur */}
+            <div>
+              <label className="text-sm font-medium">Utilisateur</label>
+              <Select
+                value={selectedUserId?.toString() || ""}
+                onValueChange={(value) => setSelectedUserId(value ? Number.parseInt(value) : null)}
+                disabled={isLoadingUsers || !selectedMagasinId || users.length === 0}
+              >
+                <SelectTrigger className="mt-1" dir={textDirection}>
+                  <SelectValue
+                    placeholder={selectedMagasinId ? "Sélectionner un utilisateur" : "Sélectionnez d'abord un magasin"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id.toString()}>
+                      {user.username} ({user.email}) - {user.role}
+                    </SelectItem>
+                  ))}
+                  {users.length === 0 && !isLoadingUsers && selectedMagasinId && (
+                    <SelectItem value="no-users" disabled>
+                      Aucun utilisateur disponible pour ce magasin
+                    </SelectItem>
+                  )}
+                  {isLoadingUsers && (
+                    <SelectItem value="loading-users" disabled>
+                      Chargement des utilisateurs...
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Type de meuble */}
+            <div>
+              <label className="text-sm font-medium">Type de meuble</label>
+              <Select
+                value={selectedFurnitureTypeId}
+                onValueChange={setSelectedFurnitureTypeId}
+                disabled={isLoadingFurnitureTypes || furnitureTypes.length === 0}
+              >
+                <SelectTrigger className="mt-1" dir={textDirection}>
+                  <SelectValue placeholder="Sélectionner un type de meuble" />
+                </SelectTrigger>
+                <SelectContent>
+                  {furnitureTypes.map((type) => (
+                    <SelectItem key={type.furniture_type_id} value={type.furniture_type_id}>
+                      {type.nomType} - Nb_Faces : {type.nombreFaces}
+                    </SelectItem>
+                  ))}
+                  {furnitureTypes.length === 0 && !isLoadingFurnitureTypes && (
+                    <SelectItem value="no-types" disabled>
+                      Aucun type de meuble disponible
+                    </SelectItem>
+                  )}
+                  {isLoadingFurnitureTypes && (
+                    <SelectItem value="loading-types" disabled>
+                      Chargement des types...
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sélection du statut du planogramme */}
+            <div>
+              <label className="text-sm font-medium">Statut du planogramme</label>
+              <Select value={selectedPlanogramStatus} onValueChange={setSelectedPlanogramStatus}>
+                <SelectTrigger className="mt-1" dir={textDirection}>
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {planogramStatusOptions.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sélection du type de tâche */}
+            <div>
+              <label className="text-sm font-medium">Type de tâche</label>
+              <Select value={selectedTaskType} onValueChange={setSelectedTaskType}>
+                <SelectTrigger className="mt-1" dir={textDirection}>
+                  <SelectValue placeholder="Sélectionner un type de tâche" />
+                </SelectTrigger>
+                <SelectContent>
+                  {taskTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Preview détaillé */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Preview</label>
+              <Card className="p-4 bg-muted/20">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-muted/30 rounded-md flex items-center justify-center flex-shrink-0">
+                    {getFurnitureIcon(furniture.type)}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {/* Nom du meuble (dynamique) */}
+                    <div className="text-sm font-medium" dir={textDirection}>
+                      {name || "Meuble sans nom"}
+                    </div>
+
+                    {/* Informations de base */}
+                    <div className="text-sm text-muted-foreground" dir={textDirection}>
+                      <div>
+                        ({furniture.sections}) rows, ({furniture.slots}) columns
+                      </div>
+                      <div>({placedProductsCount}) products placed</div>
+                      <div>savePlanogramDialog.multipleQuantityProducts</div>
+                      {selectedMagasinId && (
+                        <div>
+                          Magasin: {magasins.find((m) => m.magasin_id === selectedMagasinId)?.nom_magasin || ""}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Type de meuble avec détails */}
+                    {selectedFurnitureTypeId && (
+                      <div className="text-xs text-blue-600">
+                        <div>
+                          Type de meuble:{" "}
+                          {furnitureTypes.find((ft) => ft.furniture_type_id === selectedFurnitureTypeId)?.nomType || ""}{" "}
+                          | Nombre des faces:{" "}
+                          {furnitureTypes.find((ft) => ft.furniture_type_id === selectedFurnitureTypeId)?.nombreFaces ||
+                            ""}
+                        </div>
+                        {furniture.type === "gondola" && (
+                          <>
+                            <div className="text-green-600">
+                              Gondola - Avant: {Math.floor(furniture.slots / 2)} col × {furniture.sections} étag
+                            </div>
+                            <div className="text-green-600">
+                              Gondola - Arrière: {Math.floor(furniture.slots / 2)} col × {furniture.sections} étag
+                            </div>
+                          </>
+                        )}
+                        {furniture.type === "shelves-display" && (
+                          <>
+                            <div className="text-purple-600">
+                              Avant/Arrière: {Math.floor(furniture.slots / 2)} col × {furniture.sections} étag
+                            </div>
+                            <div className="text-purple-600">Gauche/Droite: 1 col × {furniture.sections} étag</div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Dimensions du meuble */}
+                    <div className="text-xs text-gray-600 p-2 bg-gray-100 rounded">
+                      <div className="font-semibold mb-1">Dimensions du meuble :</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <span>Largeur: {furniture.width}m</span>
+                        <span>Hauteur: {furniture.height}m</span>
+                        <span>Profondeur: {furniture.depth}m</span>
+                        <span>Base: 0.3m</span>
+                        <span>Épaisseur étagère: 0.05m</span>
+                      </div>
+                    </div>
+
+                    {/* Produits placés - Format détaillé comme save-planogram-dialog */}
+                    {placedProductsCount > 0 && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-md max-h-40 overflow-y-auto">
+                        <h5 className="text-xs font-semibold text-gray-700 mb-2">Produits placés :</h5>
+                        <div className="space-y-1">
+                          {cells
+                            .filter((cell) => cell.productId !== null)
+                            .map((cell, index) => {
+                              const product = products.find((p) => p.primary_id === cell.productId)
+                              if (!product) return null
+
+                              let face = "front"
+                              if (furniture.type === "gondola") {
+                                face = cell.x < furniture.slots / 2 ? "front" : "back"
+                              } else if (furniture.type === "shelves-display") {
+                                const quarterWidth = furniture.slots / 4
+                                if (cell.x < quarterWidth) {
+                                  face = "left"
+                                } else if (cell.x < quarterWidth * 2) {
+                                  face = "front"
+                                } else if (cell.x < quarterWidth * 3) {
+                                  face = "back"
+                                } else {
+                                  face = "right"
+                                }
+                              }
+
+                              return (
+                                <div key={index} className="text-xs text-gray-600 border-b border-gray-200 pb-1">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <span className="font-medium text-gray-800">{product.name}</span>
+                                      <span className="text-gray-500 ml-1">({product.primary_id})</span>
+                                    </div>
+                                    <div className="text-right text-xs">
+                                      <div>Qty: {cell.quantity || 1}</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Étagère: {cell.y + 1}</span>
+                                    <span>Colonne: {cell.x + 1}</span>
+                                    <span>Face: {face}</span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className={isRTL ? "justify-start" : "justify-end"}>
           <DialogClose asChild>
-            <Button variant="outline">{t("cancel")}</Button>
+            <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <DialogClose asChild>
-            <Button onClick={handleSave} disabled={!selectedMagasinId || isLoading}>
-              {t("save")}
-            </Button>
-          </DialogClose>
+          <Button
+            onClick={() => {
+              console.log("🔘 Bouton Save cliqué!")
+              console.log(
+                "Button disabled?",
+                !selectedMagasinId || !selectedZoneId || !selectedFurnitureTypeId || isLoading,
+              )
+              console.log("selectedMagasinId:", selectedMagasinId)
+              console.log("selectedZoneId:", selectedZoneId)
+              console.log("selectedFurnitureTypeId:", selectedFurnitureTypeId)
+              console.log("isLoading:", isLoading)
+              handleSave()
+            }}
+            disabled={!selectedMagasinId || !selectedZoneId || !selectedFurnitureTypeId || isLoading}
+          >
+            Save
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1268,7 +1799,7 @@ export function FurnitureEditor() {
 
                 <SaveFurnitureDialog
                   furniture={currentFurniture}
-                  products={productsForDisplay}
+                  products={products} // Changer de productsForDisplay à products
                   cells={cells}
                   onSave={saveFurnitureToLibrary}
                 />

@@ -48,6 +48,50 @@ export const findUserByEmail = async (email) => {
     throw error; // La fonction appelante gère l'erreur
   }
 };
+
+  // Trouver un utilisateur par magasin
+  export const findUserByStore = async (idMagasin) => {
+    try {      
+      const users = await Users.findAll({ 
+        where: { 
+          magasin_id: idMagasin 
+        },
+        attributes: {
+          exclude: ['password'] // Exclure explicitement le mot de passe
+        }
+      });
+      
+      return users;
+    } catch (error) {
+      console.error("Erreur dans findUserByStore:", error);
+      throw error;
+    }
+  };
+  
+  export const getUsersByStore = async (req, res) => {
+    try {
+      const { idMagasin } = req.params;
+      
+      // Validation
+      if (!idMagasin) {
+        return res.status(400).json({ message: "L'ID du magasin est requis" });
+      }
+  
+      const users = await findUserByStore(idMagasin);
+      
+      if (!users || users.length === 0) {
+        return res.status(404).json({ message: "Aucun utilisateur trouvé pour ce magasin" });
+      }
+  
+      res.json(users);
+    } catch (error) {
+      console.error("Erreur dans getUsersByStore:", error);
+      res.status(500).json({ 
+        message: "Erreur serveur lors de la récupération des utilisateurs",
+        error: error.message 
+      });
+    }
+  };
 /*export const findUserByEmail = async (req, res) => {
     try {
         const { email } = req.params;

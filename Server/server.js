@@ -56,7 +56,10 @@ import categorieFormationRoutes  from './Routes/categorieFormationRoutes.js';
 import formationRoutes from './Routes/formationRoutes.js'
 import faqRoutes from './Routes/faqRoutes.js'
 import historiqueActions from './Routes/historiqueActionRoutes.js'
-
+import PlanogramRoutes from './Routes/planogramRoutes.js'
+import FurnitureTypeRoutes from './Routes/furnitureTypeRoutes.js';
+import FurnitureRoutes from './Routes/furnitureRoutes.js'
+import ProductPositionRoutes from './Routes/productPositionRoutes.js'
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -101,6 +104,13 @@ app.use("/api/categoriesFromations", categorieFormationRoutes);
 app.use("/api/formations", formationRoutes);
 app.use("/api/faq", faqRoutes);
 app.use("/api/historiqueActions", historiqueActions);
+app.use("/api/planogram", PlanogramRoutes);
+app.use("/api/furnitureType", FurnitureTypeRoutes);
+app.use("/api/furniture", FurnitureRoutes);
+app.use("/api/productPosition", ProductPositionRoutes);
+
+
+
 
 
 
@@ -114,7 +124,7 @@ app.use('/api/categories', categorieRoutes);
 app.use('/api/magasins', magasinRoutes);
 app.use('/api/zones', zoneRoutes);
 // Synchroniser Sequelize avec la base
-sequelize.sync({ force : false }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
+sequelize.sync({ alter: true }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
     .then(() => {
         console.log('Base synchronisée');
     })

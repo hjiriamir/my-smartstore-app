@@ -46,7 +46,7 @@ function LoginSignup() {
                     if (res.data.role === "admin") {
                         router.push('/Dashboard');
                     } else {
-                        router.push('/');
+                        router.push('/api');
                     }
                 } else {
                     router.push('/Login');

@@ -11,7 +11,7 @@ const Tache = sequelize.define('taches', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'planogrammes',  
+      model: 'planograms',  
       key: 'planogram_id',
     },
     onUpdate: 'CASCADE',
@@ -29,7 +29,7 @@ const Tache = sequelize.define('taches', {
   },
   idUser: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: {
       model: 'Users',
       key: 'id',
@@ -54,8 +54,20 @@ const Tache = sequelize.define('taches', {
     allowNull: true,
   },
   type: {
-    type: DataTypes.STRING, // ex: "implémentation", "validation", "Control", etc.
-    allowNull: true,
+    type: DataTypes.ENUM(
+      'mise_en_place',
+      'controle',
+      'audit',
+      'reapprovisionnement',
+      'nettoyage',
+      'formation',
+      'promotion',
+      'maintenance',
+      'remplacement_produit',
+      'inspection',
+      'autre'
+    ),
+    allowNull: false,
   },
   commentaire: {
     type: DataTypes.TEXT,
