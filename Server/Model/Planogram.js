@@ -39,6 +39,10 @@ const Planogram = sequelize.define('Planogram', {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },
+  update_date: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -53,6 +57,14 @@ const Planogram = sequelize.define('Planogram', {
     type: DataTypes.ENUM('actif', 'inactif', 'en cours'),
     defaultValue: 'en cours',
   },
+  pdfUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  imageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  }
 }, {
   tableName: 'planograms',
   timestamps: false,

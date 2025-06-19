@@ -61,13 +61,16 @@ import FurnitureTypeRoutes from './Routes/furnitureTypeRoutes.js';
 import FurnitureRoutes from './Routes/furnitureRoutes.js'
 import ProductPositionRoutes from './Routes/productPositionRoutes.js'
 
+
+
+import {Planogram, Tache, Furniture,Zone1} from './Model/associations.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 const router = express.Router(); 
 app.use(express.json());
 app.use(cors({
     origin: ["http://localhost:3000"],
-    methods:["POST","GET","PUT","DELETE"],
+    methods:["POST","GET","PUT","DELETE","PATCH"],
     credentials: true
 }));
 app.use(cookieParser());
@@ -120,11 +123,12 @@ app.use("/api/productPosition", ProductPositionRoutes);
 
 
 
+
 app.use('/api/categories', categorieRoutes);
 app.use('/api/magasins', magasinRoutes);
 app.use('/api/zones', zoneRoutes);
 // Synchroniser Sequelize avec la base
-sequelize.sync({ alter: true }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
+sequelize.sync({ force : false }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
     .then(() => {
         console.log('Base synchronisée');
     })

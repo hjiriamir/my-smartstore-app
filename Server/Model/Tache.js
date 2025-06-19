@@ -73,6 +73,14 @@ const Tache = sequelize.define('taches', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  priorite: {
+    type: DataTypes.ENUM(
+      'Haute',
+      'Basse',
+      'Moyenne'
+    ),
+    allowNull: true,
+  },
 }, {
   timestamps: false
 });

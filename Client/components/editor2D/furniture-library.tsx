@@ -239,17 +239,30 @@ export function FurnitureLibrary() {
   const [clearLibraryDialogOpen, setClearLibraryDialogOpen] = useState(false)
 
   // Filter furniture
-  const filteredFurniture = savedFurniture.filter((furniture) => {
-    // Search term filter
-    const matchesSearch =
-      furniture.furniture.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (furniture.description && furniture.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Filter furniture
+const filteredFurniture = savedFurniture.filter((furniture) => {
+  // First check if furniture and its properties exist
+  if (!furniture || !furniture.furniture || !furniture.furniture.name) {
+    return false; // Skip invalid furniture items
+  }
 
-    // Type filter
-    const matchesType = selectedType === "all" || furniture.furniture.type === selectedType
+  // Ensure name is a string before calling toLowerCase
+  const name = typeof furniture.furniture.name === 'string' 
+    ? furniture.furniture.name 
+    : String(furniture.furniture.name);
+  
+  // Search term filter
+  const matchesSearch =
+    name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (furniture.description && 
+     typeof furniture.description === 'string' && 
+     furniture.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    return matchesSearch && matchesType
-  })
+  // Type filter
+  const matchesType = selectedType === "all" || furniture.furniture.type === selectedType;
+
+  return matchesSearch && matchesType;
+});
 
   // Handle clear library
   const handleClearLibrary = () => {
@@ -262,31 +275,41 @@ export function FurnitureLibrary() {
   }
 
   // Sort furniture
-  const sortedFurniture = [...filteredFurniture].sort((a, b) => {
-    let valueA, valueB
+ // Sort furniture
+const sortedFurniture = [...filteredFurniture].sort((a, b) => {
+  let valueA: string | number, valueB: string | number
 
-    switch (sortField) {
-      case "name":
-        valueA = a.furniture.name.toLowerCase()
-        valueB = b.furniture.name.toLowerCase()
-        break
-      case "type":
-        valueA = a.furniture.type
-        valueB = b.furniture.type
-        break
-      case "products":
-        valueA = a.products.length
-        valueB = b.products.length
-        break
-      default:
-        valueA = a.furniture.name.toLowerCase()
-        valueB = b.furniture.name.toLowerCase()
-    }
+  switch (sortField) {
+    case "name":
+      // Ensure name is treated as string
+      valueA = typeof a.furniture.name === 'string' 
+        ? a.furniture.name.toLowerCase() 
+        : String(a.furniture.name).toLowerCase()
+      valueB = typeof b.furniture.name === 'string'
+        ? b.furniture.name.toLowerCase()
+        : String(b.furniture.name).toLowerCase()
+      break
+    case "type":
+      valueA = a.furniture.type
+      valueB = b.furniture.type
+      break
+    case "products":
+      valueA = a.products.length
+      valueB = b.products.length
+      break
+    default:
+      valueA = typeof a.furniture.name === 'string'
+        ? a.furniture.name.toLowerCase()
+        : String(a.furniture.name).toLowerCase()
+      valueB = typeof b.furniture.name === 'string'
+        ? b.furniture.name.toLowerCase()
+        : String(b.furniture.name).toLowerCase()
+  }
 
-    if (valueA < valueB) return sortDirection === "asc" ? -1 : 1
-    if (valueA > valueB) return sortDirection === "asc" ? 1 : -1
-    return 0
-  })
+  if (valueA < valueB) return sortDirection === "asc" ? -1 : 1
+  if (valueA > valueB) return sortDirection === "asc" ? 1 : -1
+  return 0
+})
 
   // Handle sort change
   const handleSortChange = (field: "name" | "type" | "products") => {

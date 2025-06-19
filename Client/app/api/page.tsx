@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,19 +13,25 @@ import ImplementationTracking from "../../components/front-office/implementation
 import Communication from "../../components/front-office/communication"
 import ProductSearch from "../../components/front-office/product-search"
 import TrainingSupport from "../../components/front-office/training-support"
+import axios from "axios"
+import { useToast } from "@/hooks/use-toast"
+import './page.css'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
+  const [magasin, setMagasin] = useState("Chargement...") // État pour stocker le nom du magasin
+  const [userId, setUserId] = useState(null) // État pour stocker l'ID de l'utilisateur
+  const { toast } = useToast()
+    
+const [magasinId, setMagasinId] = useState<number | null>(null);
+const [dashboardStats, setDashboardStats] = useState({
+  pendingTasks: 0,
+  completedToday: 0,
+  totalPlanograms: 0,
+  implementationRate: 0,
+});
 
-  // Données simulées pour le tableau de bord
-  const dashboardStats = {
-    pendingTasks: 12,
-    completedToday: 8,
-    totalPlanograms: 45,
-    implementationRate: 87,
-  }
-
-  const recentPlanograms = [
+ /* const recentPlanograms = [
     {
       id: 1,
       name: "Rayon Épicerie Salée",
@@ -50,13 +56,326 @@ export default function Dashboard() {
       priority: "Basse",
       dueDate: "2024-01-18",
     },
-  ]
+  ]*/
+  interface MagasinResponse {
+    magasin_id: number;
+    nom_magasin: string;
+    
+  }
+  interface Planogram {
+    id: number;
+    planogram_id: number;
+    name: string;
+    description: string;
+    status: string;
+    priority: string;
+    dueDate: string;
+  }
+  const [recentPlanograms, setRecentPlanograms] = useState<Planogram[]>([]);
 
-  const notifications = [
-    { id: 1, type: "urgent", message: "Nouveau planogramme publié pour le rayon Boulangerie", time: "10:30" },
-    { id: 2, type: "info", message: "Confirmation requise pour le rayon Fruits & Légumes", time: "09:15" },
-    { id: 3, type: "warning", message: "Retard détecté sur l'implémentation du rayon Textile", time: "08:45" },
-  ]
+  interface Notification {
+    id: number;
+    Utilisateur_id: number;
+    type: string;
+    contenu: string;
+    date_envoi: string;
+    lu: boolean;
+  }
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const fetchNotifications = async (userId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token non trouvé");
+  
+      const response = await axios.get(
+        `http://localhost:8081/api/notification/getNotificationsByUser/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      setNotifications(response.data.notifications || []);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des notifications:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les notifications",
+        variant: "destructive",
+      });
+    }
+  };
+  const markAsRead = async (notificationId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token non trouvé");
+  
+      await axios.patch(
+        `http://localhost:8081/api/notification/markAsRead/${notificationId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      // Mettre à jour l'état local
+      setNotifications(notifications.map(notif => 
+        notif.id === notificationId ? {...notif, lu: true} : notif
+      ));
+    } catch (error) {
+      console.error("Erreur lors du marquage comme lu:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de marquer la notification comme lue",
+        variant: "destructive",
+      });
+    }
+  };
+  const formatNotificationDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Si c'est aujourd'hui, on affiche seulement l'heure
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+    
+    // Si c'est hier
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return `Hier à ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    }
+    
+    // Sinon, on affiche la date complète
+    return date.toLocaleString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+  
+
+  const fetchRecentPlanograms = async (magasinId: string, userId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token non trouvé");
+  
+      const response = await axios.get(
+        `http://localhost:8081/api/planogram/planogramsRecent/${magasinId}/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      // Prendre seulement les 3 premiers éléments
+      const recentData = response.data.slice(0, 3);
+      
+      const formattedPlanograms: Planogram[] = recentData.map((item: any) => ({
+        id: item.id,
+        planogram_id: item.planogram.planogram_id,
+        name: item.planogram.nom,
+        description: item.planogram.description,
+        status: item.statut === "à faire" ? "À implémenter" : 
+                item.statut === "en cours" ? "En cours" : "Terminé",
+        priority: item.priorite,
+        dueDate: item.date_fin_prevue,
+      }));
+  
+      setRecentPlanograms(formattedPlanograms);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des planogrammes récents:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les planogrammes récents",
+        variant: "destructive",
+      });
+    }
+  };
+
+ // Récupérer l'utilisateur connecté
+ useEffect(() => {
+  const fetchCurrentUser = async () => {
+    try {
+      // 1. Vérifiez d'abord si le token existe
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Aucun token d'authentification trouvé");
+      }
+
+      // 2. Faites la requête avec les headers appropriés
+      const response = await fetch("http://localhost:8081/api/auth/me", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        credentials: "include"
+      });
+
+      // 3. Vérifiez le statut de la réponse
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erreur lors de la récupération des données");
+      }
+
+      // 4. Analysez la réponse
+      const data = await response.json();
+      console.log("Réponse complète de /api/auth/me:", data);
+
+      // 5. Récupérez l'ID selon différentes structures possibles
+      const userId = data.user?.idUtilisateur; 
+      
+      if (!userId) {
+        throw new Error("ID utilisateur non trouvé dans la réponse");
+      }
+
+      setUserId(userId);
+      console.log("ID utilisateur confirmé:", userId);
+      return userId;
+
+    } catch (error) {
+      console.error("Erreur détaillée:", error);
+      toast({
+        title: "Erreur d'authentification",
+        //description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  fetchCurrentUser();
+}, [toast]);
+
+
+const fetchMagasinData = async (userId: number): Promise<string | null> => {
+  console.log("Début de fetchMagasinData - userId:", userId);
+  
+  if (!userId) {
+    console.warn("Aucun userId fourni à fetchMagasinData");
+    return null;
+  }
+  
+  try {
+    console.log("Tentative de récupération du magasin pour userId:", userId);
+    
+    const response = await axios.get<MagasinResponse>(
+      `http://localhost:8081/api/magasins/getMagasinByUser/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    
+    console.log("Réponse de l'API magasin:", response.data);
+    
+    if (response.data?.nom_magasin && response.data?.magasin_id) {
+      console.log("Nom du magasin trouvé:", response.data.nom_magasin);
+      setMagasin(response.data.nom_magasin);
+      setMagasinId(response.data.magasin_id);
+      return response.data.magasin_id.toString(); // Retourne l'ID comme string
+    } else {
+      const errorMsg = "Données du magasin incomplètes dans la réponse";
+      console.warn(errorMsg, response.data);
+      throw new Error(errorMsg);
+    }
+  } catch (error) {
+    console.error("Erreur dans fetchMagasinData:", error);
+    setMagasin("Non disponible");
+    toast({
+      title: "Erreur",
+      description: "Impossible de récupérer les informations du magasin",
+      variant: "destructive",
+    });
+    return null;
+  }
+};
+
+const fetchDashboardStats = async (magasinId: string, userId: number) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Token non trouvé");
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const [pendingRes, completedRes, planogramsRes, implementationRes] = await Promise.all([
+      axios.get(`http://localhost:8081/api/taches/tachesEnAttente/${magasinId}/${userId}`, { headers }),
+      axios.get(`http://localhost:8081/api/taches/tachesTermine/${magasinId}/${userId}`, { headers }),
+      axios.get(`http://localhost:8081/api/planogram/getPlanogramsByMagasin/${magasinId}/${userId}`, { headers }),
+      axios.get(`http://localhost:8081/api/planogram/tauxImplementation/${magasinId}/${userId}`, { headers })
+    ]);
+
+    console.log("Réponses API:", {
+      pending: pendingRes.data,
+      completed: completedRes.data,
+      planograms: planogramsRes.data,
+      implementation: implementationRes.data
+    });
+
+    // Extraction des données
+    const pendingTasks = pendingRes.data.count || pendingRes.data.rows?.length || 0;
+    const completedToday = completedRes.data.count || completedRes.data.rows?.length || 0;
+    const totalPlanograms = planogramsRes.data.count || planogramsRes.data.rows?.length || 0;
+    
+    let implementationRate = 0;
+    if (typeof implementationRes.data.taux_implementation === 'string') {
+      implementationRate = parseFloat(implementationRes.data.taux_implementation);
+    } else if (typeof implementationRes.data.taux === 'number') {
+      implementationRate = implementationRes.data.taux;
+    } else if (implementationRes.data.planograms_implementes && implementationRes.data.total_planograms) {
+      implementationRate = (implementationRes.data.planograms_implementes / implementationRes.data.total_planograms) * 100;
+    }
+
+    console.log("Statistiques calculées:", {
+      pendingTasks,
+      completedToday,
+      totalPlanograms,
+      implementationRate
+    });
+
+    setDashboardStats({
+      pendingTasks,
+      completedToday,
+      totalPlanograms,
+      implementationRate
+    });
+
+  } catch (error) {
+    console.error("Erreur lors de la récupération des statistiques:", error);
+    toast({
+      title: "Erreur",
+      description: "Impossible de charger les statistiques du tableau de bord",
+      variant: "destructive",
+    });
+  }
+};
+
+  // Effet pour charger les données au montage du composant
+  useEffect(() => {
+    console.log("useEffect déclenché - userId actuel:", userId);
+    
+    const loadData = async () => {
+      console.log("Début de loadData - userId:", userId);
+      if (userId) {
+        console.log("Appel à fetchMagasinData avec userId:", userId);
+        const magasinId = await fetchMagasinData(userId);
+        if (magasinId && userId) {
+          await fetchDashboardStats(magasinId.toString(), userId);
+          await fetchRecentPlanograms(magasinId.toString(), userId);
+          await fetchNotifications(userId); // Ajout de cette ligne
+        }
+      } else {
+        console.log("userId non disponible - pas d'appel à fetchMagasinData");
+      }
+    };
+    
+    loadData().catch(error => {
+      console.error("Erreur dans loadData:", error);
+    });
+  }, [userId]);
 
   return (
     <div className="min-h-screen bg-gray-50 mt-14">
@@ -66,20 +385,20 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Package className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">PlanogramPro</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Smart Store</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-                <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
-                  3
-                </Badge>
-              </Button>
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
+                {notifications.filter(n => !n.lu).length}
+              </Badge>
+            </Button>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <Users className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-sm font-medium">Magasin Centre-Ville</span>
+                <span className="text-sm font-medium">Magasin : {magasin}</span>
               </div>
             </div>
           </div>
@@ -110,7 +429,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{dashboardStats.pendingTasks}</div>
-                  <p className="text-xs text-muted-foreground">À traiter aujourd'hui</p>
+                  <p className="text-xs text-muted-foreground">À traiter</p>
                 </CardContent>
               </Card>
 
@@ -142,8 +461,10 @@ export default function Dashboard() {
                   <TrendingUp className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">{dashboardStats.implementationRate}%</div>
-                  <Progress value={dashboardStats.implementationRate} className="mt-2" />
+                <div className="text-2xl font-bold text-blue-600">
+  {Math.round(dashboardStats.implementationRate)}%
+</div>
+<Progress value={dashboardStats.implementationRate} className="mt-2" />
                 </CardContent>
               </Card>
             </div>
@@ -151,66 +472,85 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Planogrammes récents */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Planogrammes récents</CardTitle>
-                  <CardDescription>Dernières publications pour votre magasin</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentPlanograms.map((planogram) => (
-                      <div key={planogram.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{planogram.name}</h4>
-                          <p className="text-sm text-muted-foreground">{planogram.category}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant={
-                              planogram.status === "Terminé"
-                                ? "default"
-                                : planogram.status === "En cours"
-                                  ? "secondary"
-                                  : "destructive"
-                            }
-                          >
-                            {planogram.status}
-                          </Badge>
-                          <Badge variant="outline">{planogram.priority}</Badge>
-                        </div>
+              <CardHeader>
+                <CardTitle>Planogrammes récents</CardTitle>
+                <CardDescription>Dernières publications pour votre magasin</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 max-h-96 overflow-y-auto"> {/* Ajout de max-h-96 et overflow-y-auto */}
+                  {recentPlanograms.map((planogram) => (
+                    <div key={planogram.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{planogram.name}</h4>
+                        <p className="text-sm text-muted-foreground">{planogram.description}</p>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
+                      <div className="flex items-center space-x-2">
+                        <Badge
+                          variant={
+                            planogram.status === "Terminé"
+                              ? "default"
+                              : planogram.status === "En cours"
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
+                          {planogram.status}
+                        </Badge>
+                        <Badge variant="outline">{planogram.priority}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
               {/* Notifications */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Notifications</CardTitle>
-                  <CardDescription>Alertes et mises à jour importantes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                        <div
-                          className={`w-2 h-2 rounded-full mt-2 ${
-                            notification.type === "urgent"
-                              ? "bg-red-500"
-                              : notification.type === "warning"
-                                ? "bg-yellow-500"
-                                : "bg-blue-500"
-                          }`}
-                        />
-                        <div className="flex-1">
-                          <p className="text-sm">{notification.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+  <CardHeader>
+    <CardTitle>Notifications</CardTitle>
+    <CardDescription>Alertes et mises à jour importantes</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      {notifications.length > 0 ? (
+        notifications.map((notification) => (
+          <div 
+            key={notification.id} 
+            className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+              !notification.lu ? "bg-blue-50 border-blue-200" : ""
+            }`}
+            onClick={() => markAsRead(notification.id)}
+          >
+            <div
+              className={`w-2 h-2 rounded-full mt-2 ${
+                !notification.lu 
+                  ? "bg-blue-500 animate-pulse" 
+                  : "bg-gray-300"
+              }`}
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                {notification.type === "nouveau planogramme" && "Nouveau planogramme"}
+                {notification.type === "confirmation requise" && "Confirmation requise"}
+                {notification.type === "retard" && "Retard détecté"}
+              </p>
+              <p className="text-sm">{notification.contenu}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatNotificationDate(notification.date_envoi)}
+              </p>
+            </div>
+            {!notification.lu && (
+              <span className="text-xs text-blue-500">Nouveau</span>
+            )}
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          Aucune notification pour le moment
+        </p>
+      )}
+    </div>
+  </CardContent>
+</Card>
             </div>
 
             

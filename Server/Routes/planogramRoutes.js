@@ -5,7 +5,11 @@ import {
   getPlanogramById,
   updatePlanogram,
   deletePlanogram,
-  createFullPlanogram
+  createFullPlanogram,
+  getPlanogramsByMagasin,
+  tauxImplementation,
+  planogramsRecent,
+  getPlanogramDetails
 } from '../Controller/planogramController.js';
 
 const router = express.Router();
@@ -14,6 +18,13 @@ router.post('/createPlanogram', createPlanogram);
 router.post('/createFullPlanogram', createFullPlanogram);
 router.get('/getAllPlanograms', getAllPlanograms);
 router.get('/getPlanogramById/:id', getPlanogramById);
+router.get('/getPlanogramDetails/:idMagasin', getPlanogramDetails);
+
+router.get('/tauxImplementation/:idMagasin/:idUser', tauxImplementation);
+router.get('/planogramsRecent/:idMagasin/:idUser', planogramsRecent);
+
+
+router.get('/getPlanogramsByMagasin/:idMagasin/:idUser', getPlanogramsByMagasin);
 router.put('/updatePlanogram/:id', updatePlanogram);
 router.delete('/deletePlanogram/:id', deletePlanogram);
 

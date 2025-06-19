@@ -1,6 +1,6 @@
 // Controller/magasinController.js
 import Magasin from '../Model/magasin1.js';
-
+import Users from '../Model/Users.js'
 // Créer un nouveau magasin
 export const createMagasin = async (req, res) => {
   try {
@@ -57,7 +57,25 @@ export const getMagasinsByEntrepriseId = async (req, res) => {
   }
 };
 
+export const getMagasinByUser = async (req, res)=> {
+  try {
+    const { id } = req.params;  // id de l'utilisateur
+    const user = await Users.findByPk(id);
+    // Trouver tous la magasin avec user_id = id
+    const magasin = await Magasin.findOne({
+      where: {magasin_id: user.magasin_id}
+    })
 
+    if (magasin.length === 0) {
+      return res.status(404).json({ error: 'Aucun magasin trouvé pour cette utilisateur' });
+    }
+
+    res.status(200).json(magasin);
+  } catch (error) {
+    console.error('Erreur lors de la récupération du magasin :', error);
+    res.status(500).json({ error: error.message });
+  }
+}
 // Mettre à jour un magasin par ID
 export const updateMagasin = async (req, res) => {
   try {
