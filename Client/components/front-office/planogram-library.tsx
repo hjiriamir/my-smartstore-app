@@ -53,6 +53,95 @@ export default function PlanogramLibrary() {
   const { toast } = useToast()
   const [selectedPlanogram, setSelectedPlanogram] = useState<Planogram | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [zones, setZones] = useState<{zone_id: string, nom_zone: string}[]>([])
+
+
+  // get zones by store
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        if (!token) {
+          throw new Error("Token d'authentification manquant")
+        }
+  
+        // 1. Récupérer l'ID de l'utilisateur connecté
+        const userResponse = await fetch("http://localhost:8081/api/auth/me", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          credentials: "include"
+        });
+  
+        if (!userResponse.ok) {
+          const errorData = await userResponse.json()
+          throw new Error(errorData.message || "Erreur lors de la récupération de l'utilisateur")
+        }
+        
+        const userData = await userResponse.json()
+        const userId = userData.user?.idUtilisateur || userData.id
+  
+        // 2. Récupérer le magasin de l'utilisateur
+        const magasinResponse = await fetch(`${API_BASE_URL}/magasins/getMagasinByUser/${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
+        
+        if (!magasinResponse.ok) {
+          throw new Error("Erreur lors de la récupération du magasin")
+        }
+        
+        const magasinData = await magasinResponse.json()
+  
+        // 3. Récupérer les zones du magasin
+        const zonesResponse = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${magasinData.magasin_id}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
+        
+        if (!zonesResponse.ok) {
+          throw new Error("Erreur lors de la récupération des zones")
+        }
+        
+        const zonesData = await zonesResponse.json()
+        setZones(zonesData)
+  
+        // 4. Récupérer les planogrammes du magasin
+        const planogramsResponse = await fetch(`${API_BASE_URL}/planogram/getPlanogramDetails/${magasinData.magasin_id}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
+        
+        if (!planogramsResponse.ok) {
+          throw new Error("Erreur lors de la récupération des planogrammes")
+        }
+        
+        const planogramsData = await planogramsResponse.json()
+        setPlanograms(Array.isArray(planogramsData) ? planogramsData : [])
+        
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Une erreur inconnue est survenue"
+        setError(errorMessage)
+        toast({
+          title: "Erreur",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+  
+    fetchData()
+  }, [toast])
+
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -347,17 +436,18 @@ const handleDownloadImage = async (planogram: Planogram) => {
         </div>
 
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Zone" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les zones</SelectItem>
-            <SelectItem value="Frais">Frais</SelectItem>
-            <SelectItem value="Épicerie">Épicerie</SelectItem>
-            <SelectItem value="Textile">Textile</SelectItem>
-            <SelectItem value="Électronique">Électronique</SelectItem>
-          </SelectContent>
-        </Select>
+  <SelectTrigger className="w-full sm:w-48">
+    <SelectValue placeholder="Zone" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">Toutes les zones</SelectItem>
+    {zones.map((zone) => (
+      <SelectItem key={zone.zone_id} value={zone.nom_zone}>
+        {zone.nom_zone}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-48">
@@ -365,10 +455,9 @@ const handleDownloadImage = async (planogram: Planogram) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="mise_en_place">À mettre en place</SelectItem>
-            <SelectItem value="en_cours">En cours</SelectItem>
-            <SelectItem value="terminé">Terminé</SelectItem>
             <SelectItem value="actif">Actif</SelectItem>
+            <SelectItem value="en cours">En cours</SelectItem>
+            <SelectItem value="inactif">Inactif</SelectItem>
           </SelectContent>
         </Select>
       </div>

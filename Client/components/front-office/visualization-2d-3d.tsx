@@ -7,147 +7,533 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/components/ui/use-toast"
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
   Eye,
   RotateCcw,
-  ZoomIn,
-  ZoomOut,
-  Move3D,
+  Download,
   FileImage,
-  FileText,
   Thermometer,
   Package,
   MapPin,
+  List,
+  Grid,
 } from "lucide-react"
 
-// Définir les types pour les données de l'API
-interface Meuble {
-  id: string
-  name: string
-  type: string
-  model3D?: { url: string }
+const API_BASE_URL = "http://localhost:8081/api"
+
+// Définir les types pour les données
+interface Furniture {
+  furniture_id: number
+  planogram_id: number
+  furniture_type_id: number
+  largeur: number
+  hauteur: number
+  profondeur: number
+  nb_colonnes_unique_face: number
+  nb_etageres_unique_face: number
+  nb_colonnes_front_back: number | null
+  nb_etageres_front_back: number | null
+  nb_colonnes_left_right: number | null
+  nb_etageres_left_right: number | null
+  pdfUrl: string | null
+  imageUrl: string | null
+  FurnitureType: {
+    furniture_type_id: number
+    nomType: string
+    nombreFaces: number
+    description: string
+  }
+  positions: Array<{
+    position_id: number
+    furniture_id: number
+    product_id: number
+    face: string
+    etagere: number
+    colonne: number
+    quantite: number
+    product: {
+      id: number
+      produit_id: string
+      nom: string
+      description: string
+      prix: number
+      stock: number
+      categorie_id: string
+      longueur: number
+      conditionnement: string
+      largeur: number
+      hauteur: number
+      poids: number
+      saisonnalite: string
+      priorite_merchandising: string
+      contrainte_temperature: string
+      contrainte_conditionnement: string
+      date_creation: string
+      date_modification: string
+      imageUrl: string | null
+    }
+  }>
 }
 
-// Simuler les fonctions d'API (à remplacer par les vraies)
-const getUserStoreId = async () => {
-  // Simule une requête API pour obtenir l'ID du magasin de l'utilisateur
-  return "store123"
+interface Product {
+  id: number
+  produit_id: string
+  nom: string
+  prix: number
+  stock: number
+  position: {
+    face: string
+    etagere: number
+    colonne: number
+    quantite: number
+  }
+  sales_performance?: number // Optionnel car non présent dans l'API
 }
 
-const getMeublesForStore = async (storeId: string): Promise<Meuble[]> => {
-  // Simule une requête API pour obtenir les meubles d'un magasin
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { id: "meuble1", name: "Meuble Épicerie", type: "Épicerie" },
-        { id: "meuble2", name: "Meuble Laitier", type: "Frais" },
-      ])
-    }, 500)
-  })
-}
-
-const getMeubleById = async (meubleId: string): Promise<Meuble> => {
-  // Simule une requête API pour obtenir un meuble par ID
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: meubleId,
-        name: `Meuble ${meubleId}`,
-        type: "Type",
-        model3D: { url: `url/vers/modele/${meubleId}.glb` },
-      })
-    }, 300)
-  })
-}
-
-export default function Visualization2D3D() {
-  // Remplacer les données simulées par un appel API
-  const [meubles, setMeubles] = useState<Meuble[]>([])
-  const [selectedMeuble, setSelectedMeuble] = useState<Meuble | null>(null)
+export default function FurnitureVisualization() {
+  const [furnitures, setFurnitures] = useState<Furniture[]>([])
+  const [selectedFurniture, setSelectedFurniture] = useState<Furniture | null>(null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [zoomLevel, setZoomLevel] = useState([100])
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [activeTab, setActiveTab] = useState("furniture")
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
+
+
+
+  
+
+  const generateFullPdf = async () => {
+    if (!selectedFurniture) {
+      toast({
+        title: "Erreur",
+        description: "Aucun meuble sélectionné",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const margin = 10;
+      let yPosition = margin;
+  
+      // Styles
+      const titleColor = '#2c3e50';
+      const headerColor = '#3498db';
+      const textColor = '#34495e';
+  
+      // 1. Page de titre
+      doc.setFontSize(24);
+      doc.setTextColor(titleColor);
+      doc.text(`Fiche Technique du Meuble`, 105, yPosition, { align: 'center' });
+      yPosition += 10;
+      doc.setFontSize(18);
+      doc.text(`Référence: ${selectedFurniture.furniture_id}`, 105, yPosition, { align: 'center' });
+      yPosition += 20;
+  
+      // 2. Image du meuble
+      if (selectedFurniture.imageUrl) {
+        try {
+          const imgData = await fetch(selectedFurniture.imageUrl)
+            .then(response => response.blob())
+            .then(blob => new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            }));
+  
+          const imgProps = doc.getImageProperties(imgData as string);
+          const pdfWidth = doc.internal.pageSize.getWidth() - 2 * margin;
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  
+          // Cadre autour de l'image
+          doc.setDrawColor(200, 200, 200);
+          doc.setFillColor(245, 245, 245);
+          doc.roundedRect(margin, yPosition, pdfWidth, pdfHeight + 10, 3, 3, 'FD');
+          
+          doc.addImage(imgData as string, 'JPEG', margin + 5, yPosition + 5, pdfWidth - 10, pdfHeight - 10);
+          yPosition += pdfHeight + 15;
+        } catch (error) {
+          console.error("Erreur lors du chargement de l'image", error);
+        }
+      }
+  
+      // 3. Détails du meuble avec mise en forme
+      doc.setFontSize(16);
+      doc.setTextColor(headerColor);
+      doc.text('Détails du Meuble', margin, yPosition);
+      yPosition += 10;
+  
+      // Ligne de séparation
+      doc.setDrawColor(headerColor);
+      doc.line(margin, yPosition, doc.internal.pageSize.getWidth() - margin, yPosition);
+      yPosition += 5;
+  
+      doc.setFontSize(12);
+      doc.setTextColor(textColor);
+  
+      const furnitureDetails = [
+        { label: 'Type', value: selectedFurniture.FurnitureType.nomType },
+        { label: 'Dimensions', value: `${selectedFurniture.largeur}cm × ${selectedFurniture.hauteur}cm × ${selectedFurniture.profondeur}cm` },
+        { label: 'Colonnes', value: selectedFurniture.nb_colonnes_unique_face.toString() },
+        { label: 'Étagères', value: selectedFurniture.nb_etageres_unique_face.toString() },
+        { label: 'Description', value: selectedFurniture.FurnitureType.description }
+      ];
+  
+      furnitureDetails.forEach(detail => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${detail.label}:`, margin, yPosition);
+        doc.setFont('helvetica', 'normal');
+        doc.text(detail.value, margin + 30, yPosition);
+        yPosition += 7;
+      });
+  
+      // 4. Liste des produits avec tableau
+      doc.addPage();
+      yPosition = margin;
+      
+      doc.setFontSize(16);
+      doc.setTextColor(headerColor);
+      doc.text('Liste des Produits', margin, yPosition);
+      yPosition += 10;
+      
+      // Ligne de séparation
+      doc.line(margin, yPosition, doc.internal.pageSize.getWidth() - margin, yPosition);
+      yPosition += 8;
+  
+      // En-tête du tableau
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(titleColor);
+      
+      const columns = [
+        { header: 'Nom', width: 60 },
+        { header: 'Position', width: 40 },
+        { header: 'Prix', width: 30 },
+        { header: 'Stock', width: 30 },
+        { header: 'Quantité', width: 30 }
+      ];
+      
+      // Dessiner l'en-tête
+      let xPosition = margin;
+      columns.forEach(col => {
+        doc.text(col.header, xPosition, yPosition);
+        xPosition += col.width;
+      });
+      yPosition += 5;
+      
+      // Ligne sous l'en-tête
+      doc.line(margin, yPosition, doc.internal.pageSize.getWidth() - margin, yPosition);
+      yPosition += 7;
+  
+      // Contenu du tableau
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(textColor);
+      
+      products.forEach(product => {
+        if (yPosition > 270) { // Nouvelle page si on arrive en bas
+          doc.addPage();
+          yPosition = margin;
+          
+          // Redessiner l'en-tête sur la nouvelle page
+          doc.setFont('helvetica', 'bold');
+          xPosition = margin;
+          columns.forEach(col => {
+            doc.text(col.header, xPosition, yPosition);
+            xPosition += col.width;
+          });
+          yPosition += 12;
+          doc.setFont('helvetica', 'normal');
+        }
+        
+        xPosition = margin;
+        doc.text(product.nom, xPosition, yPosition);
+        xPosition += columns[0].width;
+        
+        doc.text(`${product.position.face}, E${product.position.etagere}, C${product.position.colonne}`, xPosition, yPosition);
+        xPosition += columns[1].width;
+        
+        doc.text(`${product.prix} RS`, xPosition, yPosition);
+        xPosition += columns[2].width;
+        
+        const stockStatus = getStockStatus(product.stock);
+        doc.setTextColor(
+          stockStatus === "En stock" ? '#27ae60' : 
+          stockStatus === "Stock faible" ? '#e67e22' : '#e74c3c'
+        );
+        doc.text(stockStatus, xPosition, yPosition);
+        doc.setTextColor(textColor);
+        xPosition += columns[3].width;
+        
+        doc.text(product.position.quantite.toString(), xPosition, yPosition);
+        
+        yPosition += 7;
+      });
+  
+      // 5. Sauvegarder le PDF
+      doc.save(`meuble_${selectedFurniture.furniture_id}_fiche_technique.pdf`);
+  
+      toast({
+        title: "Succès",
+        description: "PDF généré avec succès",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF", error);
+      toast({
+        title: "Erreur",
+        description: "Échec de la génération du PDF",
+        variant: "destructive",
+      });
+    }
+  };
+  
+
+  //  la fonction handleExport
+  const handleExport = async (format: "pdf" | "image" | "full-pdf") => {
+    if (!selectedFurniture) return;
+    
+    if (format === "pdf") {
+      // Générer un PDF même si pdfUrl est null
+      if (selectedFurniture.pdfUrl) {
+        window.open(selectedFurniture.pdfUrl, '_blank');
+      } else {
+        await generateFullPdf(); // Utilisez la génération de PDF complet comme fallback
+      }
+    } else if (format === "image" && selectedFurniture.imageUrl) {
+      const link = document.createElement('a');
+      link.href = selectedFurniture.imageUrl;
+      link.download = `meuble-${selectedFurniture.furniture_id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else if (format === "full-pdf") {
+      await generateFullPdf();
+    }
+  };
+
 
   useEffect(() => {
-    loadMeublesForVisualization()
-  }, [])
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        if (!token) {
+          throw new Error("Token d'authentification manquant")
+        }
 
-  const loadMeublesForVisualization = async () => {
-    try {
-      const storeId = await getUserStoreId()
-      const meublesData = await getMeublesForStore(storeId)
-      setMeubles(meublesData)
-      if (meublesData.length > 0) {
-        setSelectedMeuble(meublesData[0])
+        // 1. Récupérer l'ID de l'utilisateur connecté
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          credentials: "include"
+        })
+
+        if (!userResponse.ok) {
+          const errorData = await userResponse.json()
+          throw new Error(errorData.message || "Erreur lors de la récupération de l'utilisateur")
+        }
+
+        const userData = await userResponse.json()
+        const userId = userData.user?.idUtilisateur || userData.id
+
+        // 2. Récupérer les meubles de l'utilisateur
+        const furnituresResponse = await fetch(`${API_BASE_URL}/furniture/getFurnituresByUser/${userId}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
+
+        if (!furnituresResponse.ok) {
+          throw new Error("Erreur lors de la récupération des meubles")
+        }
+
+        const furnituresData = await furnituresResponse.json()
+        setFurnitures(furnituresData)
+
+        if (furnituresData.length > 0) {
+          setSelectedFurniture(furnituresData[0])
+          // Transformer les positions en produits pour l'affichage
+          const productsData = furnituresData[0].positions.map(pos => ({
+            ...pos.product,
+            position: {
+              face: pos.face,
+              etagere: pos.etagere,
+              colonne: pos.colonne,
+              quantite: pos.quantite
+            },
+            // Ajout d'une performance de vente aléatoire pour l'exemple
+            sales_performance: Math.floor(Math.random() * 30) + 70
+          }))
+          setProducts(productsData)
+        }
+
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Une erreur inconnue est survenue"
+        setError(errorMessage)
+        toast({
+          title: "Erreur",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error("Erreur lors du chargement des meubles:", error)
-    } finally {
-      setLoading(false)
+    }
+
+    fetchData()
+  }, [toast])
+
+  const handleFurnitureChange = async (furnitureId: string) => {
+    const furniture = furnitures.find(f => f.furniture_id.toString() === furnitureId)
+    if (furniture) {
+      setSelectedFurniture(furniture)
+      // Transformer les positions en produits pour l'affichage
+      const productsData = furniture.positions.map(pos => ({
+        ...pos.product,
+        position: {
+          face: pos.face,
+          etagere: pos.etagere,
+          colonne: pos.colonne,
+          quantite: pos.quantite
+        },
+        // Ajout d'une performance de vente aléatoire pour l'exemple
+        sales_performance: Math.floor(Math.random() * 30) + 70
+      }))
+      setProducts(productsData)
+      setSelectedProduct(null)
     }
   }
 
-  // Fonction pour charger le modèle 3D
-  const load3DModel = async (meubleId: string) => {
-    try {
-      const meuble = await getMeubleById(meubleId)
-      if (meuble.model3D) {
-        // Ici vous appelleriez votre système de visualisation 3D existant
-        console.log("Chargement du modèle 3D:", meuble.model3D.url)
-        // Votre logique de chargement 3D existante
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement du modèle 3D:", error)
-    }
-  }
-
-  const [selectedPlanogram, setSelectedPlanogram] = useState("epicerie-salee")
-  const [viewMode, setViewMode] = useState("2d")
-  const [zoomLevel, setZoomLevel] = useState([100])
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
-  const [showHeatmap, setShowHeatmap] = useState(false)
-
-  const planograms = [
-    { id: "epicerie-salee", name: "Rayon Épicerie Salée", category: "Épicerie" },
-    { id: "produits-laitiers", name: "Produits Laitiers", category: "Frais" },
-    { id: "boissons-chaudes", name: "Boissons Chaudes", category: "Épicerie" },
-  ]
-
-  const products = [
-    {
-      id: "P001",
-      name: "Pâtes Barilla Spaghetti 500g",
-      position: { x: 120, y: 80, shelf: 2 },
-      quantity: 24,
-      price: 1.89,
-      stock: "En stock",
-      performance: 85,
-    },
-    {
-      id: "P002",
-      name: "Sauce Tomate Mutti 400g",
-      position: { x: 180, y: 80, shelf: 2 },
-      quantity: 18,
-      price: 2.45,
-      stock: "Stock faible",
-      performance: 92,
-    },
-    {
-      id: "P003",
-      name: "Huile Olive Puget 500ml",
-      position: { x: 240, y: 80, shelf: 2 },
-      quantity: 12,
-      price: 4.99,
-      stock: "En stock",
-      performance: 78,
-    },
-  ]
-
-  const handleProductClick = (product: any) => {
+  const handleProductClick = (product: Product) => {
     setSelectedProduct(product)
   }
 
-  const handleExport = (format: "pdf" | "image") => {
-    // Simulation de l'export
-    console.log(`Export en ${format} du planogramme ${selectedPlanogram}`)
+
+  const getStockStatus = (stock: number): string => {
+    return stock > 20 ? "En stock" : stock > 0 ? "Stock faible" : "Rupture"
+  }
+
+  const renderFurnitureView = () => {
+    if (!selectedFurniture) return null;
+  
+    return (
+      <div className="relative bg-gray-100 rounded-lg h-[600px] w-full overflow-hidden">
+        {selectedFurniture.imageUrl ? (
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.5}
+            maxScale={3}
+            wheel={{ step: 0.1 }}
+            doubleClick={{ disabled: true }}
+          >
+            {({ zoomIn, zoomOut, resetTransform }) => (
+              <>
+                <div className="absolute top-2 left-2 z-10 flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => zoomIn()}
+                    className="bg-white/90 backdrop-blur-sm"
+                  >
+                    +
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => zoomOut()}
+                    className="bg-white/90 backdrop-blur-sm"
+                  >
+                    -
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => resetTransform()}
+                    className="bg-white/90 backdrop-blur-sm"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </div>
+                <TransformComponent
+                  wrapperStyle={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  contentStyle={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <img
+                    src={selectedFurniture.imageUrl}
+                    alt={`Meuble ${selectedFurniture.furniture_id}`}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                      objectFit: "contain",
+                    }}
+                  />
+                </TransformComponent>
+              </>
+            )}
+          </TransformWrapper>
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Aucune image disponible
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderProductsView = () => {
+    return (
+      <div className="space-y-2">
+        {products.map(product => (
+          <div
+            key={product.id}
+            className={`p-4 rounded-lg cursor-pointer transition-colors ${
+              selectedProduct?.id === product.id
+                ? "bg-blue-100 border border-blue-300"
+                : "bg-white hover:bg-gray-50 border border-gray-200"
+            }`}
+            onClick={() => handleProductClick(product)}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="font-medium">{product.nom}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {product.position.face}, Étagère {product.position.etagere}, Colonne {product.position.colonne}
+                </p>
+              </div>
+              <Badge variant={
+                getStockStatus(product.stock) === "En stock" 
+                  ? "default" 
+                  : getStockStatus(product.stock) === "Stock faible" 
+                    ? "destructive" 
+                    : "outline"
+              }>
+                {getStockStatus(product.stock)}
+              </Badge>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -155,71 +541,99 @@ export default function Visualization2D3D() {
       {/* Contrôles de visualisation */}
       <Card>
         <CardHeader>
-          <CardTitle>Contrôles de visualisation</CardTitle>
-          <CardDescription>Sélectionnez le planogramme et configurez l'affichage</CardDescription>
+          <CardTitle>Visualisation des meubles et produits</CardTitle>
+          <CardDescription>Sélectionnez un meuble et naviguez entre la vue meuble et la liste des produits</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Select
-              value={selectedMeuble?.id || ""}
-              onValueChange={(value) => {
-                const meuble = meubles.find((m) => m.id === value)
-                setSelectedMeuble(meuble || null)
-                if (meuble) load3DModel(meuble.id)
-              }}
+              value={selectedFurniture?.furniture_id.toString() || ""}
+              onValueChange={handleFurnitureChange}
+              disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un meuble" />
+                <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un meuble"} />
               </SelectTrigger>
               <SelectContent>
-                {meubles.map((meuble) => (
-                  <SelectItem key={meuble.id} value={meuble.id}>
-                    {meuble.name} ({meuble.type})
+                {furnitures.map((furniture) => (
+                  <SelectItem key={furniture.furniture_id} value={furniture.furniture_id.toString()}>
+                    {`Meuble ${furniture.furniture_id} (${furniture.FurnitureType.nomType})`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Tabs value={viewMode} onValueChange={setViewMode}>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="2d">Vue 2D</TabsTrigger>
-                <TabsTrigger value="3d">Vue 3D</TabsTrigger>
+                <TabsTrigger value="furniture">
+                  <Grid className="h-4 w-4 mr-2" />
+                  Meuble
+                </TabsTrigger>
+                <TabsTrigger value="products">
+                  <List className="h-4 w-4 mr-2" />
+                  Produits
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">Zoom:</span>
-              <div className="flex-1">
-                <Slider
-                  value={zoomLevel}
-                  onValueChange={setZoomLevel}
-                  max={200}
-                  min={50}
-                  step={10}
-                  className="w-full"
-                />
+            {activeTab === "furniture" && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">Zoom:</span>
+                <div className="flex-1">
+                  <Slider
+                    value={zoomLevel}
+                    onValueChange={setZoomLevel}
+                    max={200}
+                    min={50}
+                    step={10}
+                    className="w-full"
+                  />
+                </div>
+                <span className="text-sm text-muted-foreground">{zoomLevel[0]}%</span>
               </div>
-              <span className="text-sm text-muted-foreground">{zoomLevel[0]}%</span>
-            </div>
+            )}
 
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant={showHeatmap ? "default" : "outline"}
-                onClick={() => setShowHeatmap(!showHeatmap)}
-              >
-                <Thermometer className="h-4 w-4 mr-2" />
-                Heatmap
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => selectedMeuble && load3DModel(selectedMeuble.id)}
-                disabled={!selectedMeuble}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Charger modèle 3D
-              </Button>
-            </div>
+<div className="flex space-x-2">
+  {activeTab === "furniture" && (
+    <>
+      <Button
+        size="sm"
+        variant={showHeatmap ? "default" : "outline"}
+        onClick={() => setShowHeatmap(!showHeatmap)}
+      >
+        <Thermometer className="h-4 w-4 mr-2" />
+        Performance
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => handleExport("image")}
+        disabled={!selectedFurniture || !selectedFurniture.imageUrl}
+      >
+        <FileImage className="h-4 w-4 mr-2" />
+        Image
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => handleExport("pdf")}
+        disabled={!selectedFurniture} 
+      >
+        <Download className="h-4 w-4 mr-2" />
+        Planogramme
+      </Button>
+      <Button
+        size="sm"
+        variant="default"
+        onClick={() => handleExport("full-pdf")}
+        disabled={!selectedFurniture}
+      >
+        <Download className="h-4 w-4 mr-2" />
+        Fiche Technique
+      </Button>
+    </>
+  )}
+</div>
           </div>
         </CardContent>
       </Card>
@@ -227,105 +641,44 @@ export default function Visualization2D3D() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Zone de visualisation principale */}
         <div className="lg:col-span-3">
-          <Card>
-            <CardHeader>
+  <Card className="h-full">
+    <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>{planograms.find((p) => p.id === selectedPlanogram)?.name}</CardTitle>
+                  <CardTitle>
+                    {selectedFurniture ? `Meuble ${selectedFurniture.furniture_id}` : "Aucun meuble sélectionné"}
+                  </CardTitle>
                   <CardDescription>
-                    Mode {viewMode.toUpperCase()} - Zoom {zoomLevel[0]}%
+                    {selectedFurniture && (
+                      <>
+                        {activeTab === "furniture" 
+                          ? `Vue meuble - Zoom ${zoomLevel[0]}%`
+                          : `Liste des produits (${products.length})`}
+                        {activeTab === "furniture" && (
+                          <span className="ml-4">
+                            Dimensions: {selectedFurniture.largeur}cm × {selectedFurniture.hauteur}cm × {selectedFurniture.profondeur}cm
+                          </span>
+                        )}
+                        <span className="ml-4">
+                          Type: {selectedFurniture.FurnitureType.nomType}
+                        </span>
+                      </>
+                    )}
                   </CardDescription>
                 </div>
-                <div className="flex space-x-2">
-                  <Button size="sm" variant="outline">
+                {activeTab === "furniture" && (
+                  <Button size="sm" variant="outline" onClick={() => setZoomLevel([100])}>
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Réinitialiser
+                    Réinitialiser zoom
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleExport("image")}>
-                    <FileImage className="h-4 w-4 mr-2" />
-                    Export Image
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleExport("pdf")}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Zone de visualisation simulée */}
-              <div className="relative bg-gray-100 rounded-lg h-96 overflow-hidden">
-                {viewMode === "2d" ? (
-                  <div className="relative w-full h-full" style={{ transform: `scale(${zoomLevel[0] / 100})` }}>
-                    {/* Simulation d'un planogramme 2D */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-gray-200 to-gray-300">
-                      {/* Étagères */}
-                      {[1, 2, 3, 4].map((shelf) => (
-                        <div
-                          key={shelf}
-                          className="absolute w-full h-16 bg-white border-2 border-gray-400 shadow-md"
-                          style={{ top: `${shelf * 80}px` }}
-                        >
-                          <div className="absolute left-2 top-1 text-xs font-medium text-gray-600">Étagère {shelf}</div>
-                        </div>
-                      ))}
-
-                      {/* Produits */}
-                      {products.map((product) => (
-                        <div
-                          key={product.id}
-                          className={`absolute w-12 h-12 rounded cursor-pointer transition-all hover:scale-110 ${
-                            selectedProduct?.id === product.id
-                              ? "bg-blue-500 ring-2 ring-blue-300"
-                              : showHeatmap
-                                ? `bg-gradient-to-r ${
-                                    product.performance > 90
-                                      ? "from-green-400 to-green-600"
-                                      : product.performance > 80
-                                        ? "from-yellow-400 to-yellow-600"
-                                        : "from-red-400 to-red-600"
-                                  }`
-                                : "bg-blue-400 hover:bg-blue-500"
-                          }`}
-                          style={{
-                            left: `${product.position.x}px`,
-                            top: `${product.position.shelf * 80 + 20}px`,
-                          }}
-                          onClick={() => handleProductClick(product)}
-                          title={product.name}
-                        >
-                          <Package className="h-6 w-6 text-white m-3" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-100 to-purple-100">
-                    <div className="text-center">
-                      <Move3D className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Vue 3D Interactive</h3>
-                      <p className="text-gray-500 mb-4">Visualisation 3D du planogramme avec rotation et zoom</p>
-                      <div className="flex justify-center space-x-2">
-                        <Button size="sm" variant="outline">
-                          <RotateCcw className="h-4 w-4 mr-2" />
-                          Rotation
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <ZoomIn className="h-4 w-4 mr-2" />
-                          Zoom +
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <ZoomOut className="h-4 w-4 mr-2" />
-                          Zoom -
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </CardHeader>
+    <CardContent className="h-[calc(100%-120px)]">
+      {activeTab === "furniture" ? renderFurnitureView() : renderProductsView()}
+    </CardContent>
+  </Card>
+</div>
 
         {/* Panneau d'informations produit */}
         <div className="space-y-4">
@@ -336,46 +689,53 @@ export default function Visualization2D3D() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-medium">{selectedProduct.name}</h4>
-                  <p className="text-sm text-muted-foreground">ID: {selectedProduct.id}</p>
+                  <h4 className="font-medium">{selectedProduct.nom}</h4>
+                  <p className="text-sm text-muted-foreground">ID: {selectedProduct.produit_id}</p>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm">Prix:</span>
-                    <span className="text-sm font-medium">{selectedProduct.price}€</span>
+                    <span className="text-sm font-medium">{selectedProduct.prix} RS</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">Quantité:</span>
-                    <span className="text-sm font-medium">{selectedProduct.quantity}</span>
+                    <span className="text-sm font-medium">{selectedProduct.position.quantite}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">Stock:</span>
-                    <Badge variant={selectedProduct.stock === "En stock" ? "default" : "destructive"}>
-                      {selectedProduct.stock}
+                    <Badge variant={
+                      getStockStatus(selectedProduct.stock) === "En stock" 
+                        ? "default" 
+                        : getStockStatus(selectedProduct.stock) === "Stock faible" 
+                          ? "destructive" 
+                          : "outline"
+                    }>
+                      {getStockStatus(selectedProduct.stock)}
                     </Badge>
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm">Performance:</span>
-                    <span className="text-sm font-medium">{selectedProduct.performance}%</span>
+                {selectedProduct.sales_performance && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm">Performance:</span>
+                      <span className="text-sm font-medium">{selectedProduct.sales_performance}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${selectedProduct.sales_performance}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${selectedProduct.performance}%` }}
-                    ></div>
-                  </div>
-                </div>
+                )}
 
                 <div className="pt-2 border-t">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     <span>
-                      Étagère {selectedProduct.position.shelf}, Position ({selectedProduct.position.x},{" "}
-                      {selectedProduct.position.y})
+                      Face {selectedProduct.position.face}, Étagère {selectedProduct.position.etagere}, Colonne {selectedProduct.position.colonne}
                     </span>
                   </div>
                 </div>
@@ -385,13 +745,17 @@ export default function Visualization2D3D() {
             <Card>
               <CardContent className="text-center py-8">
                 <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Cliquez sur un produit pour voir ses détails</p>
+                <p className="text-gray-500">
+                  {activeTab === "products" 
+                    ? "Sélectionnez un produit dans la liste" 
+                    : "Affichez la liste des produits pour sélectionner"}
+                </p>
               </CardContent>
             </Card>
           )}
 
           {/* Légende Heatmap */}
-          {showHeatmap && (
+          {showHeatmap && activeTab === "furniture" && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Légende Performance</CardTitle>

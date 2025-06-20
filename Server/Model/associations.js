@@ -5,6 +5,19 @@ import Furniture from './Furniture.js';
 import Tache from './Tache.js';
 import Planogram from './Planogram.js';
 import Zone1 from './zone1.js';
+import User from './Users.js'
+import FurnitureType from './FurnitureType.js';
+import ProductPosition from './ProductPosition.js';
+import Produit from './Produit.js';
+import ChatMessage from './ChatMessage.js'
+import Fournisseur from './Fournisseur.js';
+import Categorie1 from './Categorie1.js';
+import Vente from './Ventes.js';
+import StockMovement from './StockMovement.js';
+import magasin1 from './magasin1.js';
+
+
+//import Conversation from './Conversation.js';
 // === Associations Conversation/Users===
 Conversation.belongsToMany(Users, {
   through: ConversationParticipant,
@@ -38,6 +51,59 @@ Planogram.belongsTo(Zone1, {
   targetKey: 'zone_id', // cible la colonne unique zone_id dans zones
   as: 'zone'
 });
+
+Furniture.hasMany(ProductPosition, { foreignKey: 'furniture_id', as: 'positions' });
+ProductPosition.belongsTo(Produit, { foreignKey: 'product_id', as: 'product' });
+
+Produit.hasMany(ProductPosition, { foreignKey: 'product_id', as: 'positions' });
+
+Tache.belongsTo(User, { foreignKey: 'idUser', as: 'user' });
+Furniture.belongsTo(FurnitureType, { foreignKey: 'furniture_type_id', as:'furnitureType' });
+
+ChatMessage.belongsTo(User, {foreignKey: 'utilisateur_id', as: 'utilisateur'})
+ChatMessage.belongsTo(Conversation, {foreignKey: 'conversation_id',as:'conversation'})
+ConversationParticipant.belongsTo(Users, { foreignKey: 'utilisateur_id', as: 'utilisateur' });
+
+//ConversationParticipant.hasMany(User, {foreignKey:'utilisateur_id', as:'utilisateur'})
+// Association : une Conversation a plusieurs Participants
+Conversation.hasMany(ConversationParticipant, {
+  foreignKey: 'conversation_id',
+  as: 'participants'
+});
+
+// Association : un Participant appartient à une Conversation
+ConversationParticipant.belongsTo(Conversation, {
+  foreignKey: 'conversation_id',
+  as: 'conversation'
+});
+
+Produit.belongsTo(Fournisseur, {foreignKey:'fournisseur_id',as:'fournisseur'})
+Produit.belongsTo(Categorie1, {
+  foreignKey: 'categorie_id',  // Colonne dans Produit
+  targetKey: 'categorie_id',   // Colonne dans Categorie1 (si différente de 'id')
+  as: 'categorie'
+});ProductPosition.belongsTo(Furniture,{foreignKey:'furniture_id', as:'furniture'})
+Vente.belongsTo(Produit, {
+  foreignKey: 'produit_id',  // Colonne dans Produit
+  targetKey: 'produit_id',   // Colonne dans Categorie1 (si différente de 'id')
+  as: 'produit'
+});
+StockMovement.belongsTo(Produit, {
+  foreignKey: 'produit_id',  // Colonne dans Produit
+  targetKey: 'produit_id',   // Colonne dans Categorie1 (si différente de 'id')
+  as: 'produit'
+});
+Categorie1.belongsTo(magasin1, {foreignKey:'magasin_id', as: 'magasin'})
+Produit.hasMany(Vente, {
+  foreignKey: 'produit_id', // Colonne dans Vente qui référence Produit
+  sourceKey: 'produit_id',  // Colonne dans Produit à référencer (votre index_unique)
+  as: 'ventes'
+});
+Produit.hasMany(StockMovement, {
+  foreignKey: 'produit_id', // Colonne dans StockMovement
+  sourceKey: 'produit_id',  // Colonne dans Produit
+  as: 'stockmovements'
+});
 export {
   Conversation,
   ConversationParticipant,
@@ -45,5 +111,14 @@ export {
   Tache,
   Planogram,
   Furniture,
-  Zone1
+  Zone1,
+  FurnitureType,
+  User,
+  ProductPosition,
+  Fournisseur,
+  Vente,
+  StockMovement,
+  magasin1,
+  Categorie1,
+  Produit
 };

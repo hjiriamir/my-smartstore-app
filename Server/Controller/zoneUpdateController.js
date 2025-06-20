@@ -1,4 +1,5 @@
 // Controller/zoneController.js
+import Zone1 from '../Model/zone1.js';
 import Zone from '../Model/zone1.js';
 
 // Créer une zone

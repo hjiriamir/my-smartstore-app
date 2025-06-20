@@ -23,6 +23,10 @@ const ChatMessage = sequelize.define('chat_messages', {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   },
+  lu: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   fichier_joint_url: {
     type: DataTypes.STRING,
     allowNull: true

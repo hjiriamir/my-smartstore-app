@@ -1,7 +1,7 @@
 // Model/Produit.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../Config/database1.js';
-
+import Fournisseur from './Fournisseur.js';
 const Produit = sequelize.define('Produit', {
   id: {
     type: DataTypes.INTEGER,
@@ -38,7 +38,16 @@ const Produit = sequelize.define('Produit', {
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT'
   },
-
+  fournisseur_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'fournisseurs',       
+      key: 'fournisseur_id'       
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'RESTRICT'
+  },
   // Dimensions physiques
   longueur: {
     type: DataTypes.FLOAT,
@@ -95,6 +104,10 @@ const Produit = sequelize.define('Produit', {
   date_modification: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
+  },
+  imageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   tableName: 'produits',

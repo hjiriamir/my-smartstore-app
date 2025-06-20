@@ -1,4 +1,9 @@
 import Furniture from '../Model/Furniture.js';
+import Tache from '../Model/Tache.js';
+import FurnitureType from '../Model/FurnitureType.js';
+import Planogram from '../Model/Planogram.js';
+import ProductPosition from '../Model/ProductPosition.js';
+import Produit  from '../Model/Produit.js';
 
 export const createFurniture = async (req, res) => {
   try {
@@ -45,5 +50,45 @@ export const deleteFurniture = async (req, res) => {
     res.status(200).json({ message: 'Supprimé avec succès' });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const getFurnituresByUser = async (req, res) => {
+  const { idUser } = req.params;
+
+  try {
+    const taches = await Tache.findAll({
+      where: { idUser },
+      include: {
+        model: Planogram,
+        as: 'planogram',
+        include: {
+          model: Furniture,
+          as: 'furnitures',
+          include: [
+            FurnitureType,
+            {
+              model: ProductPosition,
+              as: 'positions', // doit correspondre à l'alias défini dans l'association
+              include: {
+                model: Produit ,
+                as: 'product' // pareil : dépend de ton association
+              }
+            }
+          ]
+        }
+      }
+    });
+
+    // Extraire les meubles enrichis
+    const furnitures = taches.flatMap(t => t.planogram?.furnitures || []);
+
+    res.status(200).json(furnitures);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: 'Erreur lors de la récupération des meubles et produits de l\'utilisateur',
+      error: error.message
+    });
   }
 };

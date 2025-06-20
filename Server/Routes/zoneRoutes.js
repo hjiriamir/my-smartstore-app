@@ -7,7 +7,7 @@ import {
   updateZone,
   deleteZone,
   createZonesList,
-  getAllZonesMagasin
+  getAllZonesMagasin,
 } from '../Controller/zoneUpdateController.js';
 
 const router = express.Router();

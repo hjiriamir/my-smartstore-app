@@ -21,16 +21,17 @@ import Users from './Model/Users.js';
 import Produits from './Model/Produit.js';
 import Promotion from './Model/Promotion.js';
 import Stock from './Model/Stock.js';
-import StockMovement from './Model/StockMovement.js';
-import Vente from './Model/Ventes.js';
+/*import StockMovement from './Model/StockMovement.js';
+import Vente from './Model/Ventes.js';*/
 import ConversionZone from './Model/ConversionZone.js';
-import Fournisseur from './Model/Fournisseur.js';
+//import Fournisseur from './Model/Fournisseur.js';
 import HeatmapData from './Model/HeatmapData.js';
 import LegalConstraint from './Model/LegalConstraint.js';
 import LocalEvent from './Model/LocalEvent.js';
 import SupplierAgreement from './Model/SupplierAgreement.js';
 import Planogramme from './Model/Planogramme.js';
 import PlanogrammeDetail from './Model/PlanogrammeDetail.js';
+import ChatMessage from './Model/ChatMessage.js';
 
 import contactMessageRoutes from './Routes/messageContactRoutes.js';
 import demandeAbonnementRoutes from './Routes/demandeAbonnementRoutes.js';
@@ -60,10 +61,11 @@ import PlanogramRoutes from './Routes/planogramRoutes.js'
 import FurnitureTypeRoutes from './Routes/furnitureTypeRoutes.js';
 import FurnitureRoutes from './Routes/furnitureRoutes.js'
 import ProductPositionRoutes from './Routes/productPositionRoutes.js'
+import commentaireRoutes from './Routes/commentaireRoutes.js'
+import chatMessageRoutes from './Routes/chatMessageRoutes.js'
+import ConversationParticipantRoutes from './Routes/conversationParticipantRoutes.js';
 
-
-
-import {Planogram, Tache, Furniture,Zone1} from './Model/associations.js';
+import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit} from './Model/associations.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 const router = express.Router(); 
@@ -111,16 +113,9 @@ app.use("/api/planogram", PlanogramRoutes);
 app.use("/api/furnitureType", FurnitureTypeRoutes);
 app.use("/api/furniture", FurnitureRoutes);
 app.use("/api/productPosition", ProductPositionRoutes);
-
-
-
-
-
-
-
-
-
-
+app.use("/api/commentaireRoutes", commentaireRoutes);
+app.use("/api/chatMessageRoutes", chatMessageRoutes);
+app.use("/api/participants", ConversationParticipantRoutes);
 
 
 
@@ -128,7 +123,7 @@ app.use('/api/categories', categorieRoutes);
 app.use('/api/magasins', magasinRoutes);
 app.use('/api/zones', zoneRoutes);
 // Synchroniser Sequelize avec la base
-sequelize.sync({ force : false }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
+sequelize.sync({  force : false }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
     .then(() => {
         console.log('Base synchronisée');
     })

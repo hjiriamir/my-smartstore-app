@@ -20,5 +20,4 @@ router.get('/getMagasinByUser/:id', getMagasinByUser);
 router.get('/getMagasinsByEntrepriseId/:id', getMagasinsByEntrepriseId);
 router.put('/updateMagasin/:id', updateMagasin);
 router.delete('/deleteMagasin/:id', deleteMagasin);
-
 export default router;

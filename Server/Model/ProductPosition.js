@@ -18,11 +18,11 @@ const ProductPosition = sequelize.define('ProductPosition', {
     onDelete: 'CASCADE',
   },
   product_id: {
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'produits',
-      key: 'produit_id',
+      key: 'id',
     },
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',

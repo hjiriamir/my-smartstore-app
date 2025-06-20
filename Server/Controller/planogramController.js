@@ -1,4 +1,4 @@
-import { Sequelize, Op } from 'sequelize';
+import { Sequelize, Op, where, fn, col, literal  } from 'sequelize';
 import sequelize from '../Config/database1.js';
 
 import Planogram from '../Model/Planogram.js';
@@ -8,7 +8,6 @@ import Tache from '../Model/Tache.js';
 import Users from '../Model/Users.js';
 import Notification from '../Model/Notification.js';
 import { sendBasicEmail } from '../Services/sendEmail.js';
-import Zones from '../Model/zone1.js';
 import Zone1 from '../Model/zone1.js';
 
 // Créer un planogramme simple
@@ -277,28 +276,72 @@ export const getPlanogramsByMagasin = async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const planograms = await Tache.findAndCountAll({
+    const planograms = await Planogram.findAll({
       where: {
-        idUser: idUser,
-        type: 'mise_en_place'
+        magasin_id: idMagasin,
+        statut: 'actif',
+        date_creation: {
+          [Op.between]: [startOfMonth, endOfMonth]
+        }
       },
       include: [
         {
-          model: Planogram,
-          as: 'planogram',
+          model: Tache,
+          as: 'taches',
           where: {
-            magasin_id: idMagasin,
-            statut: 'actif',
-            date_creation: {
-              [Op.between]: [startOfMonth, endOfMonth]
-            }
+            idUser,
+            type: 'mise_en_place'
           },
-          required: true
+          required: false,
+          include: [
+            {
+              model: Users,
+              as: 'user', // correspond à l'alias de l'association
+              attributes: ['id', 'name', 'email']
+            }
+          ]
         }
       ]
+      
     });
 
-    return res.status(200).json(planograms);
+    const result = planograms.map(planogram => {
+      const taches = planogram.taches || [];
+
+      const totalTaches = taches.length;
+      const nbTermine = taches.filter(t => t.statut === 'terminé').length;
+      const nbAFaire = taches.filter(t => t.statut === 'à faire').length;
+      const nbEnCours = taches.filter(t => t.statut === 'en cours').length;
+      const nbEnRetard = taches.filter(t => t.statut === 'en retard').length;
+
+      const progression = totalTaches > 0 ? (nbTermine / totalTaches) * 100 : 0;
+
+      return {
+        planogram,
+        totalTaches,
+        nbTermine,
+        nbAFaire,
+        nbEnCours,
+        nbEnRetard,
+        progression: Number(progression.toFixed(2)),
+        taches: taches.map(t => ({
+          id: t.id,
+          statut: t.statut,
+          type: t.type,
+          date_debut: t.date_debut,
+          date_fin_prevue: t.date_fin_prevue,
+          date_fin_reelle: t.date_fin_reelle,
+          priorite: t.priorite,
+          assignedUser: t.assignedUser ? {
+            id: t.assignedUser.id,
+            name: t.assignedUser.name,
+            email: t.assignedUser.email
+          } : null
+        }))
+      };
+    });
+
+    return res.status(200).json(result);
 
   } catch (error) {
     console.error("Erreur lors de la récupération des planogrammes :", error);
@@ -434,3 +477,4 @@ export const getPlanogramDetails = async (req, res) => {
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 };
+

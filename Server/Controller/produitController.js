@@ -1,5 +1,15 @@
-import Produit from '../Model/Produit.js';
-
+import { 
+  Produit, 
+  Fournisseur, 
+  Categorie1, 
+  ProductPosition, 
+  Furniture, 
+  FurnitureType,
+  Planogram, 
+  Zone1, 
+  Vente, 
+  StockMovement 
+} from '../Model/associations.js';
 // Créer un produit
 export const createProduit = async (req, res) => {
   try {
@@ -82,3 +92,87 @@ export const createProduitsList = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+
+export const getProduitDetails = async (req, res) => {
+  try {
+    const { idMagasin } = req.params;
+
+    if (!idMagasin) {
+      return res.status(400).json({ error: "idMagasin manquant." });
+    }
+
+    const produits = await Produit.findAll({
+      include: [
+        {
+          model: Fournisseur,
+          as: 'fournisseur',
+          attributes: ['fournisseur_id', 'nom']
+        },
+        {
+          model: Categorie1,
+          as: 'categorie',
+         // where: { magasin_id: idMagasin },
+          required: false,
+          attributes: ['categorie_id', 'nom']
+        },
+        {
+          model: ProductPosition,
+          as: 'positions',
+          required: false,
+          include: [
+            {
+              model: Furniture,
+              as: 'furniture',
+              required: false,
+              attributes: ['furniture_id', 'planogram_id', 'furniture_type_id'],
+              include: [
+                {
+                  model: FurnitureType,
+                  as: 'furnitureType',
+                  required: false,
+                  attributes: ['nomType', 'nombreFaces']
+                },
+                {
+                  model: Planogram,
+                  as: 'planogram',
+                  required: false,
+                  where: { magasin_id: idMagasin },
+                  attributes: ['planogram_id', 'zone_id', 'magasin_id', 'nom'],
+                  include: [
+                    {
+                      model: Zone1,
+                      as: 'zone',
+                      required: false,
+                      attributes: ['zone_id', 'nom_zone']
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          model: Vente,
+          as: 'ventes',
+          where: { magasin_id: idMagasin },
+          required: false,
+          attributes: ['vente_id', 'quantite', 'prix_unitaire']
+        },
+        {
+          model: StockMovement,
+          as: 'stockmovements',
+          where: { magasin_id: idMagasin },
+          required: false,
+          attributes: ['mouvement_id', 'type_mouvement', 'quantite', 'cout_unitaire', 'valeur_mouvement']
+        }
+      ]
+    });
+
+    return res.json(produits);
+  } catch (error) {
+    console.error('Erreur dans getProduitDetails:', error);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
