@@ -41,7 +41,7 @@ interface Furniture {
   nb_etageres_left_right: number | null
   pdfUrl: string | null
   imageUrl: string | null
-  FurnitureType: {
+  furnitureType: {
     furniture_type_id: number
     nomType: string
     nombreFaces: number
@@ -181,11 +181,10 @@ export default function FurnitureVisualization() {
       doc.setTextColor(textColor);
   
       const furnitureDetails = [
-        { label: 'Type', value: selectedFurniture.FurnitureType.nomType },
-        { label: 'Dimensions', value: `${selectedFurniture.largeur}cm × ${selectedFurniture.hauteur}cm × ${selectedFurniture.profondeur}cm` },
+        { label: 'Type', value: selectedFurniture.furnitureType.nomType },        { label: 'Dimensions', value: `${selectedFurniture.largeur}cm × ${selectedFurniture.hauteur}cm × ${selectedFurniture.profondeur}cm` },
         { label: 'Colonnes', value: selectedFurniture.nb_colonnes_unique_face.toString() },
         { label: 'Étagères', value: selectedFurniture.nb_etageres_unique_face.toString() },
-        { label: 'Description', value: selectedFurniture.FurnitureType.description }
+        { label: 'Description', value: selectedFurniture.furnitureType.description }
       ];
   
       furnitureDetails.forEach(detail => {
@@ -555,11 +554,11 @@ export default function FurnitureVisualization() {
                 <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un meuble"} />
               </SelectTrigger>
               <SelectContent>
-                {furnitures.map((furniture) => (
-                  <SelectItem key={furniture.furniture_id} value={furniture.furniture_id.toString()}>
-                    {`Meuble ${furniture.furniture_id} (${furniture.FurnitureType.nomType})`}
-                  </SelectItem>
-                ))}
+              {furnitures.map((furniture) => (
+  <SelectItem key={furniture.furniture_id} value={furniture.furniture_id.toString()}>
+    {`Meuble ${furniture.furniture_id} (${furniture.furnitureType.nomType})`}
+  </SelectItem>
+))}
               </SelectContent>
             </Select>
 
@@ -660,7 +659,7 @@ export default function FurnitureVisualization() {
                           </span>
                         )}
                         <span className="ml-4">
-                          Type: {selectedFurniture.FurnitureType.nomType}
+                        Type: {selectedFurniture.furnitureType.nomType}
                         </span>
                       </>
                     )}

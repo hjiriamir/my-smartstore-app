@@ -53,7 +53,6 @@ import TacheRoutes from './Routes/tachesRoutes.js';
 import ConfirmationRoutes from './Routes/confirmationsImplantationRoutes.js';
 import NotificationRoutes from './Routes/notificationsRoutes.js';
 import conversationRoutes  from './Routes/conversationsRoutes.js';
-import categorieFormationRoutes  from './Routes/categorieFormationRoutes.js';
 import formationRoutes from './Routes/formationRoutes.js'
 import faqRoutes from './Routes/faqRoutes.js'
 import historiqueActions from './Routes/historiqueActionRoutes.js'
@@ -105,7 +104,6 @@ app.use("/api/taches", TacheRoutes);
 app.use("/api/confirmation", ConfirmationRoutes);
 app.use("/api/notification", NotificationRoutes);
 app.use("/api/conversation", conversationRoutes);
-app.use("/api/categoriesFromations", categorieFormationRoutes);
 app.use("/api/formations", formationRoutes);
 app.use("/api/faq", faqRoutes);
 app.use("/api/historiqueActions", historiqueActions);

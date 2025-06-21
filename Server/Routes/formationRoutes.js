@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.get('/getAllFormations', getAllFormations);
 router.get('/getFormationById/:id', getFormationById);
-router.post('/createFormation/', createFormation);
+router.post('/createFormation', createFormation);
 router.put('/updateFormation/:id', updateFormation);
 router.delete('/deleteFormation/:id', deleteFormation);
 

@@ -415,7 +415,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
             <TabsTrigger value="tracking">Suivi</TabsTrigger>
             <TabsTrigger value="communication">Communication</TabsTrigger>
             <TabsTrigger value="search">Recherche</TabsTrigger>
-            <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="support">Support / Gestion Compte</TabsTrigger>
           </TabsList>
 
           {/* Tableau de bord d'accueil */}

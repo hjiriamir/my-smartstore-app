@@ -24,11 +24,13 @@ export const getFaqById = async (req, res) => {
 // Créer une nouvelle FAQ
 export const createFaq = async (req, res) => {
   try {
-    const { question, reponse, categorieFormation_id } = req.body;
+    const { question, reponse,vues, personnes_aidees, categorie } = req.body;
     const newFaq = await Faq.create({
       question,
       reponse,
-      categorieFormation_id,
+      vues,
+      personnes_aidees,
+      categorie,
       date_creation: new Date(),
     });
     res.status(201).json(newFaq);

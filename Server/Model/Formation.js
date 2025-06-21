@@ -23,15 +23,9 @@ const Formation = sequelize.define('Formation', {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  categorieFormation_id: {
+  duree: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'categoriesFormation',  
-      key: 'id',
-    },
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE',
+    allowNull: true,
   },
   date_creation: {
     type: DataTypes.DATE,

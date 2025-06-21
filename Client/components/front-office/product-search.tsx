@@ -19,6 +19,7 @@ export default function ProductSearch() {
   const [currentMagasin, setCurrentMagasin] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
 
   const pdfRef = useRef<HTMLDivElement>(null)
 

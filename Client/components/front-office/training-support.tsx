@@ -1,12 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect  } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Play,
   Book,
@@ -21,109 +31,118 @@ import {
   Award,
   Users,
   MessageSquare,
+  Lock, Shield,
+  User,
+  Settings,
+  AlertCircle,
+  Download,
+  Trash2,
+  Loader2 
 } from "lucide-react"
 
 export default function TrainingSupport() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const [completedModules, setCompletedModules] = useState<number[]>([1, 3])
+  const [trainingModules, setTrainingModules] = useState<any[]>([])
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [currentResource, setCurrentResource] = useState<{type: string, url: string} | null>(null);
+  const [faqItems, setFaqItems] = useState<any[]>([])
 
-  const trainingModules = [
-    {
-      id: 1,
-      title: "Introduction aux planogrammes",
-      description: "Comprendre les bases des planogrammes et leur importance",
-      duration: "15 min",
-      type: "video",
-      difficulty: "Débutant",
-      completed: true,
-      progress: 100,
-      thumbnail: "/placeholder.svg?height=120&width=200",
-    },
-    {
-      id: 2,
-      title: "Navigation dans l'interface",
-      description: "Apprendre à utiliser efficacement la plateforme",
-      duration: "20 min",
-      type: "interactive",
-      difficulty: "Débutant",
-      completed: false,
-      progress: 45,
-      thumbnail: "/placeholder.svg?height=120&width=200",
-    },
-    {
-      id: 3,
-      title: "Visualisation 2D et 3D",
-      description: "Maîtriser les outils de visualisation avancés",
-      duration: "25 min",
-      type: "video",
-      difficulty: "Intermédiaire",
-      completed: true,
-      progress: 100,
-      thumbnail: "/placeholder.svg?height=120&width=200",
-    },
-    {
-      id: 4,
-      title: "Suivi et validation des implémentations",
-      description: "Processus de confirmation et de suivi des planogrammes",
-      duration: "18 min",
-      type: "tutorial",
-      difficulty: "Intermédiaire",
-      completed: false,
-      progress: 0,
-      thumbnail: "/placeholder.svg?height=120&width=200",
-    },
-    {
-      id: 5,
-      title: "Communication et support",
-      description: "Utiliser les outils de communication intégrés",
-      duration: "12 min",
-      type: "video",
-      difficulty: "Débutant",
-      completed: false,
-      progress: 0,
-      thumbnail: "/placeholder.svg?height=120&width=200",
-    },
-  ]
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [userData, setUserData] = useState({
+    firstName: "Jean",
+    lastName: "Dupont",
+    email: "jean.dupont@example.com",
+    phone: "+33 6 12 34 56 78"
+  });
+  
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Ici vous ajouteriez la logique pour sauvegarder les données
+      // Par exemple, un appel API à votre backend
+      // await updateUserProfile(userData);
+      
+      // Simuler un délai de sauvegarde
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setIsEditing(false);
+      // Ajouter une notification de succès si vous en avez
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde", error);
+      // Ajouter une notification d'erreur
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  const faqItems = [
-    {
-      id: 1,
-      question: "Comment puis-je visualiser un planogramme en 3D ?",
-      answer:
-        'Cliquez sur l\'onglet "Visualisation" puis sélectionnez le mode 3D. Vous pouvez ensuite utiliser les contrôles de rotation et de zoom pour explorer le planogramme.',
-      category: "Visualisation",
-      helpful: 15,
-      views: 234,
-    },
-    {
-      id: 2,
-      question: "Que faire si un produit n'apparaît pas dans le planogramme ?",
-      answer:
-        "Vérifiez d'abord que le planogramme est à jour. Si le problème persiste, contactez le support technique via le chat intégré.",
-      category: "Problèmes techniques",
-      helpful: 23,
-      views: 189,
-    },
-    {
-      id: 3,
-      question: "Comment confirmer la mise en place d'un planogramme ?",
-      answer:
-        'Allez dans l\'onglet "Suivi", sélectionnez le planogramme concerné, puis cliquez sur "Valider". Vous pouvez ajouter des photos et commentaires.',
-      category: "Implémentation",
-      helpful: 31,
-      views: 456,
-    },
-    {
-      id: 4,
-      question: "Puis-je exporter un planogramme en PDF ?",
-      answer:
-        'Oui, dans la vue de visualisation, cliquez sur "Export PDF" dans la barre d\'outils. Le PDF sera généré avec la vue actuelle.',
-      category: "Export",
-      helpful: 18,
-      views: 167,
-    },
-  ]
+
+// fetch FAQs
+useEffect(() => {
+  const fetchFaqs = async () => {
+    try {
+      const response = await fetch("http://localhost:8081/api/faq/getAllFaqs")
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des FAQs")
+      }
+      const data = await response.json()
+      // Transformez les données de l'API pour correspondre à votre structure existante
+      const formattedData = data.map((faq: any) => ({
+        id: Math.random().toString(36).substring(2, 9), // génère un ID aléatoire
+        question: faq.question,
+        answer: faq.reponse,
+        category: faq.categorie,
+        helpful: faq.personnes_aidees,
+        views: faq.vues,
+      }))
+      setFaqItems(formattedData)
+    } catch (error) {
+      console.error("Erreur:", error)
+    }
+  }
+
+  fetchFaqs()
+}, [])
+
+
+
+// fetch formations  
+useEffect(() => {
+  const fetchFormations = async () => {
+    try {
+      const response = await fetch("http://localhost:8081/api/formations/getAllFormations")
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des formations")
+      }
+      const data = await response.json()
+      // Transformez les données de l'API pour correspondre à votre structure
+      const formattedData = data.map((formation: any) => ({
+        id: formation.id,
+        title: formation.titre,
+        description: formation.description,
+        duration: `${formation.duree} min`,
+        type: "video", // Par défaut, puisque l'API indique une vidéo
+        difficulty: "Débutant", // Vous pouvez adapter cela selon vos besoins
+        completed: completedModules.includes(formation.id),
+        progress: completedModules.includes(formation.id) ? 100 : 0,
+        thumbnail: "/placeholder.svg?height=120&width=200",
+        url_video: formation.url_video,
+        url_pdf: formation.url_pdf
+      }))
+      setTrainingModules(formattedData)
+    } catch (error) {
+      console.error("Erreur:", error)
+    }
+  }
+
+  fetchFormations()
+}, [completedModules])
+
+ 
+
+ 
 
   const tutorials = [
     {
@@ -171,6 +190,7 @@ export default function TrainingSupport() {
         return <FileText className="h-4 w-4 text-gray-600" />
     }
   }
+  
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -188,290 +208,497 @@ export default function TrainingSupport() {
   const handleModuleComplete = (moduleId: number) => {
     if (!completedModules.includes(moduleId)) {
       setCompletedModules([...completedModules, moduleId])
+      // Mettez à jour l'état des modules pour refléter la complétion
+      setTrainingModules(prevModules =>
+        prevModules.map(module =>
+          module.id === moduleId
+            ? { ...module, completed: true, progress: 100 }
+            : module
+        )
+      )
     }
   }
 
-  const overallProgress = (completedModules.length / trainingModules.length) * 100
+  const ResourceViewer = () => {
+    if (!currentResource) return null;
+  
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div className="flex justify-between items-center border-b p-4">
+            <h3 className="text-lg font-medium">
+              {currentResource.type === 'video' ? 'Visionnage vidéo' : 'Document PDF'}
+            </h3>
+            <button 
+              onClick={() => {
+                setIsViewerOpen(false);
+                setCurrentResource(null);
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+          <div className="p-4">
+            {currentResource.type === 'video' ? (
+              <div className="aspect-video w-full">
+                <video 
+                  controls 
+                  autoPlay 
+                  className="w-full h-full"
+                  onEnded={handleVideoEnded}
+                >
+                  <source src={currentResource.url} type="video/mp4" />
+                  Votre navigateur ne supporte pas la lecture de vidéos.
+                </video>
+              </div>
+            ) : (
+              <iframe 
+                src={currentResource.url} 
+                className="w-full min-h-[70vh]"
+                frameBorder="0"
+              >
+                <p>Votre navigateur ne supporte pas les PDF. Vous pouvez le <a href={currentResource.url}>télécharger</a>.</p>
+              </iframe>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  const handleVideoEnded = () => {
+    if (selectedVideo && !completedModules.includes(selectedVideo.id)) {
+      setCompletedModules([...completedModules, selectedVideo.id]);
+    }
+  };
+  const handleModuleClick = (module: any) => {
+    setSelectedVideo(module);
+    
+    // Si le module a une URL vidéo, ouvrir directement la vidéo
+    if (module.url_video) {
+      setCurrentResource({ type: 'video', url: module.url_video });
+      setIsViewerOpen(true);
+    }
+    // Sinon, si le module a un PDF, ouvrir le PDF
+    else if (module.url_pdf) {
+      setCurrentResource({ type: 'pdf', url: module.url_pdf });
+      setIsViewerOpen(true);
+    }
+  };
 
+  const overallProgress = trainingModules.length > 0 
+  ? (completedModules.length / trainingModules.length) * 100 
+  : 0
   return (
     <div className="space-y-6">
-      {/* Statistiques de formation */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Progression globale</CardTitle>
-            <Award className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{Math.round(overallProgress)}%</div>
-            <Progress value={overallProgress} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Modules terminés</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {completedModules.length}/{trainingModules.length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Temps total</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">90 min</div>
-            <p className="text-xs text-muted-foreground">Formation complète</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Certification</CardTitle>
-            <Star className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{overallProgress === 100 ? "Obtenue" : "En cours"}</div>
-          </CardContent>
-        </Card>
-      </div>
-
+  
       <Tabs defaultValue="training" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="training">Formation</TabsTrigger>
           <TabsTrigger value="faq">FAQ</TabsTrigger>
-          <TabsTrigger value="tutorials">Tutoriels</TabsTrigger>
-          <TabsTrigger value="support">Support</TabsTrigger>
+          <TabsTrigger value="support"> Gestion Compte</TabsTrigger>
         </TabsList>
-
+  
         {/* Modules de formation */}
         <TabsContent value="training" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Modules de formation</CardTitle>
-              <CardDescription>Parcours d'apprentissage personnalisé</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {trainingModules.map((module) => (
-                  <Card
-                    key={module.id}
-                    className={`hover:shadow-lg transition-shadow cursor-pointer ${
-                      module.completed ? "border-green-200 bg-green-50" : ""
-                    }`}
-                    onClick={() => setSelectedVideo(module)}
-                  >
-                    <div className="relative">
-                      <img
-                        src={module.thumbnail || "/placeholder.svg"}
-                        alt={module.title}
-                        className="w-full h-32 object-cover rounded-t-lg"
-                      />
-                      {module.completed && (
-                        <div className="absolute top-2 right-2 bg-green-600 text-white rounded-full p-1">
-                          <CheckCircle className="h-4 w-4" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-2 left-2 flex items-center space-x-2">
-                        {getTypeIcon(module.type)}
-                        <span className="text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
-                          {module.duration}
-                        </span>
-                      </div>
-                    </div>
+                {trainingModules.length > 0 ? (
+                  trainingModules.map((module) => (
+                    <Card
+                      key={module.id}
+                      className={`hover:shadow-lg transition-shadow cursor-pointer ${
+                        module.completed ? "border-green-200 bg-green-50" : ""
+                      }`}
+                      onClick={() => setSelectedVideo(module)}
+                    >
+                      <div className="relative">
+  <img
+    src={module.thumbnail || "/placeholder.svg"}
+    alt={module.title}
+    className="w-full h-32 object-cover rounded-t-lg"
+  />
+  {module.completed && (
+    <div className="absolute top-2 right-2 bg-green-600 text-white rounded-full p-1">
+      <CheckCircle className="h-4 w-4" />
+    </div>
+  )}
+  <div className="absolute bottom-2 left-2 flex items-center space-x-2">
+    {/* Afficher l'icône seulement pour les vidéos */}
+    {module.url_video && getTypeIcon('video')}
+    {/* Afficher la durée seulement pour les vidéos */}
+    {module.url_video && (
+      <span className="text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
+        {module.duration}
+      </span>
+    )}
+  </div>
+</div>
+  
+<CardContent className="p-4">
+  <h3 className="font-medium mb-2">{module.title}</h3>
+  <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
 
-                    <CardContent className="p-4">
-                      <h3 className="font-medium mb-2">{module.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+  {/* Afficher le badge de type et la durée seulement pour les vidéos */}
+  <div className="flex items-center space-x-2 mb-2">
+    {module.url_video ? (
+      <>
+        <Badge variant="outline" className="flex items-center">
+          <Video className="h-3 w-3 mr-1" />
+          Vidéo
+        </Badge>
+        <Badge variant="outline" className="flex items-center">
+          <Clock className="h-3 w-3 mr-1" />
+          {module.duration}
+        </Badge>
+      </>
+    ) : module.url_pdf ? (
+      <Badge variant="outline" className="flex items-center">
+        <FileText className="h-3 w-3 mr-1" />
+        PDF
+      </Badge>
+    ) : null}
+  </div>
 
-                      <div className="flex items-center justify-between mb-3">
-                        <Badge className={getDifficultyColor(module.difficulty)}>{module.difficulty}</Badge>
-                        <span className="text-xs text-muted-foreground">{module.progress}%</span>
-                      </div>
-
-                      <Progress value={module.progress} className="mb-3" />
-
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        variant={module.completed ? "outline" : "default"}
-                        onClick={() => handleModuleComplete(module.id)}
-                      >
-                        {module.completed ? (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Revoir
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-4 w-4 mr-2" />
-                            {module.progress > 0 ? "Continuer" : "Commencer"}
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+  {(module.url_video || module.url_pdf) && (
+    <div className="flex space-x-2 mt-2">
+      {module.url_video && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentResource({ type: 'video', url: module.url_video });
+            setIsViewerOpen(true);
+          }}
+        >
+          <Video className="h-4 w-4 mr-2" />
+          Vidéo
+        </Button>
+      )}
+      {module.url_pdf && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentResource({ type: 'pdf', url: module.url_pdf });
+            setIsViewerOpen(true);
+          }}
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          PDF
+        </Button>
+      )}
+    </div>
+  )}
+</CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full flex justify-center py-8">
+                    <p className="text-muted-foreground">
+                      Chargement des modules de formation...
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-
+  
         {/* FAQ */}
         <TabsContent value="faq" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Questions fréquentes</CardTitle>
-              <CardDescription>Trouvez rapidement des réponses à vos questions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Rechercher dans la FAQ..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+  <Card>
+    <CardHeader>
+      <CardTitle>Questions fréquentes</CardTitle>
+      <CardDescription>Trouvez rapidement des réponses à vos questions</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Rechercher dans la FAQ..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {faqItems.length > 0 ? (
+          filteredFAQ.map((item) => (
+            <Card key={item.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-medium text-lg">{item.question}</h3>
+                  <Badge variant="outline">{item.category}</Badge>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                {filteredFAQ.map((item) => (
-                  <Card key={item.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-lg">{item.question}</h3>
-                        <Badge variant="outline">{item.category}</Badge>
-                      </div>
-                      <p className="text-muted-foreground mb-3">{item.answer}</p>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-4">
-                          <span>{item.views} vues</span>
-                          <span>{item.helpful} personnes aidées</span>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="ghost">
-                            👍 Utile
-                          </Button>
-                          <Button size="sm" variant="ghost">
-                            👎
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tutoriels */}
-        <TabsContent value="tutorials" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Guides et tutoriels</CardTitle>
-              <CardDescription>Documentation détaillée et guides pratiques</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {tutorials.map((tutorial) => (
-                  <Card key={tutorial.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <FileText className="h-8 w-8 text-red-600" />
-                        <div className="flex-1">
-                          <h3 className="font-medium">{tutorial.title}</h3>
-                          <p className="text-sm text-muted-foreground">{tutorial.size}</p>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">{tutorial.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">{tutorial.downloads} téléchargements</span>
-                        <Button size="sm">Télécharger</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Support */}
-        <TabsContent value="support" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contacter le support</CardTitle>
-                <CardDescription>Besoin d'aide ? Notre équipe est là pour vous</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full justify-start">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Chat en direct
-                  <Badge variant="secondary" className="ml-auto">
-                    En ligne
-                  </Badge>
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <HelpCircle className="h-4 w-4 mr-2" />
-                  Créer un ticket
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Headphones className="h-4 w-4 mr-2" />
-                  Support téléphonique
-                  <span className="ml-auto text-xs text-muted-foreground">9h-18h</span>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Ressources utiles</CardTitle>
-                <CardDescription>Liens et ressources complémentaires</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Users className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm">Communauté utilisateurs</span>
+                <p className="text-muted-foreground mb-3">{item.answer}</p>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-4">
+                    <span>{item.views} vues</span>
+                    <span>{item.helpful} personnes aidées</span>
                   </div>
-                  <Button size="sm" variant="ghost">
-                    Rejoindre
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Video className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Webinaires</span>
+                  <div className="flex space-x-2">
+                    <Button size="sm" variant="ghost">
+                      👍 Utile
+                    </Button>
+                    <Button size="sm" variant="ghost">
+                      👎
+                    </Button>
                   </div>
-                  <Button size="sm" variant="ghost">
-                    Voir
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Book className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm">Documentation API</span>
-                  </div>
-                  <Button size="sm" variant="ghost">
-                    Consulter
-                  </Button>
                 </div>
               </CardContent>
             </Card>
+          ))
+        ) : (
+          <div className="flex justify-center py-8">
+            <p className="text-muted-foreground">
+              Chargement des questions fréquentes...
+            </p>
           </div>
-        </TabsContent>
+        )}
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
+  
+      
+  
+        
+        {/* Support */}
+<TabsContent value="support" className="space-y-6">
+  <Card>
+    <CardHeader>
+      <CardTitle>Gestion du compte</CardTitle>
+      <CardDescription>Configurez vos préférences et informations personnelles</CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-6">
+      {/* Section Informations personnelles */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-medium flex items-center">
+            <User className="h-5 w-5 mr-2" />
+            Informations personnelles
+          </h3>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? 'Annuler' : 'Modifier'}
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Prénom */}
+          <div>
+            <Label>Prénom</Label>
+            {isEditing ? (
+              <Input 
+                value={userData.firstName} 
+                onChange={(e) => setUserData({...userData, firstName: e.target.value})}
+              />
+            ) : (
+              <div className="p-2 border border-transparent rounded-md text-sm">
+                {userData.firstName || 'Non renseigné'}
+              </div>
+            )}
+          </div>
+          
+          {/* Nom */}
+          <div>
+            <Label>Nom</Label>
+            {isEditing ? (
+              <Input 
+                value={userData.lastName} 
+                onChange={(e) => setUserData({...userData, lastName: e.target.value})}
+              />
+            ) : (
+              <div className="p-2 border border-transparent rounded-md text-sm">
+                {userData.lastName || 'Non renseigné'}
+              </div>
+            )}
+          </div>
+          
+          {/* Email */}
+          <div>
+            <Label>Email</Label>
+            {isEditing ? (
+              <Input 
+                type="email"
+                value={userData.email} 
+                onChange={(e) => setUserData({...userData, email: e.target.value})}
+              />
+            ) : (
+              <div className="p-2 border border-transparent rounded-md text-sm">
+                {userData.email || 'Non renseigné'}
+              </div>
+            )}
+          </div>
+          
+          {/* Téléphone */}
+          <div>
+            <Label>Téléphone</Label>
+            {isEditing ? (
+              <Input 
+                type="tel"
+                value={userData.phone} 
+                onChange={(e) => setUserData({...userData, phone: e.target.value})}
+              />
+            ) : (
+              <div className="p-2 border border-transparent rounded-md text-sm">
+                {userData.phone || 'Non renseigné'}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {isEditing && (
+          <div className="flex justify-end gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditing(false)}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : 'Enregistrer les modifications'}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Section Sécurité */}
+      <div className="space-y-4 pt-6 border-t">
+        <h3 className="font-medium flex items-center">
+          <Lock className="h-5 w-5 mr-2" />
+          Sécurité du compte
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Mot de passe</Label>
+              <p className="text-sm text-muted-foreground">
+                Dernière modification il y a 3 mois
+              </p>
+            </div>
+            <Button variant="outline">Changer le mot de passe</Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Authentification à deux facteurs</Label>
+              <p className="text-sm text-muted-foreground">
+                Ajoutez une couche de sécurité supplémentaire
+              </p>
+            </div>
+            <Switch />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Appareils connectés</Label>
+              <p className="text-sm text-muted-foreground">
+                2 appareils actifs
+              </p>
+            </div>
+            <Button variant="outline">Gérer</Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Section Préférences */}
+      <div className="space-y-4 pt-6 border-t">
+        <h3 className="font-medium flex items-center">
+          <Settings className="h-5 w-5 mr-2" />
+          Préférences
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Langue</Label>
+              <p className="text-sm text-muted-foreground">
+                Définissez votre langue préférée
+              </p>
+            </div>
+            <Select defaultValue="fr">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Langue" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Notifications</Label>
+              <p className="text-sm text-muted-foreground">
+                Contrôlez comment vous recevez les notifications
+              </p>
+            </div>
+            <Button variant="outline">Configurer</Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Thème</Label>
+              <p className="text-sm text-muted-foreground">
+                Personnalisez l'apparence de l'interface
+              </p>
+            </div>
+            <Select defaultValue="system">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sélectionnez un thème" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Clair</SelectItem>
+                <SelectItem value="dark">Sombre</SelectItem>
+                <SelectItem value="system">Système</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Section Actions */}
+      <div className="space-y-4 pt-6 border-t">
+        <h3 className="font-medium flex items-center">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          Actions
+        </h3>
+        <div className="space-y-3">
+          <Button variant="outline" className="w-full justify-start">
+            <Download className="h-4 w-4 mr-2" />
+            Exporter mes données
+          </Button>
+          <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-600">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer mon compte
+          </Button>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
       </Tabs>
+      {isViewerOpen && <ResourceViewer />}
     </div>
-  )
+  );
 }

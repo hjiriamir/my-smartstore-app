@@ -66,7 +66,9 @@ export const getFurnituresByUser = async (req, res) => {
           model: Furniture,
           as: 'furnitures',
           include: [
-            FurnitureType,
+            {model: FurnitureType,
+              as: 'furnitureType'},
+            
             {
               model: ProductPosition,
               as: 'positions', // doit correspondre à l'alias défini dans l'association

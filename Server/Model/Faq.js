@@ -15,15 +15,18 @@ const Faq = sequelize.define('Faq', {
     type: DataTypes.TEXT,
     allowNull: false,
   },
-  categorieForm_id: {
+  vues: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: 'categoriesFormation',  
-      key: 'id',
-    },
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE',
+  },
+  personnes_aidees: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  }
+  ,
+  categorie : {
+    type: DataTypes.ENUM('Visualisation', 'Technique', 'Validation', 'Export', 'Formation', 'Connexion', 'Notifications', 'Parametrage', 'Support', 'Divers'),
+    defaultValue: 'Divers',
   },
   date_creation: {
     type: DataTypes.DATE,
