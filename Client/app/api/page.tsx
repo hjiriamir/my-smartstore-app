@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Bell, CheckCircle, Clock, TrendingUp, Package, Users } from "lucide-react"
+import { Bell, CheckCircle, Clock, TrendingUp, Package, Users, User, LogOut ,Settings } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import PlanogramLibrary from "../../components/front-office/planogram-library"
 import Visualization2D3D from "../../components/front-office/visualization-2d-3d"
@@ -15,6 +15,10 @@ import ProductSearch from "../../components/front-office/product-search"
 import TrainingSupport from "../../components/front-office/training-support"
 import axios from "axios"
 import { useToast } from "@/hooks/use-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
+
 import './page.css'
 
 export default function Dashboard() {
@@ -62,6 +66,17 @@ const [dashboardStats, setDashboardStats] = useState({
     nom_magasin: string;
     
   }
+  interface UserData {
+    idUtilisateur: number;
+    nom: string;
+    email: string;
+    role: string;
+  }
+  
+  // Dans le composant Dashboard, ajoutez cet état :
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+
   interface Planogram {
     id: number;
     planogram_id: number;
@@ -198,13 +213,11 @@ const [dashboardStats, setDashboardStats] = useState({
  useEffect(() => {
   const fetchCurrentUser = async () => {
     try {
-      // 1. Vérifiez d'abord si le token existe
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Aucun token d'authentification trouvé");
       }
-
-      // 2. Faites la requête avec les headers appropriés
+  
       const response = await fetch("http://localhost:8081/api/auth/me", {
         method: "GET",
         headers: {
@@ -213,33 +226,32 @@ const [dashboardStats, setDashboardStats] = useState({
         },
         credentials: "include"
       });
-
-      // 3. Vérifiez le statut de la réponse
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Erreur lors de la récupération des données");
       }
-
-      // 4. Analysez la réponse
+  
       const data = await response.json();
       console.log("Réponse complète de /api/auth/me:", data);
-
-      // 5. Récupérez l'ID selon différentes structures possibles
-      const userId = data.user?.idUtilisateur; 
-      
-      if (!userId) {
-        throw new Error("ID utilisateur non trouvé dans la réponse");
-      }
-
-      setUserId(userId);
-      console.log("ID utilisateur confirmé:", userId);
-      return userId;
-
+  
+      const userData = {
+        idUtilisateur: data.user.idUtilisateur,
+        nom: data.user.name,
+       // prenom: data.user.prenom,
+        email: data.user.email,
+        role: data.user.role
+      };
+  
+      setUserId(userData.idUtilisateur);
+      setUserData(userData);
+      console.log("Données utilisateur:", userData);
+      return userData.idUtilisateur;
+  
     } catch (error) {
       console.error("Erreur détaillée:", error);
       toast({
         title: "Erreur d'authentification",
-        //description: error.message,
         variant: "destructive",
       });
       return null;
@@ -380,30 +392,71 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
   return (
     <div className="min-h-screen bg-gray-50 mt-14">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Smart Store</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm">
-              <Bell className="h-4 w-4" />
-              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
-                {notifications.filter(n => !n.lu).length}
-              </Badge>
-            </Button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <Users className="h-4 w-4 text-white" />
-                </div>
-                <span className="text-sm font-medium">Magasin : {magasin}</span>
-              </div>
-            </div>
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex justify-between items-center h-16">
+      <div className="flex items-center">
+        <Package className="h-8 w-8 text-blue-600 mr-3" />
+        <h1 className="text-xl font-semibold text-gray-900">Smart Store</h1>
+      </div>
+      
+      <div className="flex items-center space-x-6">
+        <Button variant="ghost" size="sm" className="relative">
+          <Bell className="h-5 w-5" />
+          {notifications.filter(n => !n.lu).length > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">
+              {notifications.filter(n => !n.lu).length}
+            </span>
+          )}
+        </Button>
+        
+        <div className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full">
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <Users className="h-4 w-4 text-white" />
           </div>
+          <span className="text-sm font-medium">Magasin : {magasin}</span>
         </div>
-      </header>
+        
+        <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="rounded-full w-8 h-8 bg-gray-100 hover:bg-gray-200"
+    >
+      <User className="h-4 w-4 text-gray-600" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent className="w-56" align="end" forceMount>
+    <DropdownMenuLabel className="font-normal">
+      <div className="flex flex-col space-y-1">
+        <p className="text-sm font-medium leading-none">
+          {userData?.nom}
+        </p>
+        <p className="text-xs leading-none text-muted-foreground">
+          {userData?.email}
+        </p>
+      </div>
+    </DropdownMenuLabel>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem onClick={() => setActiveTab("support")}>
+      <User className="mr-2 h-4 w-4" />
+      <span>Profil</span>
+    </DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem 
+      className="text-red-600 focus:text-red-700 focus:bg-red-50"
+      //onClick={() => handleLogout()}
+    >
+      <LogOut className="mr-2 h-4 w-4" />
+      <span>Déconnexion</span>
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+      </div>
+    </div>
+  </div>
+</header>
 
       {/* Navigation Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

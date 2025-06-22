@@ -152,3 +152,54 @@ export const getUserById = async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la récupération de l\'utilisateur.' });
     }
 };
+
+// update name user 
+export const updateUserName = async(req, res) =>{
+  try {
+    const { idUser } = req.params;
+    const { name } = req.body;
+    const user = await Users.findByPk(idUser);
+    if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    user.name = name;
+    await user.save();
+    res.json({ message: "Nom mis à jour avec succès", user });
+} catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la récupération de l\'utilisateur.' });
+}
+}
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    // Vérifier que l'utilisateur est authentifié
+    if (!req.user || !req.user.idUtilisateur) {
+      return res.status(401).json({ error: "Utilisateur non authentifié" });
+    }
+
+    // Récupérer l'utilisateur depuis la base
+    const user = await Users.findByPk(req.user.idUtilisateur);
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    // Vérifier l'ancien mot de passe
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Ancien mot de passe incorrect" });
+    }
+
+    // Hacher le nouveau mot de passe
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Mettre à jour le mot de passe dans la base
+    user.password = hashedNewPassword;
+    await user.save();
+
+    res.json({ status: "Success", message: "Mot de passe mis à jour avec succès" });
+
+  } catch (error) {
+    console.error("Erreur updatePassword:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la mise à jour du mot de passe" });
+  }
+};

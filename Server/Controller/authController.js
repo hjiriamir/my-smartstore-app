@@ -5,9 +5,14 @@ import {createUser,findUserByEmail, getUserById} from './usersController.js'
 import transporter from '../Config/transporter.js'
 import db from '../Config/database.js';
 import Users from '../Model/Users.js';
+import twilio from 'twilio';
+import Session from '../Model/Session.js';
+
 // Charger les variables d'environnement
 dotenv.config();
 const saltRounds = 10;
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+
 
 export const verifyUser = (req, res, next) => {
     const token = req.cookies.token;
@@ -42,7 +47,50 @@ export const register = (req, res) => {
     });
 };
 
+
 export const login = async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      const user = await Users.findOne({ 
+        where: { email },
+        raw: true 
+      });
+  
+      if (!user) return res.status(401).json({ Error: "Email incorrect" });
+  
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return res.status(401).json({ Error: "Mot de passe incorrect" });
+  
+      const tokenPayload = {
+        idUtilisateur: user.id,
+        name: user.name,
+        role: user.role,
+        entreprises_id: user.entreprises_id
+      };
+      
+      const token = jwt.sign(tokenPayload, "jwt-secret_key", { expiresIn: '1d' });
+  
+      // Créer une nouvelle session avec le token et infos client
+      await Session.create({
+        userId: user.id,
+        token,
+        userAgent: req.headers['user-agent'] || 'unknown',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        isActive: true,
+      });
+  
+      res.cookie('token', token, { httpOnly: true });
+      return res.json({
+        status: "Success",
+        role: user.role,
+        name: user.name,
+      });
+    } catch (err) {
+      console.error("Erreur login:", err);
+      res.status(500).json({ Error: "Erreur serveur" });
+    }
+  };
+/*export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await Users.findOne({ 
@@ -86,13 +134,14 @@ export const login = async (req, res) => {
         return res.json({
             status: "Success",
             role: user.role,
-            name: user.name
+            name: user.name,
+            
         });
     } catch (err) {
         console.error("Erreur login:", err);
         res.status(500).json({ Error: "Erreur serveur" });
     }
-};
+};*/
   
 /*export const login = (req, res) => {
     const { email, password } = req.body;
@@ -128,11 +177,34 @@ export const login = async (req, res) => {
         });
     });
 };*/
-
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
+    try {
+      const token = req.cookies.token;
+      if (!token) {
+        return res.status(400).json({ Error: "Token manquant" });
+      }
+  
+      // Trouver la session active correspondant au token
+      const session = await Session.findOne({ where: { token, isActive: true } });
+  
+      if (session) {
+        session.isActive = false;
+        await session.save();
+      }
+  
+      // Supprimer le cookie côté client
+      res.clearCookie('token');
+  
+      return res.json({ Status: "Success", message: "Déconnexion effectuée" });
+    } catch (err) {
+      console.error("Erreur logout:", err);
+      return res.status(500).json({ Error: "Erreur serveur lors de la déconnexion" });
+    }
+  };
+/*export const logout = (req, res) => {
     res.clearCookie('token');
     return res.json({ Status: "Success" });
-};
+};*/
 
 export const getMe = async (req, res) => {
     try {
@@ -164,7 +236,9 @@ export const getMe = async (req, res) => {
                 idUtilisateur: user.id,
                 name: user.name,
                 role: user.role,
-                entreprises_id: user.entreprises_id 
+                entreprises_id: user.entreprises_id,
+                email: user.email,
+                magasin_id: user.magasin_id
             }
         });
 
@@ -263,3 +337,102 @@ export const resetPassword = (req, res) => {
         });
     });
 };
+
+
+
+export const testLogin = async (req, res) => {
+    try {
+      const { email, password } = req.body;
+  
+      const user = await Users.findOne({ where: { email } });
+  
+      if (!user) return res.status(401).json({ Error: "Email incorrect" });
+  
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return res.status(401).json({ Error: "Mot de passe incorrect" });
+        
+      // Génération du code 2FA
+      const code2FA = Math.floor(100000 + Math.random() * 900000).toString();
+  
+      user.twoFactorCode = code2FA;
+      user.twoFactorCodeExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      user.isTwoFactorVerified = false;
+      await user.save();
+  
+      // Envoi SMS
+      if (!user.phone) {
+        return res.status(400).json({ Error: "Numéro de téléphone manquant" });
+      }
+  
+      await client.messages.create({
+        body: `Votre code de vérification SmartStore est : ${code2FA}`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: user.phone
+      });
+  
+      return res.status(200).json({
+        status: "2FA_REQUIRED",
+        message: "Code de vérification envoyé par SMS",
+        userId: user.id
+      });
+  
+    } catch (err) {
+      console.error("Erreur login:", err);
+      res.status(500).json({ Error: "Erreur serveur" });
+    }
+  };
+  
+  
+export const verify2FACode = async (req, res) => {
+    const { userId, code } = req.body;
+  
+    const user = await Users.findByPk(userId);
+    if (!user) return res.status(404).json({ Error: "Utilisateur non trouvé" });
+  
+    if (
+      user.twoFactorCode !== code ||
+      new Date() > user.twoFactorCodeExpires
+    ) {
+      return res.status(401).json({ Error: "Code invalide ou expiré" });
+    }
+  
+    // Mise à jour
+    user.isTwoFactorVerified = true;
+    user.twoFactorCode = null;
+    user.twoFactorCodeExpires = null;
+    await user.save();
+  
+    // Génération du token final
+    const token = jwt.sign({
+      idUtilisateur: user.id,
+      name: user.name,
+      role: user.role,
+      entreprises_id: user.entreprises_id
+    }, "jwt-secret_key", { expiresIn: '1d' });
+  
+    res.cookie('token', token, { httpOnly: true });
+  
+    return res.json({ status: "Success", message: "Connexion réussie", name: user.name, role: user.role });
+  };
+  
+
+  export const sendSMS = async (req, res) => {
+    const { to, message } = req.body;
+  
+    if (!to || !message) {
+      return res.status(400).json({ error: 'Numéro de destination et message requis' });
+    }
+  
+    try {
+      const response = await client.messages.create({
+        body: message,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: to,
+      });
+  
+      res.status(200).json({ message: 'SMS envoyé avec succès', sid: response.sid });
+    } catch (error) {
+      console.error('Erreur lors de l’envoi du SMS :', error);
+      res.status(500).json({ error: 'Échec de l’envoi du SMS', details: error.message });
+    }
+  };

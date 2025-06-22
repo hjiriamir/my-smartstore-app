@@ -51,6 +51,22 @@ const Users = sequelize.define('Users', {
     onUpdate: 'CASCADE',
     onDelete: 'SET NULL',
   },
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  twoFactorCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  twoFactorCodeExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  isTwoFactorVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   resetPasswordToken: {
     type: DataTypes.STRING,
     allowNull: true,  
