@@ -74,6 +74,10 @@ const Users = sequelize.define('Users', {
   resetPasswordExpires: {
     type: DataTypes.DATE,
     allowNull: true, 
+  },
+  NotificationPreference: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   }
 }, {
   tableName: 'Users',

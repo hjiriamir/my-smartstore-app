@@ -140,9 +140,10 @@ export const createFullPlanogram = async (req, res) => {
         type: type || 'implémentation',
         commentaire: commentaire || `Tâche liée au planogramme ${newPlanogram.nom}`
       }, { transaction: t });
+      const actualUser = await Users.findByPk(idUser)
 
       // Envoi email notification si idUser
-      if (idUser) {
+      if (idUser && actualUser.NotificationPreference === true) {
         try {
           const senderEmail = await getUserEmail(created_by);
           const receiverEmail = await getUserEmail(idUser);

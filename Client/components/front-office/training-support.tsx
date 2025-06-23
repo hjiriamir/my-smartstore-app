@@ -45,7 +45,9 @@ import {
   Languages, 
   Bell, 
   Palette,
-  Key
+  Key,
+  Monitor,
+  LogOut
 } from "lucide-react"
 
 export default function TrainingSupport() {
@@ -63,8 +65,207 @@ export default function TrainingSupport() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showDevicesModal, setShowDevicesModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false); 
 
+  const [connectedDevices, setConnectedDevices] = useState([
+    {
+      id: 1,
+      name: "iPhone 13",
+      type: "Mobile",
+      ip: "192.168.1.45",
+      lastActivity: "2023-10-15T14:30:00",
+      browser: "Safari",
+      os: "iOS 16",
+      status: "active",
+      icon: <Smartphone className="h-5 w-5" />
+    },
+    {
+      id: 2,
+      name: "Chrome sous Windows",
+      type: "Desktop",
+      ip: "192.168.1.100",
+      lastActivity: "2023-10-16T09:15:00",
+      browser: "Chrome 118",
+      os: "Windows 11",
+      status: "active",
+      icon: <Monitor className="h-5 w-5" />
+    }
+  ]);
+  const DevicesModal = () => {
+    if (!showDevicesModal) return null;
   
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-auto">
+          <div className="flex justify-between items-center border-b p-4">
+            <h3 className="text-lg font-semibold">Appareils connectés</h3>
+            <button 
+              onClick={() => setShowDevicesModal(false)}
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-6 gap-4 font-medium text-sm text-gray-500 dark:text-gray-400 px-4">
+              <div>Appareil</div>
+              <div>Adresse IP</div>
+              <div>Dernière activité</div>
+              <div>Système</div>
+              <div>Statut</div>
+              <div>Actions</div>
+            </div>
+            
+            {connectedDevices.map((device) => (
+              <div 
+                key={device.id} 
+                className="grid grid-cols-6 gap-4 items-center p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-100 dark:border-gray-700"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                    {device.icon}
+                  </div>
+                  <div>
+                    <div className="font-medium">{device.name}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{device.type}</div>
+                  </div>
+                </div>
+                
+                <div className="text-sm">{device.ip}</div>
+                
+                <div className="text-sm">
+                  {new Date(device.lastActivity).toLocaleDateString()} à{' '}
+                  {new Date(device.lastActivity).toLocaleTimeString()}
+                </div>
+                
+                <div className="text-sm">
+                  <div>{device.browser}</div>
+                  <div className="text-gray-500 dark:text-gray-400">{device.os}</div>
+                </div>
+                
+                <div>
+                  <Badge 
+                    variant={device.status === 'active' ? 'default' : 'outline'}
+                    className={
+                      device.status === 'active' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400' 
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                    }
+                  >
+                    {device.status === 'active' ? 'Actif' : 'Expiré'}
+                  </Badge>
+                </div>
+                
+                <div>
+                  {device.status === 'active' ? (
+                    <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDisconnectDevice(device.id)}
+                    className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+                  >
+                    <LogOut className="h-4 w-4 mr-1" />
+                    Déconnecter
+                  </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled
+                      className="opacity-50"
+                    >
+                      Déjà déconnecté
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {connectedDevices.filter(d => d.status === 'active').length} appareil(s) actif(s)
+              </div>
+              <div className="flex space-x-2">
+              <Button 
+  variant="outline" 
+  //onClick={handleDisconnectAllDevices}
+  className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+>
+  <LogOut className="h-4 w-4 mr-1" />
+  Tout déconnecter
+</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDevicesModal(false)}
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const handleDisconnectDevice = async (sessionId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Aucun token d'authentification trouvé");
+      }
+  
+      // Appel à l'API pour déconnecter la session spécifique
+      const logoutSessionResponse = await fetch(
+        `http://localhost:8081/api/session/logoutSession/${sessionId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Cookie": `token=${token}`
+          },
+          credentials: "include"
+        }
+      );
+  
+      if (!logoutSessionResponse.ok) {
+        throw new Error("Erreur lors de la déconnexion de la session");
+      }
+  
+      // Si la première API réussit, appeler l'API de logout générale
+      const logoutResponse = await fetch("http://localhost:8081/api/auth/logout", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": `token=${token}`
+        },
+        credentials: "include"
+      });
+  
+      if (!logoutResponse.ok) {
+        throw new Error("Erreur lors de la déconnexion générale");
+      }
+  
+      // Mettre à jour l'état local
+      setConnectedDevices(prevDevices => 
+        prevDevices.map(device => 
+          device.id === sessionId 
+            ? { ...device, status: 'expired' } 
+            : device
+        )
+      );
+      
+      toast.success("Session déconnectée avec succès");
+  
+      // Redirection vers la page d'accueil
+      window.location.href = "http://localhost:3000";
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+      toast.error("Erreur lors de la déconnexion de la session");
+    }
+  };
   // Règles de validation du mot de passe
   const passwordRules = [
     { id: 1, text: "8 caractères minimum", validator: (pwd:any) => pwd.length >= 8 },
@@ -137,7 +338,8 @@ export default function TrainingSupport() {
     //lastName: "",
     email: "",
     role: "",
-    magasin_id: ""
+    magasin_id: "",
+    NotificationPreference:""
   });
 
   // fetch user
@@ -170,7 +372,8 @@ export default function TrainingSupport() {
         firstName: data.user?.name || "",
         email: data.user?.email || "",
         role: data.user?.role || "",
-        magasin_id: data.user?.magasin_id || ""
+        magasin_id: data.user?.magasin_id || "",
+        NotificationPreference: data.user?.NotificationPreference || ""
       });
   
     } catch (error) {
@@ -179,6 +382,7 @@ export default function TrainingSupport() {
   };
   useEffect(() => {
     fetchUserData();
+    fetchActiveSessions(); 
   }, []);
   const handleSave = async () => {
     setIsSaving(true);
@@ -228,6 +432,232 @@ export default function TrainingSupport() {
       setIsSaving(false);
     }
   };
+
+// get les sessions active
+const fetchActiveSessions = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Aucun token d'authentification trouvé");
+    }
+
+    const response = await fetch("http://localhost:8081/api/session/getActiveSessions", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Cookie": `token=${token}`
+      },
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de la récupération des sessions actives");
+    }
+
+    const data = await response.json();
+    
+    // Transformez les données de l'API pour correspondre à votre structure existante
+    const formattedDevices = data.sessions.map((session: any) => ({
+      id: session.id, // Assurez-vous que c'est bien l'ID de session
+      name: `${session.deviceType} (${session.browser})`,
+      type: session.deviceType,
+      ip: session.ipAddress,
+      lastActivity: session.lastActivity,
+      browser: session.browser,
+      os: session.os,
+      status: "active",
+      icon: session.deviceType === "Mobile" ? <Smartphone className="h-5 w-5" /> : <Monitor className="h-5 w-5" />
+    }));
+
+    setConnectedDevices(formattedDevices);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des sessions:", error);
+    toast.error("Erreur lors du chargement des appareils connectés");
+  }
+};
+
+const NotificationsModal = () => {
+  if (!showNotificationsModal) return null;
+
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email: false,
+    platform: true
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fonction pour récupérer les préférences depuis l'API
+  const fetchNotificationPreferences = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Aucun token d'authentification trouvé");
+      if (!userData.id) throw new Error("ID utilisateur non trouvé");
+
+      const response = await fetch(
+        `http://localhost:8081/api/auth1/getNotificationPreferenceByUser/${userData.id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          credentials: "include"
+        }
+      );
+
+      if (!response.ok) throw new Error("Erreur lors de la récupération des préférences");
+
+      const data = await response.json();
+      
+      // Conversion robuste en booléen
+      const emailPref = data.NotificationPreference === true || 
+                       data.NotificationPreference === 'true' || 
+                       data.NotificationPreference === 1;
+
+      setNotificationPrefs({
+        email: emailPref,
+        platform: true
+      });
+
+      console.log('Préférence récupérée:', data.NotificationPreference, 'Convertie:', emailPref);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors du chargement des préférences");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showNotificationsModal) {
+      fetchNotificationPreferences();
+    }
+  }, [showNotificationsModal]);
+
+  const handleSavePreferences = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Aucun token d'authentification trouvé");
+      if (!userData.id) throw new Error("ID utilisateur non trouvé");
+
+      const response = await fetch(
+        `http://localhost:8081/api/auth1/updateNotificationPreference/${userData.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            NotificationPreference: notificationPrefs.email
+          }),
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Erreur lors de la mise à jour");
+      }
+
+      // Mise à jour optimiste de l'état global
+      setUserData(prev => ({
+        ...prev,
+        NotificationPreference: notificationPrefs.email.toString()
+      }));
+      
+      toast.success("Préférences enregistrées");
+      setShowNotificationsModal(false);
+    } catch (error: any) {
+      console.error("Erreur lors de la sauvegarde:", error);
+      toast.error(error.message || "Erreur lors de la mise à jour");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md">
+        <div className="flex justify-between items-center border-b p-4">
+          <h3 className="text-lg font-semibold">Préférences de notification</h3>
+          <button 
+            onClick={() => setShowNotificationsModal(false)}
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Par email</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Recevoir les notifications par email
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={notificationPrefs.email}
+                    onCheckedChange={(checked) => 
+                      setNotificationPrefs(prev => ({...prev, email: checked}))
+                    }
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Dans la plateforme</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Alertes internes uniquement
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={true}
+                    disabled
+                    className="opacity-100"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowNotificationsModal(false)}
+                  disabled={isSaving}
+                >
+                  Annuler
+                </Button>
+                <Button 
+                  onClick={handleSavePreferences}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    "Enregistrer"
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 // fetch FAQs
@@ -856,8 +1286,8 @@ useEffect(() => {
           
           {
             label: "Appareils connectés",
-            description: "2 appareils actifs",
-            action: <Button variant="outline">Gérer</Button>,
+            description: `${connectedDevices.length} appareil(s) actif(s)`,
+            action: <Button variant="outline" onClick={() => setShowDevicesModal(true)}>Gérer</Button>,
             icon: <Smartphone className="h-5 w-5 text-gray-500" />
           }
         ].map((item, index) => (
@@ -892,27 +1322,20 @@ useEffect(() => {
 
   <div className="space-y-4">
     {[
-      {
-        label: "Langue",
-        description: "Définissez votre langue préférée",
-        component: (
-          <Select defaultValue="fr">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Langue" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fr">Français</SelectItem>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-            </SelectContent>
-          </Select>
-        ),
-        icon: <Languages className="h-5 w-5 text-gray-500" />
-      },
+      
       {
         label: "Notifications",
-        description: "Contrôlez comment vous recevez les notifications",
-        component: <Button variant="outline">Configurer</Button>,
+        description: userData.NotificationPreference === "true" 
+          ? "Notifications par email activées" 
+          : "Notifications par email désactivées",
+        component: (
+          <Button 
+            variant="outline"
+            onClick={() => setShowNotificationsModal(true)}
+          >
+            Configurer
+          </Button>
+        ),
         icon: <Bell className="h-5 w-5 text-gray-500" />
       },
      
@@ -933,43 +1356,14 @@ useEffect(() => {
   </div>
 </div>
 
-{/* Section Actions */}
-<div className="space-y-6 bg-white/50 dark:bg-gray-900/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mt-6">
-  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
-    <div className="flex items-center space-x-3">
-      <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/50">
-        <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-        Actions
-      </h3>
-    </div>
-  </div>
 
-  <div className="space-y-3">
-    <Button 
-      variant="outline" 
-      className="w-full justify-start p-6 hover:bg-gray-100 dark:hover:bg-gray-800"
-    >
-      <div className="flex items-center space-x-4">
-        <Download className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-        <div className="text-left">
-          <Label className="block font-medium">Exporter mes données</Label>
-          <p className="text-sm text-muted-foreground">
-            Téléchargez toutes vos données en format ZIP
-          </p>
-        </div>
-      </div>
-    </Button>
-    
-   
-  </div>
-</div>
     </CardContent>
   </Card>
 </TabsContent>
       </Tabs>
       {isViewerOpen && <ResourceViewer />}
+      {showDevicesModal && <DevicesModal />}
+      {showNotificationsModal && <NotificationsModal />}
     </div>
   );
 }

@@ -4,7 +4,9 @@ import { createUser,
         getAllUsersExcludingAdmin, 
         getUserById,getUsersByStore,
         updateUserName,
-        updatePassword
+        updatePassword,
+        updateNotificationPreference,
+        getNotificationPreferenceByUser
      } from '../Controller/usersController.js';
 import { verifyToken } from '../Middlewares/authMiddleware.js';
 
@@ -16,6 +18,10 @@ router.get('/users/store/:idMagasin', getUsersByStore);
 router.get('/users/excluding-admin/:entreprises_id', getAllUsersExcludingAdmin);
 router.get('/getUserById/:id', getUserById);
 router.put('/updateUserName/:idUser', updateUserName);
+router.get('/getNotificationPreferenceByUser/:idUser', getNotificationPreferenceByUser);
+
+router.put('/updateNotificationPreference/:idUser', updateNotificationPreference);
+
 router.put('/updatePassword', verifyToken, updatePassword);
 
 export default router;

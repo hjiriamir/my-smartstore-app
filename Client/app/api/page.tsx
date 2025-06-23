@@ -98,6 +98,52 @@ const [dashboardStats, setDashboardStats] = useState({
   }
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
+// handle logout
+const handleLogout = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast({
+        title: "Erreur",
+        description: "Aucun token trouvé",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const response = await axios.get("http://localhost:8081/api/auth/logout", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true
+    });
+
+    if (response.data.Status === "Success") {
+      // Supprimer le token du localStorage
+      localStorage.removeItem("token");
+      
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès",
+      });
+
+      // Rediriger vers la page d'accueil (http://localhost:3000/)
+      setTimeout(() => {
+        window.location.href = "http://localhost:3000/";
+      }, 1500);
+    }
+  } catch (error) {
+    console.error("Erreur lors de la déconnexion:", error);
+    toast({
+      title: "Erreur",
+      description: "Une erreur est survenue lors de la déconnexion",
+      variant: "destructive",
+    });
+  }
+};
+
+
+
   const fetchNotifications = async (userId: number) => {
     try {
       const token = localStorage.getItem("token");
@@ -184,17 +230,15 @@ const [dashboardStats, setDashboardStats] = useState({
         }
       );
   
-      // Prendre seulement les 3 premiers éléments
-      const recentData = response.data.slice(0, 3);
-      
-      const formattedPlanograms: Planogram[] = recentData.map((item: any) => ({
+      // Gardez tous les résultats sans .slice(0, 3)
+      const formattedPlanograms: Planogram[] = response.data.map((item: any) => ({
         id: item.id,
         planogram_id: item.planogram.planogram_id,
         name: item.planogram.nom,
         description: item.planogram.description,
         status: item.statut === "à faire" ? "À implémenter" : 
                 item.statut === "en cours" ? "En cours" : "Terminé",
-        priority: item.priorite,
+        priority: item.priorite || "Non définie",
         dueDate: item.date_fin_prevue,
       }));
   
@@ -330,7 +374,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
     // Extraction des données
     const pendingTasks = pendingRes.data.count || pendingRes.data.rows?.length || 0;
     const completedToday = completedRes.data.count || completedRes.data.rows?.length || 0;
-    const totalPlanograms = planogramsRes.data.count || planogramsRes.data.rows?.length || 0;
+    const totalPlanograms = planogramsRes.data.length || 0;
     
     let implementationRate = 0;
     if (typeof implementationRes.data.taux_implementation === 'string') {
@@ -419,11 +463,11 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
         
         <DropdownMenu>
         <DropdownMenuTrigger asChild>
-    <Button 
-      variant="ghost" 
-      size="icon" 
-      className="rounded-full w-8 h-8 bg-gray-100 hover:bg-gray-200"
-    >
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full w-8 h-8 bg-gray-100 hover:bg-gray-200"
+        >
       <User className="h-4 w-4 text-gray-600" />
     </Button>
   </DropdownMenuTrigger>
@@ -445,12 +489,12 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
     </DropdownMenuItem>
     <DropdownMenuSeparator />
     <DropdownMenuItem 
-      className="text-red-600 focus:text-red-700 focus:bg-red-50"
-      //onClick={() => handleLogout()}
-    >
-      <LogOut className="mr-2 h-4 w-4" />
-      <span>Déconnexion</span>
-    </DropdownMenuItem>
+  className="text-red-600 focus:text-red-700 focus:bg-red-50"
+  onClick={handleLogout} 
+>
+  <LogOut className="mr-2 h-4 w-4" />
+  <span>Déconnexion</span>
+</DropdownMenuItem>
   </DropdownMenuContent>
 </DropdownMenu>
       </div>
@@ -493,7 +537,6 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">{dashboardStats.completedToday}</div>
-                  <p className="text-xs text-muted-foreground">+12% par rapport à hier</p>
                 </CardContent>
               </Card>
 
@@ -525,37 +568,43 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Planogrammes récents */}
               <Card>
-              <CardHeader>
-                <CardTitle>Planogrammes récents</CardTitle>
-                <CardDescription>Dernières publications pour votre magasin</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-96 overflow-y-auto"> {/* Ajout de max-h-96 et overflow-y-auto */}
-                  {recentPlanograms.map((planogram) => (
-                    <div key={planogram.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{planogram.name}</h4>
-                        <p className="text-sm text-muted-foreground">{planogram.description}</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={
-                            planogram.status === "Terminé"
-                              ? "default"
-                              : planogram.status === "En cours"
-                                ? "secondary"
-                                : "destructive"
-                          }
-                        >
-                          {planogram.status}
-                        </Badge>
-                        <Badge variant="outline">{planogram.priority}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+  <CardHeader>
+    <CardTitle>Planogrammes récents</CardTitle>
+    <CardDescription>Dernières publications pour votre magasin</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="h-[400px] overflow-y-auto"> {/* Conteneur avec hauteur fixe et scroll */}
+      <div className="space-y-4 min-h-[300px]"> {/* Conteneur interne pour l'espacement */}
+        {recentPlanograms.map((planogram) => (
+          <div 
+            key={planogram.id} 
+            className="flex items-center justify-between p-3 border rounded-lg"
+            style={{ minHeight: '80px' }} /* Hauteur minimale pour chaque carte */
+          >
+            <div className="flex-1">
+              <h4 className="font-medium">{planogram.name}</h4>
+              <p className="text-sm text-muted-foreground">{planogram.description}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge
+                variant={
+                  planogram.status === "Terminé"
+                    ? "default"
+                    : planogram.status === "En cours"
+                      ? "secondary"
+                      : "destructive"
+                }
+              >
+                {planogram.status}
+              </Badge>
+              <Badge variant="outline">{planogram.priority}</Badge>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </CardContent>
+</Card>
               {/* Notifications */}
               <Card>
   <CardHeader>
@@ -563,16 +612,19 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
     <CardDescription>Alertes et mises à jour importantes</CardDescription>
   </CardHeader>
   <CardContent>
-    <div className="space-y-4">
+  <div className="h-[400px] overflow-y-auto">
+  <div className="space-y-4 min-h-[300px]"> 
+
       {notifications.length > 0 ? (
         notifications.map((notification) => (
           <div 
-            key={notification.id} 
-            className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-              !notification.lu ? "bg-blue-50 border-blue-200" : ""
-            }`}
-            onClick={() => markAsRead(notification.id)}
-          >
+              key={notification.id} 
+              className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                !notification.lu ? "bg-blue-50 border-blue-200" : ""
+              }`}
+              onClick={() => markAsRead(notification.id)}
+              style={{ minHeight: '80px' }} /* Hauteur minimale pour chaque notification */
+            >
             <div
               className={`w-2 h-2 rounded-full mt-2 ${
                 !notification.lu 
@@ -601,6 +653,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
           Aucune notification pour le moment
         </p>
       )}
+    </div>
     </div>
   </CardContent>
 </Card>

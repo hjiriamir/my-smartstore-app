@@ -535,3 +535,55 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
   }
+  /* Ajoutez ces règles à votre fichier CSS */
+.scrollable-section {
+  height: 400px;
+  overflow-y: auto;
+  padding-right: 8px; /* Pour éviter que le contenu ne soit caché par la scrollbar */
+}
+
+.scrollable-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-section::-webkit-scrollbar-thumb {
+  background-color: rgba(59, 130, 246, 0.5);
+  border-radius: 3px;
+}
+
+.scrollable-section::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+.scrollable-section::-webkit-scrollbar-track {
+  background-color: rgba(243, 244, 246, 0.5);
+  border-radius: 3px;
+}
+
+/* Dans votre fichier CSS */
+.scroll-container {
+  height: 400px;
+  overflow-y: auto;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(59, 130, 246, 0.5);
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background-color: rgba(243, 244, 246, 0.5);
+  border-radius: 3px;
+}
+
+.card-item {
+  min-height: 80px;
+}

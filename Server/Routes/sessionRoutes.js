@@ -1,6 +1,6 @@
 import express from 'express';
 import { getActiveSessions, logoutSession } from '../Controller/sessionController.js';
-import verifyToken  from '../Middleware/authMiddleware.js'; // middleware d'authentification
+import {verifyToken}  from '../Middlewares/authMiddleware.js'; 
 
 const router = express.Router();
 
@@ -11,6 +11,6 @@ router.use(verifyToken );
 router.get('/getActiveSessions', getActiveSessions);
 
 // Déconnecter une session spécifique
-router.delete('/:sessionId', logoutSession);
+router.delete('/logoutSession/:sessionId', logoutSession);
 
 export default router;

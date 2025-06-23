@@ -238,7 +238,8 @@ export const getMe = async (req, res) => {
                 role: user.role,
                 entreprises_id: user.entreprises_id,
                 email: user.email,
-                magasin_id: user.magasin_id
+                magasin_id: user.magasin_id,
+                NotificationPreference: user.NotificationPreference
             }
         });
 

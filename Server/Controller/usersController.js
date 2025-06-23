@@ -203,3 +203,59 @@ export const updatePassword = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur lors de la mise à jour du mot de passe" });
   }
 };
+
+export const updateNotificationPreference = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+    const { NotificationPreference } = req.body;
+
+    const [affectedRows] = await Users.update(
+      { NotificationPreference },
+      { where: { id: idUser } }
+    );
+
+    if (affectedRows === 0) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé ou préférence inchangée' });
+    }
+
+    const updatedUser = await Users.findByPk(idUser, {
+      attributes: { exclude: ['password'] }
+    });
+
+    res.json({
+      message: 'Préférences mises à jour avec succès',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Erreur updateNotificationPreference:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const getNotificationPreferenceByUser = async (req, res) => {
+  try {
+    const { idUser } = req.params;
+
+    const user = await Users.findByPk(idUser, {
+      attributes: ['NotificationPreference']
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    // Conversion explicite en booléen
+    const notificationPref = Boolean(user.NotificationPreference);
+    
+    // Debug: Afficher les valeurs
+    console.log('Valeur brute:', user.NotificationPreference);
+    console.log('Valeur convertie:', notificationPref);
+
+    res.json({ 
+      NotificationPreference: notificationPref 
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération de l'utilisateur :", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
