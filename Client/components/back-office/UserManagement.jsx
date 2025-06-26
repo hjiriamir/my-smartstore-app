@@ -192,18 +192,16 @@ const UserManagement = () => {
                             </thead>
                             <tbody>
                             {users.length > 0 ? (
-    users.map((user) => {
-        console.log('User ID:', user.idUtilisateur, 'User:', user);
-        return (
-            <tr key={user.idUtilisateur}>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>{user.magasin_id}</td>
-                <td><button className="edit-button">{t("details")}</button></td>
-            </tr>
-        );
-    })
+    users.map((user, index) => (
+        <tr key={user.idUtilisateur || `user-${index}`}>
+          <td>{user.name}</td>
+          <td>{user.email}</td>
+          <td>{user.role}</td>
+          <td>{user.magasin_id}</td>
+          <td><button className="edit-button">{t("details")}</button></td>
+        </tr>
+      ))
+      
 ) : (
     <tr key="no-users">
         <td colSpan="4">{t("noUsers")}</td>

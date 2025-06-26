@@ -23,6 +23,16 @@ const Formation = sequelize.define('Formation', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  entreprise_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'entreprises',
+      key: 'id',
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  },
   duree: {
     type: DataTypes.INTEGER,
     allowNull: true,

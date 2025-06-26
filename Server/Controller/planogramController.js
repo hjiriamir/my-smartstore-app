@@ -7,7 +7,7 @@ import ProductPosition from '../Model/ProductPosition.js';
 import Tache from '../Model/Tache.js';
 import Users from '../Model/Users.js';
 import Notification from '../Model/Notification.js';
-import { sendBasicEmail } from '../Services/sendEmail.js';
+import { sendBasicEmail } from '../Services/SendEmail.js';
 import Zone1 from '../Model/zone1.js';
 
 // Créer un planogramme simple

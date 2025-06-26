@@ -177,3 +177,50 @@ export const markMessageAsRead = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getMessageByEntreprise = async (req, res) => {
+  const idEntreprise = parseInt(req.params.idEntreprise, 10);
+
+  if (isNaN(idEntreprise)) {
+    return res.status(400).json({ error: "idEntreprise invalide" });
+  }
+
+  try {
+    // 1. Récupérer les utilisateurs de l'entreprise avec plus d'informations
+    const users = await Users.findAll({
+      where: { entreprises_id: idEntreprise },
+      attributes: ['id', 'name', 'email', 'role'], 
+    });
+
+    // 2. Récupérer les messages pour chaque utilisateur
+    const usersWithMessages = await Promise.all(users.map(async (user) => {
+      const messages = await ChatMessage.findAndCountAll({
+        where: { utilisateur_id: user.id }
+      });
+
+      return {
+        utilisateur: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        },
+        nombre_messages: messages.count,
+        messages: messages.rows
+      };
+    }));
+
+    // 3. Calculer le nombre total de messages pour l'entreprise
+    const totalMessages = usersWithMessages.reduce(
+      (total, user) => total + user.nombre_messages, 0
+    );
+
+    res.status(200).json({
+      nombre_total_messages: totalMessages,
+      nombre_utilisateurs: users.length,
+      utilisateurs: usersWithMessages
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des messages :", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};

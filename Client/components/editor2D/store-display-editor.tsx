@@ -1677,11 +1677,15 @@ useEffect(() => {
 
   // Check if a furniture matches any element in the floor plan
   const isFurnitureInPlan = (furniture) => {
-    if (!floorPlan) return false
-
+    if (!floorPlan || !furniture?.furniture?.name) return false
+  
+    const furnitureName = typeof furniture.furniture.name === 'string' 
+      ? furniture.furniture.name.toLowerCase() 
+      : String(furniture.furniture.name).toLowerCase()
+  
     return floorPlan.elements.some(
       (element) =>
-        (element.name && element.name.toLowerCase() === furniture.furniture.name.toLowerCase()) ||
+        (element.name && element.name.toLowerCase() === furnitureName) ||
         (!element.name && element.type === furniture.furniture.type),
     )
   }
@@ -2674,27 +2678,28 @@ useEffect(() => {
 
       {/* Meubles existants de la bibliothèque */}
       {savedFurniture
-        .filter(furniture => 
-          selectedMagasin === "all" || 
-          furniture.storeId === selectedMagasin
-        )
-        .map((furniture) => {
-          const isInPlan = isFurnitureInPlan(furniture);
-          return (
-            <DraggableFurnitureItem
-              key={`${furniture.furniture.id}-${furniture.furniture.name}`}
-              furniture={furniture}
-              onRename={handleRenameFurniture}
-              isMatchingPlan={isInPlan}
-              disabled={floorPlan && !isInPlan}
-              onManualPlacement={handleManualPlacement}
-              floorPlan={floorPlan}
-              toast={toast}
-              matchedPlanElements={matchedPlanElements}
-              placedFurniture={placedFurniture}
-            />
-          );
-        })}
+  .filter(furniture => 
+    selectedMagasin === "all" || 
+    furniture.storeId === selectedMagasin
+  )
+  .filter(furniture => furniture.furniture && furniture.furniture.name) // Add this line
+  .map((furniture) => {
+    const isInPlan = isFurnitureInPlan(furniture);
+    return (
+      <DraggableFurnitureItem
+        key={`${furniture.furniture.id}-${furniture.furniture.name}`}
+        furniture={furniture}
+        onRename={handleRenameFurniture}
+        isMatchingPlan={isInPlan}
+        disabled={floorPlan && !isInPlan}
+        onManualPlacement={handleManualPlacement}
+        floorPlan={floorPlan}
+        toast={toast}
+        matchedPlanElements={matchedPlanElements}
+        placedFurniture={placedFurniture}
+      />
+    );
+  })}
     </div>
   </ScrollArea>
 </div>

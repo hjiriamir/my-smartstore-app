@@ -61,3 +61,45 @@ html: `
 
     return transporter.sendMail(mailOptions);
 };
+
+export const sendAccountCreatedEmail = async (toEmail, userEmail, userPassword) => {
+    const mailOptions = {
+      from: {
+        name: "Smart Store",
+        address: process.env.EMAIL_USER,
+      },
+      to: toEmail,
+      subject: "✅ Compte créé avec succès - Smart Store",
+      html: `
+      <html>
+      <body>
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px; text-align: center;">
+          <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto;">
+            <h2 style="color: #2c3e50;">Votre compte Smart Store a été créé avec succès 🎉</h2>
+            <p>Bonjour,</p>
+            <p>Nous vous confirmons que votre compte a bien été créé.</p>
+            
+            <h3 style="color: #34495e;">🧾 Détails de connexion :</h3>
+            <p><strong>Email :</strong> ${userEmail}</p>
+            <p><strong>Mot de passe temporaire :</strong> ${userPassword}</p>
+  
+            <p style="color: #e74c3c;"><strong>Nous vous recommandons de changer votre mot de passe immédiatement après votre première connexion.</strong></p>
+  
+            <a href="https://smartstore.com/login"
+               style="display: inline-block; background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+               Se connecter à Smart Store
+            </a>
+  
+            <p style="margin-top: 30px; color: #7f8c8d; font-size: 12px;">
+              Si vous n'êtes pas à l'origine de cette création de compte, veuillez nous contacter immédiatement.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+      `,
+    };
+  
+    return transporter.sendMail(mailOptions);
+  };
+  

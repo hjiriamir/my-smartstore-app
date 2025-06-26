@@ -24,13 +24,14 @@ export const getFaqById = async (req, res) => {
 // Créer une nouvelle FAQ
 export const createFaq = async (req, res) => {
   try {
-    const { question, reponse,vues, personnes_aidees, categorie } = req.body;
+    const { question, reponse,vues, personnes_aidees, categorie, entreprise_id } = req.body;
     const newFaq = await Faq.create({
       question,
       reponse,
       vues,
       personnes_aidees,
       categorie,
+      entreprise_id,
       date_creation: new Date(),
     });
     res.status(201).json(newFaq);
@@ -66,3 +67,19 @@ export const deleteFaq = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
+
+
+export const getFaqByEntreprise = async(req,res) =>{7
+  try {
+    const { idEntreprise } = req.params;
+    if(!idEntreprise){
+      console.error('idEntreprise n\'est pas valide');
+    }
+    const faqs = await Faq.findAndCountAll({
+      where:{entreprise_id: idEntreprise}
+    })
+    res.json({faqs})
+  } catch (error) {
+    res.status(500).json({error:'erreur serveur'})
+  }
+}

@@ -190,6 +190,35 @@ export function SavePlanogramDialog({ planogramConfig, cells, products, productI
     }
   }, [selectedMagasinId, toast])
 
+  // fetch products IDs
+  const fetchProductIdsMap = async (productCodes: string[]): Promise<Record<string, number>> => {
+    try {
+      const response = await fetch(
+        `http://localhost:8081/api/produits/getProductIdsFromCodes?productCodes=${encodeURIComponent(productCodes.join(','))}`,
+        {
+          method: "GET",
+          headers: { 
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+  
+      const productsData = await response.json();
+      
+      return productsData.reduce((acc: Record<string, number>, product: any) => {
+        acc[product.produit_id] = product.id;
+        return acc;
+      }, {});
+    } catch (error) {
+      console.error("Erreur lors de la récupération des IDs produits:", error);
+      throw error;
+    }
+  };
+
   // Charger les types de meubles
   useEffect(() => {
     const fetchFurnitureTypes = async () => {
@@ -270,132 +299,84 @@ export function SavePlanogramDialog({ planogramConfig, cells, products, productI
       return "right"
     }
   }
-
-  const handleSave = async () => {
-    // Validate required fields before sending
-    if (!selectedMagasinId || !selectedZoneId || !name || !currentUser) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      })
-      return
+  // Fonction pour récupérer l'ID d'un produit à partir de son code
+const fetchProductIdByCode = async (productCode: string): Promise<number> => {
+  try {
+    const response = await fetch(`http://localhost:8081/api/produits/getProductIdsByCodes/${productCode}`);
+    
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP: ${response.status}`);
     }
+    
+    const productId = await response.json();
+    return productId;
+  } catch (error) {
+    console.error(`Erreur lors de la récupération de l'ID pour le produit ${productCode}:`, error);
+    throw error;
+  }
+};
 
-    setIsLoading(true)
 
+const handleSave = async () => {
+  // Validate required fields before sending
+      if (!selectedMagasinId || !selectedZoneId || !name || !currentUser) {
+        toast({
+          title: "Erreur",
+          description: "Veuillez remplir tous les champs obligatoires",
+          variant: "destructive",
+        })
+        return
+      }
+    setIsLoading(true);
+  
     try {
-      // Construire les positions de produits à partir des cellules
+      // Étape 1: Récupérer tous les codes produits uniques
+      const productCodes = Array.from(
+        new Set(
+          cells
+            .filter((cell) => cell.instanceId !== null)
+            .map((cell) => {
+              const productInstance = productInstances.find((pi) => pi.instanceId === cell.instanceId);
+              return productInstance?.productId; // Ceci est le product_code (ex: "P002")
+            })
+            .filter(Boolean)
+        )
+      );
+  
+      // Étape 2: Récupérer le mapping des IDs
+      const productIdMap = await fetchProductIdsMap(productCodes);
+  
+      // Vérifier si tous les produits ont été trouvés
+      const missingProducts = productCodes.filter(code => !productIdMap[code]);
+      if (missingProducts.length > 0) {
+        throw new Error(
+          `Les produits suivants n'ont pas été trouvés: ${missingProducts.join(", ")}`
+        );
+      }
+  
+      // Étape 3: Construire les positions avec les vrais IDs
       const productPositions = cells
         .filter((cell) => cell.instanceId !== null)
         .map((cell) => {
-          const productInstance = productInstances.find((pi) => pi.instanceId === cell.instanceId)
-          const product = productInstance ? products.find((p) => p.primary_id === productInstance.productId) : null
-
-          if (!product) return null
-
-          // Déterminer la face correcte selon le type de meuble et la position
-          let face = "front" // valeur par défaut
-
-          if (planogramConfig.furnitureType === "gondola") {
-            // Pour gondola : front si colonne < moitié, back sinon
-            face = cell.x < planogramConfig.columns / 2 ? "front" : "back"
-          } else if (planogramConfig.furnitureType === "shelves-display") {
-            // Pour shelves-display : utiliser la face directement depuis la cellule si disponible
-            // Sinon, calculer basé sur la position
-            if (cell.face) {
-              face = cell.face
-            } else if (cell.side) {
-              face = cell.side
-            } else {
-              // Logique de fallback basée sur la position
-              const totalColumns = planogramConfig.columns
-              const quarterWidth = totalColumns / 4
-
-              if (cell.x < quarterWidth) {
-                face = "left"
-              } else if (cell.x < quarterWidth * 2) {
-                face = "front"
-              } else if (cell.x < quarterWidth * 3) {
-                face = "back"
-              } else {
-                face = "right"
-              }
-            }
+          const productInstance = productInstances.find((pi) => pi.instanceId === cell.instanceId);
+          if (!productInstance) return null;
+  
+          const realProductId = productIdMap[productInstance.productId];
+          if (!realProductId) {
+            throw new Error(`ID non trouvé pour le produit ${productInstance.productId}`);
           }
-          // Pour planogram simple face, garder "front"
-
-          console.log(
-            `Produit ${product.primary_id} - Position: (${cell.x}, ${cell.y}) - Face: ${face} - Qty: ${cell.quantity || 1}`,
-          )
-
+  
           return {
-            product_id: product.primary_id,
-            face: face,
-            etagere: cell.y + 1, // +1 car les étagères commencent à 1
-            colonne: cell.x + 1, // +1 car les colonnes commencent à 1
+            product_id: realProductId, // Utiliser l'ID numérique ici
+            face: getFaceFromPosition(cell.x, planogramConfig.columns),
+            etagere: cell.y + 1,
+            colonne: cell.x + 1,
             quantite: cell.quantity || 1,
-          }
+          };
         })
-        .filter(Boolean) // Supprimer les éléments null
-
-      // Vérifier s'il y a des doublons
-      const uniquePositions = new Set()
-      const duplicates = []
-
-      productPositions.forEach((pos, index) => {
-        const key = `${pos.product_id}-${pos.face}-${pos.etagere}-${pos.colonne}`
-        if (uniquePositions.has(key)) {
-          duplicates.push({ index, position: pos, key })
-        } else {
-          uniquePositions.add(key)
-        }
-      })
-
-      if (duplicates.length > 0) {
-        console.warn("Doublons détectés:", duplicates)
-      }
-
-      console.log("Product positions finales à envoyer:", productPositions)
-      console.log(`Nombre de positions: ${productPositions.length}`)
-
-      // Obtenir la configuration du meuble
-      const furnitureConfig = getFurnitureConfiguration()
-
-      // Construire l'objet furniture selon le type
-      const furniture = {
-        furniture_type_id: Number.parseInt(selectedFurnitureTypeId),
-        largeur: planogramConfig.furnitureDimensions.width,
-        hauteur: planogramConfig.furnitureDimensions.height,
-        profondeur: planogramConfig.furnitureDimensions.depth,
-        productPositions: productPositions,
-      }
-
-      // Ajouter les propriétés spécifiques selon le type de meuble
-      if (planogramConfig.furnitureType === "planogram") {
-        furniture.nb_colonnes_unique_face = planogramConfig.columns
-        furniture.nb_etageres_unique_face = planogramConfig.rows
-      } else if (planogramConfig.furnitureType === "gondola") {
-        furniture.nb_colonnes_front_back = planogramConfig.columns
-        furniture.nb_etageres_front_back = planogramConfig.rows
-      } else if (planogramConfig.furnitureType === "shelves-display") {
-        // Pour shelves-display 4 faces, utiliser les mêmes propriétés que dans l'exemple Postman
-
-        // Récupérer les détails du shelves-display
-        const shelvesDetails = planogramConfig.shelvesDisplayDetails || {}
-
-        // Propriétés pour les faces gauche/droite
-        furniture.nb_colonnes_left_right = shelvesDetails.nb_colonnes_left_right || 1
-        furniture.nb_etageres_left_right = shelvesDetails.nb_etageres_left_right || planogramConfig.rows
-
-        // Propriétés pour les faces avant/arrière (utiliser la même structure que Postman)
-        furniture.nb_colonnes_front_back = shelvesDetails.nbre_colonnes_front || 3
-        furniture.nb_etageres_front_back = planogramConfig.rows
-
-        console.log("Configuration du meuble shelves-display:", furniture)
-      }
-
-      // Construire l'objet requestBody
+        .filter(Boolean);
+  
+      // Étape 4: Construire le payload final
       const requestBody = {
         magasin_id: selectedMagasinId,
         zone_id: selectedZoneId,
@@ -403,54 +384,61 @@ export function SavePlanogramDialog({ planogramConfig, cells, products, productI
         description: description || `Planogramme créé le ${new Date().toLocaleDateString()}`,
         created_by: currentUser.id || currentUser.idUtilisateur,
         statut: selectedPlanogramStatus,
-        furnitures: [furniture],
+        furnitures: [
+          {
+            furniture_type_id: Number.parseInt(selectedFurnitureTypeId),
+            largeur: planogramConfig.furnitureDimensions.width,
+            hauteur: planogramConfig.furnitureDimensions.height,
+            profondeur: planogramConfig.furnitureDimensions.depth,
+            productPositions: productPositions,
+          },
+        ],
         tache: selectedUserId
           ? {
               idUser: selectedUserId,
               statut: "à faire",
               date_debut: new Date().toISOString(),
-              date_fin_prevue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // +7 jours
+              date_fin_prevue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
               type: selectedTaskType,
               commentaire: `Tâche liée au planogramme ${name}`,
             }
           : null,
-      }
-
-      console.log("RequestBody à envoyer:", JSON.stringify(requestBody, null, 2))
-
+      };
+  
+      console.log("Request payload:", JSON.stringify(requestBody, null, 2));
+  
+      // Envoyer la requête
       const response = await fetch("http://localhost:8081/api/planogram/createFullPlanogram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
         credentials: "include",
-      })
-
-      const data = await response.json()
-
+      });
+  
+      const data = await response.json();
+  
       if (!response.ok) {
-        throw new Error(data.details || data.error || "Erreur inconnue")
+        throw new Error(data.details || data.error || "Erreur inconnue");
       }
-
+  
       toast({
         title: "Succès",
         description: `Planogramme créé avec succès (ID: ${data.planogram_id})`,
         variant: "default",
-      })
-
-      // Handle success (refresh list, redirect, etc.)
-      if (onSave) onSave(data.planogram_id)
+      });
+  
+      if (onSave) onSave(data.planogram_id);
     } catch (error) {
-      console.error("Erreur lors de la création du planogramme:", error)
+      console.error("Erreur lors de la création du planogramme:", error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue lors de la création du planogramme",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-
+  };
   // Fonctions utilitaires
   function getFaceFromPosition(x: number): string {
     if (planogramConfig.furnitureType === "shelves-display") {

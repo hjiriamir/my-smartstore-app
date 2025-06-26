@@ -64,7 +64,7 @@ import commentaireRoutes from './Routes/commentaireRoutes.js'
 import chatMessageRoutes from './Routes/chatMessageRoutes.js'
 import ConversationParticipantRoutes from './Routes/conversationParticipantRoutes.js';
 import sessionRoutes from './Routes/sessionRoutes.js'
-import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit} from './Model/associations.js';
+import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation} from './Model/associations.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 const router = express.Router(); 

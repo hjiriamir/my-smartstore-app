@@ -28,6 +28,16 @@ const Faq = sequelize.define('Faq', {
     type: DataTypes.ENUM('Visualisation', 'Technique', 'Validation', 'Export', 'Formation', 'Connexion', 'Notifications', 'Parametrage', 'Support', 'Divers'),
     defaultValue: 'Divers',
   },
+  entreprise_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'entreprises',
+      key: 'id',
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  },
   date_creation: {
     type: DataTypes.DATE,
     allowNull: false,

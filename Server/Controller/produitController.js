@@ -176,3 +176,46 @@ export const getProduitDetails = async (req, res) => {
   }
 };
 
+export const getProductIdsByCodes= async(req,res) => {
+  try {
+    const { productCode } = req.params;
+
+    if (!productCode) {
+      return res.status(400).json({ error: "productCode manquant." });
+    }
+    const produit = await Produit.findOne({
+      where: {produit_id:productCode}
+    })
+    return res.json(produit.id);
+  } catch (error) {
+    console.error('Erreur dans getProductIdsByCodes:', error);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+export const getProductIdsFromCodes = async (req, res) => {
+  try {
+    // Récupérer les codes depuis les query parameters
+    const productCodes = req.query.productCodes;
+    
+    if (!productCodes) {
+      return res.status(400).json({ error: "Paramètre productCodes manquant." });
+    }
+
+    // Convertir en tableau si ce n'est pas déjà le cas
+    const codesArray = Array.isArray(productCodes) 
+      ? productCodes 
+      : productCodes.split(',');
+
+    const produits = await Produit.findAll({
+      where: {
+        produit_id: codesArray
+      },
+      attributes: ['produit_id', 'id']
+    });
+
+    return res.json(produits);
+  } catch (error) {
+    console.error("Erreur dans getProductIdsFromCodes:", error);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+};

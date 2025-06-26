@@ -15,7 +15,8 @@ import Categorie1 from './Categorie1.js';
 import Vente from './Ventes.js';
 import StockMovement from './StockMovement.js';
 import magasin1 from './magasin1.js';
-
+import Entreprises from './Entreprises.js';
+import Formation from './Formation.js';
 
 //import Conversation from './Conversation.js';
 // === Associations Conversation/Users===
@@ -93,6 +94,9 @@ StockMovement.belongsTo(Produit, {
   targetKey: 'produit_id',   // Colonne dans Categorie1 (si différente de 'id')
   as: 'produit'
 });
+
+
+
 Categorie1.belongsTo(magasin1, {foreignKey:'magasin_id', as: 'magasin'})
 Produit.hasMany(Vente, {
   foreignKey: 'produit_id', // Colonne dans Vente qui référence Produit
@@ -104,6 +108,20 @@ Produit.hasMany(StockMovement, {
   sourceKey: 'produit_id',  // Colonne dans Produit
   as: 'stockmovements'
 });
+Formation.belongsTo(Entreprises, { foreignKey: 'entreprise_id' });
+Entreprises.hasMany(Formation, { foreignKey: 'entreprise_id' });
+
+// === Associations Users/Entreprise ===
+Users.belongsTo(Entreprises, {
+  foreignKey: 'entreprises_id', // le champ dans la table Users
+  as: 'entreprise' // alias pour l'inclusion
+});
+
+Entreprises.hasMany(Users, {
+  foreignKey: 'entreprises_id',
+  as: 'utilisateurs'
+});
+
 export {
   Conversation,
   ConversationParticipant,
@@ -120,5 +138,7 @@ export {
   StockMovement,
   magasin1,
   Categorie1,
-  Produit
+  Produit,
+  Formation,
+  Entreprises
 };

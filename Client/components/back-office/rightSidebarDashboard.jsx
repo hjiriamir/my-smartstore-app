@@ -72,26 +72,7 @@ const RightSidebarDashboard = () => {
             <span style={{ color: activeItem === 'category-management' ? 'white' : '' }}>{t("categoryManagement")}</span>
             
           </a>
-          <Link
-            href="/planogram-editor"
-            className={`menu-item ${activeItem === 'planogram' ? 'active' : ''}`}
-            style={{ backgroundColor: activeItem === 'planogram' ? '#0f766e' : '' }}
-            onClick={() => handleClick('planogram')}
-          >
-             <img src="/planogram.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'planogram' ? 'white' : '' }}>{t("planogram")}</span>
-           
-          </Link>
-          <Link
-            href="/floor-plan-editor"
-            className={`menu-item ${activeItem === 'floor-planning' ? 'active' : ''}`}
-            style={{ backgroundColor: activeItem === 'floor-planning' ? '#0f766e' : '' }}
-            onClick={() => handleClick('floor-planning')}
-          >
-             <img src="/building.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'floor-planning' ? 'white' : '' }}>{t("floor_planning")}</span>
-           
-          </Link>
+         
           <Link
             href="/Editor"
             className={`menu-item ${activeItem === 'Library-Furniture' ? 'active' : ''}`}
@@ -132,16 +113,16 @@ const RightSidebarDashboard = () => {
             <span style={{ color: activeItem === 'shelf-labels' ? 'white' : '' }}>{t("shelf_labels")}</span>
             
           </a>
-          <a
-            href="#"
-            className={`menu-item ${activeItem === 'reports' ? 'active' : ''}`}
-            style={{ backgroundColor: activeItem === 'reports' ? '#0f766e' : '' }}
-            onClick={() => handleClick('reports')}
+          <Link
+            href="/user-management"
+            className={`menu-item ${activeItem === 'user-management' ? 'active' : ''}`}
+            style={{ backgroundColor: activeItem === 'user-management' ? '#0f766e' : '' }}
+            onClick={() => handleClick('Library-Furniture')}
           >
-            <img src="/bar-chart.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'reports' ? 'white' : '' }}>{t("reports")}</span>
-            
-          </a>
+             <img src="/building.png" className="menu-icon" alt="Category Icon" />
+            <span style={{ color: activeItem === 'user-management' ? 'white' : '' }}>{t("user-management")}</span>
+           
+          </Link>
           <a
             href="#"
             className={`menu-item ${activeItem === 'sales-strategy' ? 'active' : ''}`}

@@ -53,3 +53,50 @@ export const getCommentairesByPlanogram = async (req, res) => {
   }
 };
 
+
+export const getCommentsByEntreprise = async (req, res) => {
+  const idEntreprise = parseInt(req.params.idEntreprise, 10);
+
+  if (isNaN(idEntreprise)) {
+    return res.status(400).json({ error: "idEntreprise invalide" });
+  }
+
+  try {
+    // 1. Récupérer les utilisateurs de l'entreprise avec plus d'informations
+    const users = await Users.findAll({
+      where: { entreprises_id: idEntreprise },
+      attributes: ['id', 'name', 'email', 'role'], 
+    });
+
+    // 2. Récupérer les commentaires pour chaque utilisateur
+    const usersWithCommets = await Promise.all(users.map(async (user) => {
+      const comments = await Commentaire.findAndCountAll({
+        where: { utilisateur_id: user.id }
+      });
+
+      return {
+        utilisateur: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        },
+        nombre_comments: comments.count,
+        comments: comments.rows
+      };
+    }));
+
+    // 3. Calculer le nombre total de messages pour l'entreprise
+    const totalComments = usersWithCommets.reduce(
+      (total, user) => total + user.nombre_comments, 0
+    );
+
+    res.status(200).json({
+      nombre_total_comments: totalComments,
+      nombre_utilisateurs: users.length,
+      utilisateurs: usersWithCommets
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des commentaires :", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};

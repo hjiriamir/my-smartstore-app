@@ -2,6 +2,9 @@ import Users from '../Model/Users.js';  // Assure-toi que ce modèle est correct
 import bcrypt, { hash } from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
+import Entreprises from '../Model/Entreprises.js';
+import { sendAccountCreatedEmail } from "../Services/SendEmail.js"; // adapte le chemin si besoin
+
 // Créer un utilisateur
 /*export const createUser = async (req, res) => {
     try {
@@ -14,8 +17,49 @@ import { Op } from 'sequelize';
     }
 };*/
 const saltRounds = 10;
-
 export const createUser = async (req, res) => {
+  try {
+    const { name, email, password, role, entreprises_id, magasin_id } = req.body;
+
+    // 1. Vérifier si l'utilisateur existe déjà (facultatif mais recommandé)
+    const existingUser = await Users.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ error: "Email déjà utilisé." });
+    }
+
+    // 2. Générer un mot de passe temporaire si non fourni
+    const rawPassword = password || Math.random().toString(36).slice(-8); 
+
+    // 3. Hash du mot de passe
+    const hashedPassword = await bcrypt.hash(rawPassword, saltRounds);
+
+    // 4. Création de l'utilisateur avec password hashé
+    const user = await Users.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      entreprises_id,
+      magasin_id,
+    });
+
+    // 5. Envoi de l'email de bienvenue avec les identifiants
+    try {
+      await sendAccountCreatedEmail(email, email, rawPassword);
+    } catch (emailError) {
+      console.error("Erreur lors de l'envoi de l'email :", emailError);
+      // Tu peux aussi supprimer l'utilisateur si l'envoi échoue, selon le besoin :
+      // await user.destroy();
+      return res.status(500).json({ error: "Utilisateur créé, mais échec de l'envoi de l'email." });
+    }
+
+    res.status(201).json(user);
+  } catch (error) {
+    console.error("Erreur createUser:", error);
+    res.status(500).json({ error: "Erreur lors de la création de l'utilisateur." });
+  }
+};
+/*export const createUser = async (req, res) => {
   try {
     const { name, email, password, role, entreprises_id, magasin_id  } = req.body;
 
@@ -33,11 +77,12 @@ export const createUser = async (req, res) => {
     });
 
     res.status(201).json(user);
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erreur lors de la création de l'utilisateur." });
   }
-};
+};*/
 
 // Trouver un utilisateur par email
 export const findUserByEmail = async (email) => {
@@ -105,7 +150,7 @@ export const findUserByEmail = async (email) => {
 
 // Récupérer tous les utilisateurs sauf Admin
 export const getAllUsersExcludingAdmin = async (req, res) => {
-  const entreprises_id = parseInt(req.params.id, 10);
+  const entreprises_id = parseInt(req.params.entreprises_id, 10);
   if (isNaN(entreprises_id)) {
     return res.status(400).json({ error: "entreprises_id invalide" });
   }
@@ -259,3 +304,108 @@ export const getNotificationPreferenceByUser = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+export const getActifUsersByEntreprise = async (req, res) => {
+  const idEntreprise = parseInt(req.params.idEntreprise, 10);
+
+  if (isNaN(idEntreprise)) {
+    return res.status(400).json({ error: "idEntreprise invalide" });
+  }
+
+  try {
+    const users = await Users.findAndCountAll({
+      where: {
+        entreprises_id: idEntreprise
+      },
+      attributes: { exclude: ['password'] }
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des utilisateurs :", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+export const getUtilisateursCeMoisParEntreprise = async (req, res) => {
+  try {
+    const { idEntreprise } = req.params;
+
+    // Validation
+    if (!idEntreprise || isNaN(idEntreprise)) {
+      return res.status(400).json({ 
+        success: false,
+        message: "ID entreprise invalide" 
+      });
+    }
+
+    // Dates du mois
+    const maintenant = new Date();
+    const debutMois = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+    const finMois = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0);
+
+    const { count, rows } = await Users.findAndCountAll({
+      where: {
+        entreprises_id: idEntreprise,
+        created_at: {
+          [Op.between]: [debutMois, finMois]
+        }
+      },
+      attributes: ['id', 'name', 'email', 'role', 'created_at'],
+      order: [['created_at', 'DESC']],
+      include: [{
+        model: Entreprises,
+        attributes: ['nomEntreprise'],
+        where: { id: idEntreprise },
+        as: 'entreprise'
+      }]
+    });
+
+    res.status(200).json({
+      success: true,
+      total: count,
+      utilisateurs: rows,
+      entreprise: rows[0]?.Entreprise?.nomEntreprise || null,
+      mois: maintenant.toLocaleString('default', { month: 'long' }),
+      annee: maintenant.getFullYear()
+    });
+
+  } catch (error) {
+    console.error("Erreur utilisateurs/mois:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur"
+    });
+  }
+};
+
+export const getEntrepriseByUser = async(req,res) =>{
+  try {
+    const { idUser } = req.params;
+    if (!idUser) {
+      return res.status(400).json({ 
+        success: false,
+        message: "ID user invalide" 
+      });
+    }
+    const user = await Users.findByPk(idUser)
+    if (!user) {
+      return res.status(400).json({ 
+        success: false,
+        message: "utilisateur n'existe pas" 
+      });
+    }
+    const entreprise = await Entreprises.findByPk(user.entreprises_id)
+    res.status(200).json({
+      success: true,
+      entreprise : entreprise
+    });
+
+  } catch (error) {
+    console.error("Erreur utilisateurs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur"
+    });
+  }
+}

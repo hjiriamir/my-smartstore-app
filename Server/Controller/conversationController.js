@@ -27,7 +27,7 @@ export const createConversation = async (req, res) => {
 // Obtenir toutes les conversations avec leurs participants
 export const getAllConversations = async (req, res) => {
   try {
-    const { conversation_id } = req.params; // ou req.query
+    const { conversation_id } = req.params; 
 
     const whereCondition = conversation_id ? { id: conversation_id } : {};
 

@@ -6,7 +6,9 @@ import {
   updateProduit,
   deleteProduit,
   createProduitsList,
-  getProduitDetails
+  getProduitDetails,
+  getProductIdsByCodes,
+  getProductIdsFromCodes
 } from '../Controller/produitController.js';
 
 const router = express.Router();
@@ -14,6 +16,9 @@ const router = express.Router();
 router.post('/createProduit', createProduit);              
 router.get('/getAllProduits', getAllProduits);
 router.get('/getProduitDetails/:idMagasin', getProduitDetails);              
+router.get('/getProductIdsByCodes/:productCode', getProductIdsByCodes);   
+router.get('/getProductIdsFromCodes', getProductIdsFromCodes);              
+
 
 router.get('/getProduitById/:id', getProduitById);         
 router.put('/updateProduit/:id', updateProduit);          
