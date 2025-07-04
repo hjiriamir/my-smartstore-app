@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, Suspense, useEffect } from "react"
+import { useState, useRef, Suspense, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import html2canvas from "html2canvas"
+import { Canvas } from "@react-three/fiber"
+import { OrbitControls, Environment } from "@react-three/drei"
 import clsx from "clsx"
-import jsPDF from "jspdf"
-import { SavePlanogramDialog } from "@/components/save-planogram-dialog"
 import { useFurnitureStore } from "@/lib/furniture-store"
-import "@/components/multilingue/i18n.js"
+import { StreamlitCommunicator, type StreamlitPlanogramData } from "@/lib/streamlit-communication"
 import {
   FileJson,
   CheckCircle2,
@@ -18,18 +17,20 @@ import {
   Wand2,
   Save,
   Download,
-  FileText,
-  ImageIcon,
-  Bug,
-  CuboidIcon as Cube,
   LayoutGrid,
   Upload,
   Edit,
   Info,
   Package,
+  Eye,
+  Settings,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Grid3X3,
+  Box,
   AlertTriangle,
 } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,152 +43,354 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useProductStore } from "@/lib/product-store"
-import PlanogramViewer3D from "./planogram-viewer-3d"
-import { PlanogramTypes, type PlanogramJsonData } from "../types/planogram_types"
-import { useTranslation } from "react-i18next"
+
+// Import realistic 3D components
+import {
+  PlanogramDisplay,
+  ShelvesDisplay,
+  GondolaDisplay,
+  ClothingRack,
+  WallDisplay,
+  AccessoryDisplay,
+  ModularCube,
+  TableDisplay,
+  RefrigeratorDisplay,
+  RefrigeratedShowcase,
+  ClothingDisplay,
+  ClothingWallDisplay,
+} from "@/components/editor2D/furniture-3d-components"
 
 export function PlanogramIA() {
-  const { t, i18n } = useTranslation()
   const router = useRouter()
   const { toast } = useToast()
-  const { products, addProducts, updateProductImage, addProductInstance, setActiveTab, addPlanogram } =
-    useProductStore()
+  const { products, addProducts, addPlanogram } = useProductStore()
+  const { addPlanogramFurniture } = useFurnitureStore()
 
   // State
   const [step, setStep] = useState<number>(0)
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [parsedData, setParsedData] = useState<any[]>([])
-  const [planogramParams, setPlanogramParams] = useState<PlanogramJsonData | null>(null)
+  const [streamlitData, setStreamlitData] = useState<StreamlitPlanogramData | null>(null)
+  const [planogramParams, setPlanogramParams] = useState<any | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [importProgress, setImportProgress] = useState<number>(0)
   const [generationProgress, setGenerationProgress] = useState<number>(0)
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
-  const [activeTab, setActiveImportTab] = useState<string>("import")
   const [jsonInputMethod, setJsonInputMethod] = useState<string>("upload")
   const [jsonText, setJsonText] = useState<string>("")
-  const [generatedCells, setGeneratedCells] = useState<any[]>([])
-  const [generatedConfig, setGeneratedConfig] = useState<any | null>(null)
+  const [generatedFurniture, setGeneratedFurniture] = useState<any[]>([])
+  const [generatedDisplayItems, setGeneratedDisplayItems] = useState<any[]>([])
   const [productInstances, setProductInstances] = useState<any[]>([])
-  const [debugInfo, setDebugInfo] = useState<string>("")
   const [planogramId, setPlanogramId] = useState<string>("")
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d")
   const [iaGeneratorUrl] = useState<string>("http://localhost:8501/")
-  const [iaGeneratedJson, setIaGeneratedJson] = useState<string>("")
-  const [placementResults, setPlacementResults] = useState<{
-    success: { id: string; reason: string }[]
-    failed: { id: string; reason: string }[]
-    total: number
-  }>({ success: [], failed: [], total: 0 })
-  const jsonInputRef = useRef<HTMLInputElement>(null)
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const planogramPreviewRef = useRef<HTMLDivElement>(null)
-  const jsonEditorRef = useRef<HTMLTextAreaElement>(null)
+  const [communicationLogs, setCommunicationLogs] = useState<string[]>([])
+  const [isRequestingData, setIsRequestingData] = useState<boolean>(false)
+  const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected")
   const [isMinimized, setIsMinimized] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [windowPosition, setWindowPosition] = useState<"inline" | "fullscreen">("inline")
-  const [windowStyle, setWindowStyle] = useState<React.CSSProperties>({})
-  const { addPlanogramFurniture } = useFurnitureStore()
-  // Temporaire - à enlever après résolution
+
+  // New states for visualization
+  const [viewMode, setViewMode] = useState<"3d" | "2d">("3d")
+  const [webglError, setWebglError] = useState<boolean>(false)
+  const [canvasKey, setCanvasKey] = useState<number>(0)
+  const [webglSupported, setWebglSupported] = useState<boolean>(true)
+
+  const jsonInputRef = useRef<HTMLInputElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const communicatorRef = useRef<StreamlitCommunicator | null>(null)
+
+  // Check WebGL support
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Filtrez explicitement par origine et type de message
-      if (event.origin === "http://localhost:8501") {
-        console.log("Message détaillé:", {
-          origin: event.origin,
-          data: event.data,
-          source: event.source,
-        })
-
-        // Vérifiez deux types de messages possibles
-        if (event.data?.type === "GENERATED_JSON") {
-          console.log("Données IA reçues:", event.data.json)
-          processIaData(event.data.json)
-        }
-        // Certaines versions de Streamlit peuvent encapsuler différemment
-        else if (event.data?.json?.type === "GENERATED_JSON") {
-          console.log("Données IA reçues (format alternatif):", event.data.json)
-          processIaData(event.data.json.json)
-        }
-      }
-    }
-
-    const processIaData = (jsonData: any) => {
+    const checkWebGLSupport = () => {
       try {
-        // Validation minimale des données
-        if (!jsonData || !jsonData.emplacement_magasin || !jsonData.nb_etageres) {
-          throw new Error("Structure JSON invalide")
+        const canvas = document.createElement("canvas")
+        const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
+        if (!gl) {
+          setWebglSupported(false)
+          setWebglError(true)
+          return false
         }
-
-        setIaGeneratedJson(JSON.stringify(jsonData, null, 2))
-        setJsonText(JSON.stringify(jsonData, null, 2))
-        validateAndProcessJson(jsonData)
-
-        toast({
-          title: "Configuration IA reçue",
-          description: "Les paramètres ont été chargés avec succès.",
-        })
-      } catch (error) {
-        console.error("Erreur de traitement:", error)
-        toast({
-          title: "Erreur de configuration",
-          description: "Les données reçues sont invalides.",
-          variant: "destructive",
-        })
+        return true
+      } catch (e) {
+        setWebglSupported(false)
+        setWebglError(true)
+        return false
       }
     }
 
-    window.addEventListener("message", handleMessage)
-    return () => window.removeEventListener("message", handleMessage)
-  }, [toast])
-  // Save planogram to library for use in store display
-  // Save planogram to library for use in store display
-  const savePlanogramToLibrary = (name: string, description: string) => {
-    if (!generatedConfig || !generatedCells) {
+    checkWebGLSupport()
+  }, [])
+
+  // Reset WebGL context with better error handling
+  const resetWebGLContext = useCallback(() => {
+    try {
+      setWebglError(false)
+      setCanvasKey((prev) => prev + 1)
+
+      // Force garbage collection if available
+      if (window.gc) {
+        window.gc()
+      }
+
       toast({
-        title: "Erreur",
-        description: "Aucun planogramme à enregistrer",
+        title: "Contexte 3D réinitialisé",
+        description: "La visualisation 3D a été redémarrée.",
+      })
+    } catch (error) {
+      console.error("Failed to reset WebGL context:", error)
+      setWebglError(true)
+      toast({
+        title: "Erreur de réinitialisation",
+        description: "Impossible de réinitialiser le contexte 3D. Utilisez la vue 2D.",
+        variant: "destructive",
+      })
+    }
+  }, [toast])
+
+  // Initialiser le communicateur
+  useEffect(() => {
+    communicatorRef.current = new StreamlitCommunicator()
+    communicatorRef.current.onPlanogramData((data: StreamlitPlanogramData) => {
+      addCommunicationLog("✅ Données reçues avec succès!")
+      processStreamlitData(data)
+      setConnectionStatus("connected")
+      setIsRequestingData(false)
+    })
+
+    return () => {
+      communicatorRef.current?.cleanup()
+    }
+  }, [])
+
+  // Configurer l'iframe quand elle est prête
+  useEffect(() => {
+    if (iframeRef.current && communicatorRef.current) {
+      communicatorRef.current.setIframe(iframeRef.current)
+      setConnectionStatus("connecting")
+      setTimeout(() => {
+        if (connectionStatus === "connecting") {
+          setConnectionStatus("connected")
+        }
+      }, 3000)
+    }
+  }, [iframeRef.current])
+
+  // Add communication log
+  const addCommunicationLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString()
+    setCommunicationLogs((prev) => [`[${timestamp}] ${message}`, ...prev.slice(0, 9)])
+  }
+
+  // Process Streamlit data
+  const processStreamlitData = (data: StreamlitPlanogramData) => {
+    try {
+      addCommunicationLog("🔄 Traitement des données Streamlit...")
+      if (!data.planogram_info || !data.furniture || !data.product_positions) {
+        throw new Error("Structure de données Streamlit invalide")
+      }
+
+      setStreamlitData(data)
+      const convertedData = convertStreamlitToInternalFormat(data)
+      setPlanogramParams(convertedData)
+      setJsonText(JSON.stringify(data, null, 2))
+      addCommunicationLog(`✅ Données traitées: ${data.planogram_info.nom_planogram}`)
+
+      toast({
+        title: "Configuration Streamlit reçue",
+        description: `Planogramme "${data.planogram_info.nom_planogram}" chargé avec succès.`,
+      })
+
+      setTimeout(() => setStep(1), 1000)
+    } catch (error) {
+      console.error("Erreur de traitement Streamlit:", error)
+      addCommunicationLog(`❌ Erreur: ${error.message}`)
+      toast({
+        title: "Erreur de configuration",
+        description: "Les données Streamlit reçues sont invalides.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Améliorer la fonction de mapping des types de meubles
+  const mapFurnitureTypeIdToName = (typeId: number): string => {
+    const typeMap: { [key: number]: string } = {
+      1: "planogram",
+      2: "gondola",
+      3: "shelves",
+      4: "clothing_rack",
+      5: "wall_display",
+      6: "accessory_display",
+      7: "modular_cube",
+      8: "table",
+      9: "refrigerator",
+      10: "refrigerated_showcase",
+      11: "clothing_display",
+      12: "clothing_wall",
+    }
+    return typeMap[typeId] || "planogram"
+  }
+
+  // Améliorer la fonction de détection du type de meuble
+  const detectFurnitureType = (furniture: any): string => {
+    // Priorité 1: Utiliser le type mappé depuis l'ID
+    if (furniture.furniture_type_id) {
+      const mappedType = mapFurnitureTypeIdToName(furniture.furniture_type_id)
+      if (mappedType !== "planogram") {
+        return mappedType
+      }
+    }
+
+    // Priorité 2: Analyser le nom du type de meuble
+    const typeName = (furniture.furniture_type_name || "").toLowerCase()
+
+    if (typeName.includes("gondola") || typeName.includes("gondole")) {
+      return "gondola"
+    }
+    if (typeName.includes("shelves") || typeName.includes("étagère") || typeName.includes("etagere")) {
+      return "shelves"
+    }
+    if (typeName.includes("clothing") || typeName.includes("vêtement") || typeName.includes("vetement")) {
+      if (typeName.includes("wall") || typeName.includes("mur")) {
+        return "clothing_wall"
+      }
+      if (typeName.includes("rack") || typeName.includes("portant")) {
+        return "clothing_rack"
+      }
+      return "clothing_display"
+    }
+    if (typeName.includes("refrigerator") || typeName.includes("réfrigérateur") || typeName.includes("refrigerateur")) {
+      if (typeName.includes("showcase") || typeName.includes("vitrine")) {
+        return "refrigerated_showcase"
+      }
+      return "refrigerator"
+    }
+    if (typeName.includes("wall") || typeName.includes("mur")) {
+      return "wall_display"
+    }
+    if (typeName.includes("accessory") || typeName.includes("accessoire")) {
+      return "accessory_display"
+    }
+    if (typeName.includes("cube") || typeName.includes("modulaire")) {
+      return "modular_cube"
+    }
+    if (typeName.includes("table")) {
+      return "table"
+    }
+
+    // Priorité 3: Analyser les dimensions pour deviner le type
+    const { largeur = 0, hauteur = 0, profondeur = 0 } = furniture
+    const width = largeur / 100
+    const height = hauteur / 100
+    const depth = profondeur / 100
+
+    // Meuble très haut et étroit = clothing_rack
+    if (height > 1.8 && width < 1.5 && depth < 0.8) {
+      return "clothing_rack"
+    }
+
+    // Meuble large et profond = gondola
+    if (width > 2 && depth > 1) {
+      return "gondola"
+    }
+
+    // Meuble haut avec peu de profondeur = wall_display
+    if (height > 1.5 && depth < 0.5) {
+      return "wall_display"
+    }
+
+    // Meuble carré = modular_cube
+    if (Math.abs(width - height) < 0.3 && Math.abs(width - depth) < 0.3) {
+      return "modular_cube"
+    }
+
+    // Meuble bas = table
+    if (height < 1) {
+      return "table"
+    }
+
+    // Par défaut = shelves (plus générique que planogram)
+    return "shelves"
+  }
+
+  // Convert Streamlit format to internal format
+  const convertStreamlitToInternalFormat = (data: StreamlitPlanogramData) => {
+    const furniture = data.furniture[0]
+    return {
+      planogram_id: data.planogram_info.planogram_id,
+      nom_planogram: data.planogram_info.nom_planogram,
+      magasin_id: data.planogram_info.magasin_id,
+      categorie_id: data.planogram_info.categorie_id,
+      furniture_type: detectFurnitureType(furniture),
+      type_meuble: furniture.furniture_type_name,
+      largeur: furniture.largeur / 100,
+      hauteur: furniture.hauteur / 100,
+      profondeur: furniture.profondeur / 100,
+      nb_etageres: furniture.nb_etageres_unique_face,
+      nb_colonnes: furniture.nb_colonnes_unique_face,
+      sections: furniture.nb_etageres_unique_face,
+      slots: furniture.nb_colonnes_unique_face,
+      product_placements: data.product_positions.map((pos) => ({
+        produit_id: pos.produit_id,
+        etage: pos.etagere,
+        colonne: pos.colonne,
+        section: pos.etagere,
+        position: pos.colonne,
+        quantite: pos.quantite,
+        quantity: pos.quantite,
+        face: pos.face,
+      })),
+      faces: furniture.faces,
+      available_faces: furniture.available_faces,
+      imageUrl: furniture.imageUrl,
+      date_creation: data.planogram_info.date_creation,
+      statut: data.planogram_info.statut,
+    }
+  }
+
+  // Map furniture type ID to name
+
+  // Request data from Streamlit
+  const requestStreamlitData = async () => {
+    if (!communicatorRef.current) {
+      toast({
+        title: "Erreur de communication",
+        description: "Le communicateur n'est pas initialisé.",
         variant: "destructive",
       })
       return
     }
 
-    // Create furniture item from planogram config with dimensions divided by 10
-    const furnitureToSave = {
-      id: `planogram-${Date.now()}`,
-      type: "planogram",
-      name,
-      sections: generatedConfig.rows,
-      slots: generatedConfig.columns,
-      width: generatedConfig.furnitureDimensions.width / 20, // Divisé par 10 partout
-      height: generatedConfig.furnitureDimensions.height / 20,
-      depth: generatedConfig.furnitureDimensions.depth / 22,
-      color: "#f0f0f0",
-      x: 0,
-      y: 0,
-      z: 0,
-      rotation: 0,
-    }
+    setIsRequestingData(true)
+    setConnectionStatus("connecting")
+    addCommunicationLog("📤 Demande de données à Streamlit...")
 
-    // Get products from cells
-    const furnitureProducts = generatedCells
-      .filter((cell) => cell.instanceId !== null)
-      .map((cell) => {
-        const productInstance = productInstances.find((pi) => pi.instanceId === cell.instanceId)
-        return {
-          productId: productInstance?.productId || "",
-          section: cell.y,
-          position: cell.x,
-        }
+    try {
+      const data = await communicatorRef.current.requestPlanogramData()
+      if (data) {
+        addCommunicationLog("✅ Données reçues avec succès!")
+        processStreamlitData(data)
+        setConnectionStatus("connected")
+      } else {
+        addCommunicationLog("⚠️ Aucune donnée reçue")
+        toast({
+          title: "Aucune donnée",
+          description: "Streamlit n'a pas retourné de données. Vérifiez qu'un planogramme est généré.",
+          variant: "destructive",
+        })
+        setConnectionStatus("disconnected")
+      }
+    } catch (error) {
+      addCommunicationLog(`❌ Erreur: ${error.message}`)
+      toast({
+        title: "Erreur de communication",
+        description: error.message,
+        variant: "destructive",
       })
-
-    // Add to furniture store
-    addPlanogramFurniture(furnitureToSave, furnitureProducts, description)
-
-    toast({
-      title: "Planogramme enregistré",
-      description: `Le planogramme "${name}" a été enregistré dans votre bibliothèque (dimensions divisées par 10).`,
-    })
+      setConnectionStatus("disconnected")
+    } finally {
+      setIsRequestingData(false)
+    }
   }
+
   // Handle JSON file selection
   const handleJsonFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -203,7 +406,15 @@ export function PlanogramIA() {
       try {
         const content = e.target?.result as string
         const jsonData = JSON.parse(content)
-        validateAndProcessJson(jsonData)
+        if (jsonData.planogram_info && jsonData.furniture && jsonData.product_positions) {
+          processStreamlitData(jsonData)
+        } else {
+          toast({
+            title: "Format non supporté",
+            description: "Le fichier ne contient pas de données Streamlit valides.",
+            variant: "destructive",
+          })
+        }
       } catch (error) {
         console.error("Error parsing JSON file:", error)
         toast({
@@ -229,7 +440,15 @@ export function PlanogramIA() {
 
     try {
       const jsonData = JSON.parse(jsonText)
-      validateAndProcessJson(jsonData)
+      if (jsonData.planogram_info && jsonData.furniture && jsonData.product_positions) {
+        processStreamlitData(jsonData)
+      } else {
+        toast({
+          title: "Format non supporté",
+          description: "Les données ne correspondent pas au format Streamlit attendu.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Error parsing JSON text:", error)
       toast({
@@ -240,202 +459,12 @@ export function PlanogramIA() {
     }
   }
 
-  // Validate and process JSON data
-  const validateAndProcessJson = (data: any) => {
-    console.log("Données JSON reçues:", data)
-    setDebugInfo(JSON.stringify(data, null, 2))
-
-    const errors: string[] = []
-
-    // Check required fields
-    const requiredFields = [
-      "emplacement_magasin",
-      "dimension_longueur_planogramme",
-      "dimension_largeur_planogramme",
-      "nb_etageres",
-      "nb_colonnes",
-    ]
-
-    for (const field of requiredFields) {
-      if (data[field] === undefined) {
-        errors.push(`Le champ '${field}' est requis`)
-      }
-    }
-
-    // Validate numeric fields
-    const numericFields = [
-      "dimension_longueur_planogramme",
-      "dimension_largeur_planogramme",
-      "nb_etageres",
-      "nb_colonnes",
-    ]
-
-    for (const field of numericFields) {
-      if (data[field] !== undefined && (typeof data[field] !== "number" || data[field] <= 0)) {
-        errors.push(`Le champ '${field}' doit être un nombre positif`)
-      }
-    }
-
-    // Validate product_placements if present
-    if (data.product_placements !== undefined) {
-      if (!Array.isArray(data.product_placements)) {
-        errors.push("Le champ 'product_placements' doit être un tableau")
-      } else {
-        // Validate each product placement
-        data.product_placements.forEach((placement: any, index: number) => {
-          if (!placement.produit_id) {
-            errors.push(`Placement ${index + 1}: 'etage' doit être un nombre supérieur à zéro`)
-          }
-          if (typeof placement.colonne !== "number" || placement.colonne <= 0) {
-            errors.push(`Placement ${index + 1}: 'colonne' doit être un nombre supérieur à zéro`)
-          }
-          if (typeof placement.colonne !== "number" || placement.colonne < 0) {
-            errors.push(`Placement ${index + 1}: 'colonne' doit être un nombre positif ou zéro`)
-          }
-        })
-      }
-    }
-
-    setValidationErrors(errors)
-
-    if (errors.length > 0) {
-      toast({
-        title: "Erreurs de validation",
-        description: `${errors.length} erreur(s) dans les données JSON`,
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Process valid JSON data
-    const processedData: PlanogramJsonData = {
-      emplacement_magasin: data.emplacement_magasin,
-      dimension_longueur_planogramme: data.dimension_longueur_planogramme,
-      dimension_largeur_planogramme: data.dimension_largeur_planogramme,
-      nb_etageres: data.nb_etageres,
-      nb_colonnes: data.nb_colonnes,
-      product_placements: data.product_placements || [],
-    }
-
-    setPlanogramParams(processedData)
-    toast({
-      title: "Paramètres chargés",
-      description: "Les paramètres du planogramme ont été chargés avec succès.",
-    })
-  }
-
-  // Handle image files selection
-  const handleImageFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      setImageFiles(Array.from(files))
-    }
-  }
-
-  // Import products from JSON data
-  const importProducts = () => {
-    if (!planogramParams) {
-      toast({
-        title: "Données manquantes",
-        description: "Veuillez d'abord charger les paramètres du planogramme au format JSON.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Start progress
-    setImportProgress(0)
-
-    // Simulate progress
-    const interval = setInterval(() => {
-      setImportProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval)
-          return prev
-        }
-        return prev + 5
-      })
-    }, 100)
-
-    // Process product placements to create product data
-    const productData = planogramParams.product_placements.map((placement) => ({
-      primary_Id: placement.produit_id,
-      name: `Produit ${placement.produit_id}`,
-      supplier: "Non spécifié",
-    }))
-
-    // Add products to store if they don't already exist
-    if (productData.length > 0) {
-      const newProducts = productData.filter((product) => !products.some((p) => p.primary_Id === product.primary_Id))
-
-      if (newProducts.length > 0) {
-        addProducts(newProducts)
-      }
-    }
-
-    // Match images with products
-    const imageMap = new Map<string, File>()
-    let pendingImageLoads = 0
-
-    imageFiles.forEach((file) => {
-      // Extract primary_Id from filename (remove extension)
-      const fileName = file.name.split(".")[0]
-      imageMap.set(fileName, file)
-    })
-
-    // Update products with images
-    productData.forEach((product) => {
-      const imageFile = imageMap.get(product.primary_Id)
-
-      if (imageFile) {
-        pendingImageLoads++
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string
-          updateProductImage(product.primary_Id, imageUrl)
-          pendingImageLoads--
-
-          // If all images are loaded and progress is at 100%, go to next step
-          if (pendingImageLoads === 0 && importProgress >= 100) {
-            setTimeout(() => {
-              setStep(3)
-            }, 500)
-          }
-        }
-        reader.readAsDataURL(imageFile)
-      }
-    })
-
-    // Complete progress
-    setTimeout(() => {
-      clearInterval(interval)
-      setImportProgress(100)
-
-      // Only proceed to next step if all images are loaded
-      if (pendingImageLoads === 0) {
-        setTimeout(() => {
-          setStep(3)
-        }, 500)
-      }
-    }, 1000)
-  }
-
-  // Generate a unique instance ID
-  const generateInstanceId = () => {
-    return `instance-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-  }
-
-  // Generate a unique planogram ID
-  const generatePlanogramId = () => {
-    return `planogram-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-  }
-
-  // Generate planogram based on JSON data
-  const generatePlanogram = () => {
+  // Generate furniture based on parameters
+  const generateFurniture = () => {
     if (!planogramParams) {
       toast({
         title: "Paramètres manquants",
-        description: "Veuillez d'abord charger les paramètres du planogramme.",
+        description: "Veuillez d'abord charger les paramètres JSON.",
         variant: "destructive",
       })
       return
@@ -443,31 +472,10 @@ export function PlanogramIA() {
 
     setIsGenerating(true)
     setGenerationProgress(0)
-
-    // Generate a unique ID for the planogram
-    const newPlanogramId = generatePlanogramId()
+    const newPlanogramId =
+      streamlitData?.planogram_info.planogram_id || `furniture-${Date.now()}-${Math.floor(Math.random() * 1000)}`
     setPlanogramId(newPlanogramId)
 
-    // Create planogram config based on parameters
-    const config = {
-      id: newPlanogramId,
-      name: `Planogramme - ${planogramParams.emplacement_magasin}`,
-      rows: planogramParams.nb_etageres,
-      columns: planogramParams.nb_colonnes,
-      cellWidth: 120,
-      cellHeight: 100,
-      furnitureType: PlanogramTypes.PLANOGRAM,
-      displayMode: "compact",
-      furnitureDimensions: {
-        width: planogramParams.dimension_longueur_planogramme,
-        height: planogramParams.dimension_largeur_planogramme,
-        depth: 0.6,
-        baseHeight: 0.3,
-        shelfThickness: 0.05,
-      },
-    }
-
-    // Progress simulation
     const interval = setInterval(() => {
       setGenerationProgress((prev) => {
         if (prev >= 95) {
@@ -478,152 +486,67 @@ export function PlanogramIA() {
       })
     }, 100)
 
-    // Create cells
-    const cells: any[] = []
-    const instances: any[] = []
+    // Process product placements to create product data
+    const productData = (planogramParams.product_placements || []).map((placement: any) => ({
+      primary_Id: placement.produit_id,
+      name: `Produit ${placement.produit_id}`,
+      supplier: "Non spécifié",
+      color: "#3b82f6",
+    }))
 
-    // Create empty cells grid
-    for (let y = 0; y < config.rows; y++) {
-      for (let x = 0; x < config.columns; x++) {
-        cells.push({
-          id: `cell-${x}-${y}-${config.furnitureType}`,
-          productId: null,
-          instanceId: null,
-          x,
-          y,
-          furnitureType: config.furnitureType,
-          quantity: 1,
-        })
+    if (productData.length > 0) {
+      const newProducts = productData.filter((product) => !products.some((p) => p.primary_Id === product.primary_Id))
+      if (newProducts.length > 0) {
+        addProducts(newProducts)
       }
     }
 
-    // Tracking placement results
-    const successfulPlacements: { id: string; reason: string }[] = []
-    const failedPlacements: { id: string; reason: string }[] = []
+    if (streamlitData) {
+      const furnitureItems = streamlitData.furniture.map((furniture, index) => ({
+        id: furniture.furniture_id,
+        type: detectFurnitureType(furniture),
+        name: `${furniture.furniture_type_name} ${index + 1}`,
+        width: furniture.largeur / 100,
+        height: furniture.hauteur / 100,
+        depth: furniture.profondeur / 100,
+        sections: furniture.nb_etageres_unique_face,
+        slots: furniture.nb_colonnes_unique_face,
+        color: "#8B4513",
+        x: index * 2,
+        y: furniture.hauteur / 200, // Position Y correctly - half the height above ground
+        z: 0,
+        rotation: 0,
+        faces: furniture.faces,
+        available_faces: furniture.available_faces,
+      }))
 
-    // Check for occupied cells to avoid duplicates
-    const occupiedCells = new Set<string>()
+      setGeneratedFurniture(furnitureItems)
 
-    // Check if there are duplicates in the placement data
-    const placementsMap = new Map<string, string>()
+      // Convert product positions to display items format
+      const displayItems = streamlitData.product_positions.map((position) => ({
+        id: position.position_id,
+        productId: position.produit_id,
+        furnitureId: position.furniture_id,
+        section: position.etagere - 1, // Convert to 0-based index
+        position: position.colonne - 1, // Convert to 0-based index
+        quantity: position.quantite,
+        face: position.face,
+        // Add the raw position data for easier access
+        ...position,
+      }))
 
-    // Place products according to specified placements
-    planogramParams.product_placements.forEach((placement) => {
-      const { produit_id, etage, colonne } = placement
-      const cellKey = `${etage}-${colonne}`
+      setGeneratedDisplayItems(displayItems)
+    }
 
-      // Find the product in the store
-      const product = products.find((p) => p.primary_Id === produit_id)
-
-      if (!product) {
-        failedPlacements.push({
-          id: produit_id,
-          reason: `Produit ${produit_id} non trouvé dans la bibliothèque`,
-        })
-        console.warn(`Product ${produit_id} not found in the store. It might need to be imported.`)
-        return
-      }
-
-      // Validate placement coordinates
-      if (etage > config.rows || colonne > config.columns) {
-        failedPlacements.push({
-          id: produit_id,
-          reason: `Coordonnées invalides: etage=${etage}, colonne=${colonne} (max ${config.rows} étagères, ${config.columns} colonnes)`,
-        })
-        console.warn(`Invalid placement for product ${produit_id}: etage=${etage}, colonne=${colonne}`)
-        return
-      }
-
-      // Check if cell is already occupied
-      if (occupiedCells.has(cellKey)) {
-        failedPlacements.push({
-          id: produit_id,
-          reason: `Cellule déjà occupée: etage=${etage}, colonne=${colonne}`,
-        })
-        console.warn(`Cell already occupied: etage=${etage}, colonne=${colonne}, trying to place ${produit_id}`)
-        return
-      }
-
-      // Find the cell
-      const cellIndex = cells.findIndex(
-        (c) => c.x === colonne - 1 && c.y === etage - 1 && c.furnitureType === config.furnitureType,
-      )
-      if (cellIndex === -1) {
-        failedPlacements.push({
-          id: produit_id,
-          reason: `Cellule non trouvée: etage=${etage}, colonne=${colonne}`,
-        })
-        console.warn(`Cell not found for placement: etage=${etage}, colonne=${colonne}`)
-        return
-      }
-
-      // Create a new instance
-      const instanceId = generateInstanceId()
-      instances.push({
-        instanceId,
-        productId: produit_id,
-        furnitureType: config.furnitureType,
-      })
-
-      // Update the cell
-      cells[cellIndex] = {
-        ...cells[cellIndex],
-        productId: produit_id,
-        instanceId,
-        quantity: 3, // Default quantity
-      }
-
-      // Mark cell as occupied
-      occupiedCells.add(cellKey)
-
-      // Add to successful placements
-      successfulPlacements.push({
-        id: produit_id,
-        reason: `Placé avec succès à etage=${etage}, colonne=${colonne}`,
-      })
-    })
-
-    // Set placement results for display
-    setPlacementResults({
-      success: successfulPlacements,
-      failed: failedPlacements,
-      total: planogramParams.product_placements.length,
-    })
-
-    // Add instances to the store
-    instances.forEach((instance) => {
-      addProductInstance(instance)
-    })
-
-    // Add the planogram to the store
-    addPlanogram({
-      id: newPlanogramId,
-      name: config.name,
-      cells,
-      config,
-    })
-
-    // Complete generation
     setTimeout(() => {
       clearInterval(interval)
       setGenerationProgress(100)
-      setGeneratedCells(cells)
-      setGeneratedConfig(config)
-      setProductInstances(instances)
-
-      // Show toast with status info
-      if (failedPlacements.length > 0) {
-        toast({
-          title: "Attention",
-          description: `${successfulPlacements.length} produits placés, ${failedPlacements.length} produits non placés`,
-          variant: "warning",
-        })
-      } else {
-        toast({
-          title: "Génération réussie",
-          description: `Tous les produits (${successfulPlacements.length}) ont été placés avec succès`,
-        })
-      }
+      toast({
+        title: "Génération réussie",
+        description: streamlitData
+          ? `Planogramme "${streamlitData.planogram_info.nom_planogram}" généré avec succès`
+          : "Le meuble a été généré avec succès",
+      })
 
       setTimeout(() => {
         setIsGenerating(false)
@@ -632,278 +555,324 @@ export function PlanogramIA() {
     }, 1500)
   }
 
-  // Go to planogram editor with the generated planogram
-  const goToPlanogramEditor = () => {
-    if (generatedConfig && planogramId) {
-      // Set the active tab in the product store
-      setActiveTab("library")
-
-      // Navigate to the planogram editor
-      router.push("/planogram-editor")
-    }
-  }
-
-  // Export planogram as image
-  const exportAsImage = () => {
-    if (!planogramPreviewRef.current) {
-      toast({
-        title: "Erreur d'exportation",
-        description: "Impossible de générer l'image. Élément non trouvé.",
-        variant: "destructive",
-      })
-      return
+  // Améliorer le composant RealisticFurniture pour plus de variété
+  const RealisticFurniture = ({ furniture, displayItems, products }: any) => {
+    const handleRemove = (item: any) => {
+      console.log("Remove item:", item)
     }
 
-    html2canvas(planogramPreviewRef.current)
-      .then((canvas) => {
-        // Create download link
-        const link = document.createElement("a")
-        link.download = `planogramme-${new Date().toISOString().slice(0, 10)}.png`
-        link.href = canvas.toDataURL("image/png")
-        link.click()
+    // Ajouter des logs pour debug
+    console.log("Rendering furniture type:", furniture.type, "for furniture:", furniture.name)
 
-        toast({
-          title: "Exportation réussie",
-          description: "Le planogramme a été exporté en image avec succès.",
-        })
-      })
-      .catch((err) => {
-        console.error("Erreur lors de l'exportation en image:", err)
-        toast({
-          title: "Erreur d'exportation",
-          description: "Une erreur s'est produite lors de l'exportation en image.",
-          variant: "destructive",
-        })
-      })
-  }
-
-  // Export planogram as PDF
-  const exportAsPDF = () => {
-    if (!planogramPreviewRef.current) {
-      toast({
-        title: "Erreur d'exportation",
-        description: "Impossible de générer le PDF. Élément non trouvé.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    html2canvas(planogramPreviewRef.current)
-      .then((canvas) => {
-        const imgData = canvas.toDataURL("image/png")
-        const pdf = new jsPDF({
-          orientation: "landscape",
-          unit: "mm",
-        })
-
-        // Calculate dimensions to fit the image to the PDF
-        const imgProps = pdf.getImageProperties(imgData)
-        const pdfWidth = pdf.internal.pageSize.getWidth()
-        const pdfHeight = pdf.internal.pageSize.getHeight()
-        const imgWidth = imgProps.width
-        const imgHeight = imgProps.height
-
-        // Calculate ratio to fit the image to the PDF
-        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
-        const imgX = (pdfWidth - imgWidth * ratio) / 2
-        const imgY = 20 // Top margin
-
-        // Add title
-        pdf.setFontSize(16)
-        pdf.text("Planogramme Automatique", pdfWidth / 2, 10, { align: "center" })
-
-        // Add image
-        pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio)
-
-        // Add additional information
-        pdf.setFontSize(10)
-        const infoY = imgY + imgHeight * ratio + 10
-        if (planogramParams) {
-          pdf.text(`Emplacement: ${planogramParams.emplacement_magasin}`, 10, infoY)
-          pdf.text(
-            `Dimensions: ${planogramParams.dimension_longueur_planogramme}m x ${planogramParams.dimension_largeur_planogramme}m`,
-            10,
-            infoY + 5,
+    // Choose the right component based on furniture type
+    const renderFurnitureComponent = () => {
+      switch (furniture.type) {
+        case "gondola":
+          return (
+            <GondolaDisplay
+              furniture={{ ...furniture, color: "#2c3e50" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
           )
-          pdf.text(`Étagères: ${planogramParams.nb_etageres}`, 10, infoY + 10)
-          pdf.text(`Colonnes: ${planogramParams.nb_colonnes}`, 10, infoY + 15)
-        }
+        case "shelves":
+          return (
+            <ShelvesDisplay
+              furniture={{ ...furniture, color: "#ecf0f1" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "clothing_rack":
+          return (
+            <ClothingRack
+              furniture={{ ...furniture, color: "#34495e" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "wall_display":
+          return (
+            <WallDisplay
+              furniture={{ ...furniture, color: "#95a5a6" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "accessory_display":
+          return (
+            <AccessoryDisplay
+              furniture={{ ...furniture, color: "#e74c3c" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "modular_cube":
+          return (
+            <ModularCube
+              furniture={{ ...furniture, color: "#9b59b6" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "table":
+          return (
+            <TableDisplay
+              furniture={{ ...furniture, color: "#d35400" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "refrigerator":
+          return (
+            <RefrigeratorDisplay
+              furniture={{ ...furniture, color: "#1abc9c" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "refrigerated_showcase":
+          return (
+            <RefrigeratedShowcase
+              furniture={{ ...furniture, color: "#16a085" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "clothing_display":
+          return (
+            <ClothingDisplay
+              furniture={{ ...furniture, color: "#8e44ad" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "clothing_wall":
+          return (
+            <ClothingWallDisplay
+              furniture={{ ...furniture, color: "#2980b9" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        case "planogram":
+          return (
+            <PlanogramDisplay
+              furniture={{ ...furniture, color: "#27ae60" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+        default:
+          // Log pour debug les types non reconnus
+          console.warn("Unknown furniture type:", furniture.type, "using ShelvesDisplay as fallback")
+          return (
+            <ShelvesDisplay
+              furniture={{ ...furniture, color: "#7f8c8d" }}
+              displayItems={displayItems}
+              products={products}
+              onRemove={handleRemove}
+            />
+          )
+      }
+    }
 
-        // Add generation date
-        pdf.text(`Généré le: ${new Date().toLocaleDateString()}`, pdfWidth - 60, pdfHeight - 10)
-
-        // Download PDF
-        pdf.save(`planogramme-${new Date().toISOString().slice(0, 10)}.pdf`)
-
-        toast({
-          title: "Exportation réussie",
-          description: "Le planogramme a été exporté en PDF avec succès.",
-        })
-      })
-      .catch((err) => {
-        console.error("Erreur lors de l'exportation en PDF:", err)
-        toast({
-          title: "Erreur d'exportation",
-          description: "Une erreur s'est produite lors de l'exportation en PDF.",
-          variant: "destructive",
-        })
-      })
+    return <>{renderFurnitureComponent()}</>
   }
 
-  // Render planogram preview for preview and export
-  const renderPlanogramPreview = () => {
-    if (!generatedConfig || !generatedCells.length) return null
+  // Realistic 3D Furniture Component
 
-    const cellSize = 60 // Cell size in pixels
-    const gridWidth = generatedConfig.columns * cellSize
-    const gridHeight = generatedConfig.rows * cellSize
+  // Enhanced 3D Scene component with realistic furniture
+  const Scene3D = () => {
+    if (!webglSupported || webglError) {
+      return (
+        <div className="flex items-center justify-center h-full bg-gray-50">
+          <div className="text-center space-y-4">
+            <AlertTriangle className="h-16 w-16 text-red-500 mx-auto" />
+            <h3 className="text-lg font-medium">WebGL non disponible</h3>
+            <p className="text-muted-foreground">Votre navigateur ne supporte pas WebGL ou le contexte a été perdu.</p>
+            <Button variant="outline" onClick={() => setViewMode("2d")}>
+              <Grid3X3 className="h-4 w-4 mr-2" />
+              Passer en vue 2D
+            </Button>
+          </div>
+        </div>
+      )
+    }
 
     return (
-      <div
-        ref={planogramPreviewRef}
-        className="border rounded-md p-4 bg-white"
-        style={{ width: gridWidth + 40, margin: "0 auto" }}
+      <Canvas
+        key={canvasKey}
+        camera={{ position: [5, 3, 5], fov: 60 }}
+        shadows
+        style={{ background: "linear-gradient(to bottom, #87CEEB, #f0f8ff)" }}
+        onCreated={({ gl }) => {
+          // Add context lost handler
+          gl.domElement.addEventListener("webglcontextlost", (event) => {
+            event.preventDefault()
+            console.warn("WebGL context lost")
+            setWebglError(true)
+          })
+
+          gl.domElement.addEventListener("webglcontextrestored", () => {
+            console.log("WebGL context restored")
+            setWebglError(false)
+          })
+        }}
+        gl={{
+          preserveDrawingBuffer: false,
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
       >
-        <h3 className="text-lg font-medium mb-4 text-center">{generatedConfig.name}</h3>
-        <div
-          className="grid gap-1 border rounded-md p-2 bg-gray-50"
-          style={{
-            gridTemplateColumns: `repeat(${generatedConfig.columns}, ${cellSize}px)`,
-            gridTemplateRows: `repeat(${generatedConfig.rows}, ${cellSize}px)`,
-          }}
-        >
-          {generatedCells.map((cell) => {
-            const product = products.find((p) => p.primary_Id === cell.productId)
-            return (
-              <div
-                key={cell.id}
-                className={`
-                  border rounded-md flex items-center justify-center overflow-hidden
-                  ${cell.productId ? "bg-primary/10 border-primary/30" : "bg-gray-100 border-gray-200"}
-                `}
-                style={{ width: cellSize, height: cellSize }}
-              >
-                {cell.productId && product ? (
-                  <div className="flex flex-col items-center justify-center p-1 w-full h-full">
-                    {product.image ? (
-                      <div className="w-8 h-8 overflow-hidden rounded-md mb-1">
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className="w-8 h-8 rounded-md mb-1 flex items-center justify-center"
-                        style={{ backgroundColor: product.color || "#f3f4f6" }}
-                      >
-                        <span className="text-xs font-bold text-white">
-                          {product.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <span className="text-xs truncate w-full text-center" title={product.name}>
-                      {product.name.length > 10 ? `${product.name.substring(0, 10)}...` : product.name}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-gray-400">
-                    {cell.x + 1},{cell.y + 1}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
+        <ambientLight intensity={0.6} />
+        <directionalLight
+          position={[10, 10, 5]}
+          intensity={0.8}
+          castShadow
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+        />
+        <pointLight position={[-10, -10, -10]} intensity={0.3} />
+
+        {/* Use realistic furniture components */}
+        {generatedFurniture.map((furniture) => (
+          <RealisticFurniture
+            key={furniture.id}
+            furniture={furniture}
+            displayItems={generatedDisplayItems.filter((item) => item.furnitureId === furniture.id)}
+            products={products}
+          />
+        ))}
+
+        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} maxDistance={20} minDistance={2} />
+        <Environment preset="warehouse" />
+
+        {/* Ground plane positioned correctly */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+          <planeGeometry args={[20, 20]} />
+          <meshStandardMaterial color="#f0f0f0" />
+        </mesh>
+      </Canvas>
     )
   }
 
-  // Render JSON template example
-  const renderJsonExample = () => {
-    const exampleJson = {
-      emplacement_magasin: "Store A",
-      dimension_longueur_planogramme: 2.0,
-      dimension_largeur_planogramme: 1.5,
-      nb_etageres: 4,
-      nb_colonnes: 3,
-      product_placements: [
-        {
-          produit_id: "PROD001",
-          etage: 0,
-          colonne: 0,
-        },
-        {
-          produit_id: "PROD002",
-          etage: 0,
-          colonne: 1,
-        },
-        {
-          produit_id: "PROD003",
-          etage: 1,
-          colonne: 0,
-        },
-      ],
-    }
+  // 2D Visualization component (unchanged)
+  const Scene2D = () => {
+    if (!streamlitData) return null
 
-    return JSON.stringify(exampleJson, null, 2)
-  }
+    const furniture = streamlitData.furniture[0]
+    const positions = streamlitData.product_positions
 
-  // Render placement status component
-  const renderPlacementStatus = () => {
-    if (placementResults.total === 0) return null
+    const cellWidth = 60
+    const cellHeight = 40
+    const gridWidth = furniture.nb_colonnes_unique_face * cellWidth
+    const gridHeight = furniture.nb_etageres_unique_face * cellHeight
 
     return (
-      <div className="space-y-4 mt-6">
-        <h4 className="font-medium">Statut du placement des produits</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border rounded-md p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <h5 className="font-medium">
-                Produits placés ({placementResults.success.length} sur {placementResults.total})
-              </h5>
-            </div>
-            <ScrollArea className="h-[200px]">
-              <div className="space-y-2">
-                {placementResults.success.map((item, index) => (
-                  <div key={`success-${index}`} className="border rounded-md p-2 bg-green-50">
-                    <div className="flex items-start gap-2">
-                      <span className="font-medium">{item.id}</span>
-                      <span className="text-sm text-muted-foreground flex-1">{item.reason}</span>
-                    </div>
-                  </div>
-                ))}
-                {placementResults.success.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">Aucun produit placé</p>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
+      <div className="w-full h-full flex items-center justify-center bg-gray-50">
+        <div className="relative border-2 border-gray-300 bg-white">
+          <svg width={gridWidth + 40} height={gridHeight + 40} className="overflow-visible">
+            {/* Grid lines */}
+            <defs>
+              <pattern id="grid" width={cellWidth} height={cellHeight} patternUnits="userSpaceOnUse">
+                <path d={`M ${cellWidth} 0 L 0 0 0 ${cellHeight}`} fill="none" stroke="#e5e7eb" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect
+              x="20"
+              y="20"
+              width={gridWidth}
+              height={gridHeight}
+              fill="url(#grid)"
+              stroke="#d1d5db"
+              strokeWidth="2"
+            />
 
-          <div className="border rounded-md p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <h5 className="font-medium">
-                Produits non placés ({placementResults.failed.length} sur {placementResults.total})
-              </h5>
+            {/* Section labels */}
+            {Array.from({ length: furniture.nb_etageres_unique_face }, (_, i) => (
+              <text
+                key={`section-${i}`}
+                x="10"
+                y={20 + (i + 0.5) * cellHeight + 5}
+                fontSize="12"
+                fill="#6b7280"
+                textAnchor="middle"
+              >
+                {furniture.nb_etageres_unique_face - i}
+              </text>
+            ))}
+
+            {/* Position labels */}
+            {Array.from({ length: furniture.nb_colonnes_unique_face }, (_, i) => (
+              <text
+                key={`position-${i}`}
+                x={20 + (i + 0.5) * cellWidth}
+                y={gridHeight + 35}
+                fontSize="12"
+                fill="#6b7280"
+                textAnchor="middle"
+              >
+                {i + 1}
+              </text>
+            ))}
+
+            {/* Product positions */}
+            {positions.map((pos, index) => {
+              const x = 20 + (pos.colonne - 1) * cellWidth
+              const y = 20 + (furniture.nb_etageres_unique_face - pos.etagere) * cellHeight
+
+              return (
+                <g key={`product-${index}`}>
+                  <rect
+                    x={x + 2}
+                    y={y + 2}
+                    width={cellWidth - 4}
+                    height={cellHeight - 4}
+                    fill="#3b82f6"
+                    fillOpacity="0.7"
+                    stroke="#1d4ed8"
+                    strokeWidth="1"
+                    rx="4"
+                  />
+                  <text
+                    x={x + cellWidth / 2}
+                    y={y + cellHeight / 2 - 5}
+                    fontSize="10"
+                    fill="white"
+                    textAnchor="middle"
+                    fontWeight="bold"
+                  >
+                    P{pos.produit_id}
+                  </text>
+                  <text x={x + cellWidth / 2} y={y + cellHeight / 2 + 8} fontSize="9" fill="white" textAnchor="middle">
+                    Qty: {pos.quantite}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+
+          {/* Legend */}
+          <div className="absolute top-2 right-2 bg-white p-2 border rounded shadow-sm">
+            <div className="text-xs font-medium mb-1">Légende</div>
+            <div className="flex items-center gap-1 text-xs">
+              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <span>Produit placé</span>
             </div>
-            <ScrollArea className="h-[200px]">
-              <div className="space-y-2">
-                {placementResults.failed.map((item, index) => (
-                  <div key={`failed-${index}`} className="border rounded-md p-2 bg-amber-50">
-                    <div className="flex items-start gap-2">
-                      <span className="font-medium">{item.id}</span>
-                      <span className="text-sm text-muted-foreground flex-1">{item.reason}</span>
-                    </div>
-                  </div>
-                ))}
-                {placementResults.failed.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">Tous les produits ont été placés avec succès</p>
-                )}
-              </div>
-            </ScrollArea>
           </div>
         </div>
       </div>
@@ -911,181 +880,108 @@ export function PlanogramIA() {
   }
 
   return (
-    <div dir={i18n.language === "ar" ? "rtl" : "ltr"} className="w-full">
-      <div className="container max-w-4xl mx-auto py-6 mt-12">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/Editor")}
-          className="flex items-center gap-2 mb-4"
-        >
-          {i18n.language === "ar" ? (
-            <>
-              {t("productImport.backToEditor")}
-              <ArrowLeft className="h-4 w-4 mr-2" />
-            </>
-          ) : (
-            <>
-              <ArrowLeft className="h-4 w-4" />
-              {t("productImport.backToEditor")}
-            </>
-          )}
+    <div className="w-full">
+      <div className="container max-w-6xl mx-auto py-6 mt-12">
+        <Button variant="outline" onClick={() => router.push("/Editor")} className="flex items-center gap-2 mb-4">
+          <ArrowLeft className="h-4 w-4" />
+          Retour à l'éditeur
         </Button>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">{t("productImport.generationAuto")}</CardTitle>
-            <CardDescription>{t("productImport.generationAutoDescription")}</CardDescription>
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Package className="h-6 w-6" />
+              Générateur de Meubles IA - Streamlit
+              <Badge
+                variant={
+                  connectionStatus === "connected"
+                    ? "default"
+                    : connectionStatus === "connecting"
+                      ? "secondary"
+                      : "destructive"
+                }
+              >
+                {connectionStatus === "connected" && <Wifi className="h-3 w-3 mr-1" />}
+                {connectionStatus === "connecting" && <RefreshCw className="h-3 w-3 mr-1 animate-spin" />}
+                {connectionStatus === "disconnected" && <WifiOff className="h-3 w-3 mr-1" />}
+                {connectionStatus}
+              </Badge>
+            </CardTitle>
+            <CardDescription>Générez automatiquement des meubles 3D à partir de données Streamlit</CardDescription>
           </CardHeader>
+
           <CardContent>
+            {/* Communication Debug Panel */}
+            {communicationLogs.length > 0 && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Logs de Communication
+                    {isRequestingData && (
+                      <Badge variant="outline" className="animate-pulse">
+                        Requête en cours
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[120px]">
+                    <div className="space-y-1">
+                      {communicationLogs.map((log, index) => (
+                        <div key={index} className="text-xs font-mono text-muted-foreground">
+                          {log}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Progress Steps */}
             <div className="flex items-center justify-between mb-8">
-              {i18n.language === "ar" ? (
-                // Arabic (RTL) version - steps from right to left (0 to 4)
-                <div className="flex w-full justify-between">
-                  <div className="flex items-center">
-                    <Badge
-                      variant={step >= 4 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center"
-                    >
-                      4
-                    </Badge>
-                    <span className={`${step >= 4 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.generateurVisualisation")}
-                    </span>
+              <div className="flex w-full overflow-x-auto">
+                {[
+                  { step: 0, label: "Configuration Streamlit", icon: Wand2 },
+                  { step: 1, label: "Validation JSON", icon: FileJson },
+                  { step: 2, label: "Aperçu", icon: CheckCircle2 },
+                  { step: 3, label: "Génération", icon: Settings },
+                  { step: 4, label: "Visualisation", icon: Eye },
+                ].map((item, index) => (
+                  <div key={item.step} className="flex items-center">
+                    <div className="flex items-center">
+                      <Badge
+                        variant={step >= item.step ? "default" : "outline"}
+                        className="w-8 h-8 flex items-center justify-center"
+                      >
+                        <item.icon className="h-4 w-4" />
+                      </Badge>
+                      <span
+                        className={`${step >= item.step ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                    {index < 4 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                   </div>
-
-                  <div className="flex items-center">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    <Badge
-                      variant={step >= 3 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      3
-                    </Badge>
-                    <span className={`${step >= 3 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.generateurAuto")}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    <Badge
-                      variant={step >= 2 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      2
-                    </Badge>
-                    <span className={`${step >= 2 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.generateurImages")}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    <Badge
-                      variant={step >= 1 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      1
-                    </Badge>
-                    <span className={`${step >= 1 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.parametreJSON")}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    <Badge
-                      variant={step >= 0 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      0
-                    </Badge>
-                    <span className={`${step >= 0 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.parametreJSON")}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                // English/French (LTR) version - steps from left to right (0 to 4)
-                <div className="flex w-full overflow-x-auto">
-                  <div className="flex items-center">
-                    <Badge
-                      variant={step >= 0 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center"
-                    >
-                      0
-                    </Badge>
-                    <span className={`${step >= 0 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.parametreJSON")}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="flex items-center">
-                    <Badge
-                      variant={step >= 1 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      1
-                    </Badge>
-                    <span className={`${step >= 1 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.parametreJSON")}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="flex items-center">
-                    <Badge
-                      variant={step >= 2 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      2
-                    </Badge>
-                    <span className={`${step >= 2 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.generateurImages")}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="flex items-center">
-                    <Badge
-                      variant={step >= 3 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      3
-                    </Badge>
-                    <span className={`${step >= 3 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.generateurAuto")}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-
-                  <div className="flex items-center">
-                    <Badge
-                      variant={step >= 4 ? "default" : "outline"}
-                      className="w-8 h-8 flex items-center justify-center mx-2"
-                    >
-                      4
-                    </Badge>
-                    <span className={`${step >= 4 ? "font-medium" : "text-muted-foreground"} mx-2 whitespace-nowrap`}>
-                      {t("productImport.generateurVisualisation")}
-                    </span>
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
 
+            {/* Steps 0-3 remain the same as before */}
             {step === 0 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">{t("productImport.generateurParamIA")}</h3>
-                  <p className="text-sm text-muted-foreground">{t("productImport.generateurParamIADescription")}</p>
+                  <h3 className="text-lg font-medium">Configuration Streamlit</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Utilisez l'interface Streamlit pour générer votre planogramme, puis récupérez les données
+                  </p>
                 </div>
 
                 <div className="border rounded-md bg-muted/10 overflow-hidden">
-                  {/* Barre de titre avec contrôles fonctionnels */}
                   <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 border-b flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      {/* Bouton Fermer */}
                       <button
                         onClick={() => router.push("/planogram-editor")}
                         className="w-3 h-3 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors group"
@@ -1093,8 +989,6 @@ export function PlanogramIA() {
                       >
                         <span className="text-white text-xs opacity-70 group-hover:opacity-100">✕</span>
                       </button>
-
-                      {/* Bouton Minimiser */}
                       <button
                         onClick={() => setIsMinimized(!isMinimized)}
                         className="w-3 h-3 rounded-full bg-yellow-500 flex items-center justify-center hover:bg-yellow-600 transition-colors group"
@@ -1102,8 +996,6 @@ export function PlanogramIA() {
                       >
                         <span className="text-white text-xs opacity-70 group-hover:opacity-100">⎚</span>
                       </button>
-
-                      {/* Bouton Agrandir */}
                       <button
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         className="w-3 h-3 rounded-full bg-green-500 flex items-center justify-center hover:bg-green-600 transition-colors group"
@@ -1113,395 +1005,339 @@ export function PlanogramIA() {
                       </button>
                     </div>
 
-                    <div className="text-xs text-muted-foreground">{t("productImport.generateurPlanogramIA")}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      Interface Streamlit - Planogramme IA
+                      <Badge variant={connectionStatus === "connected" ? "default" : "secondary"} className="text-xs">
+                        {connectionStatus}
+                      </Badge>
+                    </div>
 
                     <div className="w-12"></div>
                   </div>
 
-                  {/* Contenu conditionnel selon l'état */}
-                  {isMinimized ? (
-                    <div className="p-4 text-center text-muted-foreground bg-gray-50 dark:bg-gray-900">
-                      {t("productImport.fenetreMinimiser")}{" "}
-                      <button
-                        onClick={() => setIsMinimized(false)}
-                        className="text-primary underline hover:text-primary/80"
-                      >
-                        {t("productImport.generateurRestaurer")}
-                      </button>
-                    </div>
-                  ) : (
+                  {!isMinimized && (
                     <div
                       className={clsx(
                         "w-full transition-all duration-300 overflow-hidden",
-                        isFullscreen ? "h-[80vh]" : "h-[500px]",
+                        isFullscreen ? "h-[80vh]" : "h-[600px]",
                       )}
                     >
                       <iframe
+                        ref={iframeRef}
                         src={iaGeneratorUrl}
                         className="w-full h-full border-0"
-                        title="Générateur IA de planogramme"
+                        title="Interface Streamlit - Planogramme IA"
                         allow="camera; microphone"
                       />
                     </div>
                   )}
                 </div>
 
-                {iaGeneratedJson ? (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>Instructions</AlertTitle>
+                  <AlertDescription>
+                    <ol className="list-decimal list-inside space-y-1 mt-2">
+                      <li>Utilisez l'interface Streamlit ci-dessus pour configurer et générer votre planogramme</li>
+                      <li>Une fois généré, cliquez sur "Envoyer vers React" dans l'onglet "Résultats"</li>
+                      <li>Les données seront automatiquement récupérées ici</li>
+                      <li>Ou utilisez le bouton ci-dessous pour demander les données</li>
+                    </ol>
+                  </AlertDescription>
+                </Alert>
+
+                {streamlitData && (
                   <Alert className="w-full">
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>{t("productImport.configurationpret")}</AlertTitle>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertTitle>Données Streamlit reçues</AlertTitle>
                     <AlertDescription>
-                      {t("productImport.configurationpretDescription")}
+                      Planogramme "{streamlitData.planogram_info.nom_planogram}" reçu avec succès.
+                      <br />
+                      <strong>ID:</strong> {streamlitData.planogram_info.planogram_id}
+                      <br />
+                      <strong>Meubles:</strong> {streamlitData.furniture.length}
+                      <br />
+                      <strong>Positions:</strong> {streamlitData.product_positions.length}
                       <Button
                         variant="link"
                         size="sm"
                         className="h-auto p-0 ml-1 text-primary"
-                        onClick={() => {
-                          setJsonText(iaGeneratedJson)
-                          setStep(1)
-                        }}
+                        onClick={() => setStep(1)}
                       >
-                        ({t("productImport.passerEtape")})
+                        (Passer à l'étape suivante)
                       </Button>
                     </AlertDescription>
                   </Alert>
-                ) : (
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Info className="h-4 w-4" />
-                    <span>{t("productImport.generateurConfigIA")}</span>
-                  </div>
                 )}
 
-                <div
-                  className={`flex gap-2 ${i18n.language === "ar" ? "justify-start flex-row-reverse" : "justify-end"}`}
-                >
+                <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => setStep(1)}>
-                    {t("productImport.skipEtap")}
+                    Ignorer cette étape
                   </Button>
                   <Button
                     onClick={() => {
-                      if (iaGeneratedJson) {
+                      if (streamlitData) {
                         setStep(1)
                         return
                       }
-
-                      const iframe = document.querySelector("iframe")
-                      if (iframe?.contentWindow) {
-                        iframe.contentWindow.postMessage(
-                          {
-                            type: "REQUEST_JSON",
-                            requestId: Date.now(),
-                          },
-                          "http://localhost:8501",
-                        )
-
-                        toast({
-                          title: "Demande envoyée",
-                          description: "Requête des données envoyée à l'IA...",
-                        })
-
-                        setTimeout(() => {
-                          if (!iaGeneratedJson) {
-                            toast({
-                              title: "Pas de réponse",
-                              description: "L'IA n'a pas répondu. Essayez de regénérer.",
-                              variant: "destructive",
-                            })
-                          }
-                        }, 1000)
-                      }
+                      requestStreamlitData()
                     }}
-                    disabled={isMinimized}
+                    disabled={isMinimized || isRequestingData}
+                    className="flex items-center gap-2"
                   >
-                    {iaGeneratedJson ? t('productImport.continue') : t('productImport.getConfig')}
+                    {streamlitData ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        Continuer
+                      </>
+                    ) : isRequestingData ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Recherche en cours...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Récupérer les données
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
             )}
+
+            {/* Step 1: JSON Validation */}
             {step === 1 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">{t("productImport.planogramSettings")}</h3>
-                  <p className="text-sm text-muted-foreground">{t("productImport.planogramSettingsDescription")}</p>
+                  <h3 className="text-lg font-medium">Validation des Données</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Vérification et validation des données reçues de Streamlit
+                  </p>
                 </div>
 
-                <Tabs value={jsonInputMethod} onValueChange={setJsonInputMethod}>
-                  <TabsList className="grid grid-cols-2 mb-4">
-                    <TabsTrigger value="upload">
-                      <Upload className="h-4 w-4 mr-2" />
-                      {t("productImport.importFichier")}
-                    </TabsTrigger>
-                    <TabsTrigger value="editor">
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t("productImport.editeurJSON")}
-                    </TabsTrigger>
-                  </TabsList>
+                {streamlitData ? (
+                  <div className="space-y-4">
+                    <Alert>
+                      <CheckCircle2 className="h-4 w-4" />
+                      <AlertTitle>Données Streamlit validées</AlertTitle>
+                      <AlertDescription>Les données ont été reçues et converties avec succès.</AlertDescription>
+                    </Alert>
 
-                  <TabsContent value="upload">
-                    <div
-                      className={`
-            border-2 border-dashed rounded-lg p-12 text-center
-            ${planogramParams ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25"}
-            hover:border-primary/50 transition-colors cursor-pointer
-          `}
-                      onClick={() => jsonInputRef.current?.click()}
-                    >
-                      {planogramParams ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-center gap-2">
-                            <FileJson className="h-8 w-8 text-primary" />
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          </div>
-                          <p className="font-medium">{t("productImport.chargerJSONvalide")}</p>
-                          <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mt-4 text-sm text-left">
-                            <div>
-                              <p>
-                                <span className="font-medium">{t("productImport.generateurEtagere")}:</span>{" "}
-                                {planogramParams.emplacement_magasin}
-                              </p>
-                              <p>
-                                <span className="font-medium">{t("productImport.longeur")}:</span>{" "}
-                                {planogramParams.dimension_longueur_planogramme} m
-                              </p>
-                              <p>
-                                <span className="font-medium">{t("productImport.width")}:</span>{" "}
-                                {planogramParams.dimension_largeur_planogramme} m
-                              </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Informations du Planogramme</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <p>
+                            <strong>ID:</strong> {streamlitData.planogram_info.planogram_id}
+                          </p>
+                          <p>
+                            <strong>Nom:</strong> {streamlitData.planogram_info.nom_planogram}
+                          </p>
+                          <p>
+                            <strong>Magasin:</strong> {streamlitData.planogram_info.magasin_id}
+                          </p>
+                          <p>
+                            <strong>Catégorie:</strong> {streamlitData.planogram_info.categorie_id}
+                          </p>
+                          <p>
+                            <strong>Statut:</strong> {streamlitData.planogram_info.statut}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">Meubles et Positions</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <p>
+                            <strong>Nombre de meubles:</strong> {streamlitData.furniture.length}
+                          </p>
+                          <p>
+                            <strong>Positions produits:</strong> {streamlitData.product_positions.length}
+                          </p>
+                          <p>
+                            <strong>Types de meubles:</strong>{" "}
+                            {[...new Set(streamlitData.furniture.map((f) => f.furniture_type_name))].join(", ")}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Aucune donnée Streamlit</AlertTitle>
+                      <AlertDescription>
+                        Retournez à l'étape précédente pour récupérer les données de Streamlit.
+                      </AlertDescription>
+                    </Alert>
+
+                    <Tabs value={jsonInputMethod} onValueChange={setJsonInputMethod}>
+                      <TabsList className="grid grid-cols-2 mb-4">
+                        <TabsTrigger value="upload">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Importer fichier
+                        </TabsTrigger>
+                        <TabsTrigger value="editor">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Éditeur JSON
+                        </TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="upload">
+                        <div
+                          className="border-2 border-dashed rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                          onClick={() => jsonInputRef.current?.click()}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex justify-center">
+                              <FileJson className="h-12 w-12 text-muted-foreground" />
                             </div>
-                            <div>
-                              <p>
-                                <span className="font-medium">{t("productImport.generateurEtagere")}:</span>{" "}
-                                {planogramParams.nb_etageres}
-                              </p>
-                              <p>
-                                <span className="font-medium">{t("productImport.generateurColones")}:</span>{" "}
-                                {planogramParams.nb_colonnes}
-                              </p>
-                              <p>
-                                <span className="font-medium">{t("productImport.generateurPlacement")}:</span>{" "}
-                                {planogramParams.product_placements.length}
-                              </p>
-                            </div>
+                            <p className="text-lg font-medium">Sélectionner un fichier JSON Streamlit</p>
+                            <p className="text-sm text-muted-foreground">
+                              Glissez-déposez ou cliquez pour sélectionner votre fichier JSON exporté de Streamlit
+                            </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setPlanogramParams(null)
-                            }}
-                          >
-                            {t("productImport.changerFichier")}
+                          <Input
+                            ref={jsonInputRef}
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            onChange={handleJsonFileChange}
+                          />
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="editor">
+                        <div className="space-y-4">
+                          <Textarea
+                            placeholder="Collez ici le JSON exporté de Streamlit..."
+                            className="font-mono text-sm min-h-[200px]"
+                            value={jsonText}
+                            onChange={(e) => setJsonText(e.target.value)}
+                          />
+                          <Button onClick={handleJsonTextInput} className="w-full">
+                            Valider le JSON Streamlit
                           </Button>
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex justify-center">
-                            <FileJson className="h-12 w-12 text-muted-foreground" />
-                          </div>
-                          <p className="text-lg font-medium">{t("productImport.selectedFileJSON")}</p>
-                          <p className="text-sm text-muted-foreground">{t("productImport.dragDropJSON")}</p>
-                        </div>
-                      )}
-                      <Input
-                        ref={jsonInputRef}
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={handleJsonFileChange}
-                      />
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="editor">
-                    <div className="space-y-4">
-                      {/* Ajout de l'alerte pour la configuration IA */}
-                      {iaGeneratedJson && (
-                        <Alert>
-                          <Info className="h-4 w-4" />
-                          <AlertTitle>{t("productImport.configresultIA")}</AlertTitle>
-                          <AlertDescription>
-                            {t("productImport.configParamIA")}
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="h-auto p-0 ml-1 text-primary"
-                              onClick={() => {
-                                setJsonText("")
-                                setIaGeneratedJson("")
-                                setPlanogramParams(null)
-                              }}
-                            >
-                              ({t("productImport.generateurEffacer")})
-                            </Button>
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      <div className="p-4 border rounded-md bg-muted/10">
-                        <h4 className="font-medium mb-2">{t("productImport.JSONrequise")}</h4>
-                        <ScrollArea className="h-[200px] mb-2">
-                          <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto whitespace-pre">
-                            {renderJsonExample()}
-                          </pre>
-                        </ScrollArea>
-                        <p className="text-xs text-muted-foreground">{t("productImport.copierJSON")}</p>
-                      </div>
-
-                      <Textarea
-                        ref={jsonEditorRef}
-                        placeholder="Saisissez vos données JSON ici..."
-                        className="font-mono text-sm min-h-[200px]"
-                        value={jsonText}
-                        onChange={(e) => setJsonText(e.target.value)}
-                      />
-
-                      <Button onClick={handleJsonTextInput} className="w-full">
-                        {t("productImport.ValiderJSON")}
-                      </Button>
-
-                      {validationErrors.length > 0 && (
-                        <Alert variant="destructive" className="mt-4">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>{t("productImport.errorValidation")}</AlertTitle>
-                          <AlertDescription>
-                            <ul className="list-disc pl-5 mt-2 space-y-1">
-                              {validationErrors.map((error, index) => (
-                                <li key={index}>{error}</li>
-                              ))}
-                            </ul>
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-
-                {planogramParams && (
-                  <div className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        console.log("Paramètres actuels:", planogramParams)
-                        toast({
-                          title: "Informations de débogage",
-                          description: "Les informations de débogage ont été affichées dans la console.",
-                        })
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Bug className="h-4 w-4" />
-                      {t("productImport.debogageParams")}
-                    </Button>
-                    <Button onClick={() => setStep(2)}>{t("productImport.generateurContinuer")}</Button>
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 )}
 
-                {/* Debug info display */}
-                {debugInfo && (
-                  <div className="mt-4">
-                    <details className="border rounded-md p-2">
-                      <summary className="font-medium cursor-pointer">{t("productImport.debogageInfo")}</summary>
-                      <pre className="mt-2 p-2 bg-gray-100 rounded-md text-xs overflow-auto max-h-[300px]">
-                        {debugInfo}
-                      </pre>
-                    </details>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={() => setStep(0)}>
+                    Retour
+                  </Button>
+                  {(streamlitData || planogramParams) && <Button onClick={() => setStep(2)}>Continuer</Button>}
+                </div>
               </div>
             )}
+
+            {/* Step 2: Preview */}
             {step === 2 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">{t("productImport.currentproduitsGen")}</h3>
-                  <p className="text-sm text-muted-foreground">{t("productImport.currentproduitsGenDescr")}</p>
+                  <h3 className="text-lg font-medium">Aperçu de la Configuration</h3>
+                  <p className="text-sm text-muted-foreground">Vérification finale avant la génération 3D</p>
                 </div>
 
-                <div className="border rounded-md p-6 bg-muted/10">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {planogramParams?.product_placements.map((placement) => {
-                      const product = products.find((p) => p.primary_Id === placement.produit_id)
-                      return (
-                        <div key={placement.produit_id} className="border rounded-md p-3 flex flex-col items-center">
-                          {product?.image ? (
-                            <img
-                              src={product.image || "/placeholder.svg"}
-                              alt={product.name}
-                              className="w-16 h-16 object-contain mb-2"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center mb-2">
-                              <Package className="h-8 w-8 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="text-center">
-                            <p className="text-sm font-medium truncate w-full">
-                              {product?.name || placement.produit_id}
-                            </p>
-                            <p className="text-xs text-muted-foreground">ID: {placement.produit_id}</p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {planogramParams && planogramParams.product_placements.length > 0 && (
-                    <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                      <div className="flex items-start gap-2">
-                        <Info className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-amber-800">{t("productImport.productsInfoIA")}</p>
-                          <p className="text-sm text-amber-700">
-                            Le planogramme contient <strong>{planogramParams.product_placements.length}</strong>{" "}
-                            produits à placer. Vérifiez que tous les produits peuvent être placés dans la grille (
-                            {planogramParams.nb_etageres} étagères × {planogramParams.nb_colonnes} colonnes).
+                {streamlitData && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Meubles
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{streamlitData.furniture.length}</div>
+                          <p className="text-sm text-muted-foreground">
+                            {[...new Set(streamlitData.furniture.map((f) => f.furniture_type_name))].length} types
+                            différents
                           </p>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <LayoutGrid className="h-4 w-4" />
+                            Positions
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">{streamlitData.product_positions.length}</div>
+                          <p className="text-sm text-muted-foreground">Produits à placer</p>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Quantité totale
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold">
+                            {streamlitData.product_positions.reduce((sum, pos) => sum + pos.quantite, 0)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">Produits au total</p>
+                        </CardContent>
+                      </Card>
                     </div>
-                  )}
-                </div>
+
+                    <Alert>
+                      <CheckCircle2 className="h-4 w-4" />
+                      <AlertTitle>Configuration prête</AlertTitle>
+                      <AlertDescription>
+                        Tous les éléments sont configurés et prêts pour la génération 3D.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
 
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setStep(1)}>
-                    {t("productImport.retourGenerateur")}
+                    Retour
                   </Button>
-                  <Button onClick={() => setStep(3)}>{t("productImport.generateurContinuer")}</Button>
+                  <Button onClick={() => setStep(3)}>Générer en 3D</Button>
                 </div>
               </div>
             )}
-            {step === 2 && importProgress > 0 && (
-              <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
-                <Card className="w-[400px]">
-                  <CardHeader>
-                    <CardTitle>{t("productImport.importationEnCours")}</CardTitle>
-                    <CardDescription>{t("productImport.importationEnCoursDescr")}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Progress value={importProgress} className="h-2" />
-                    <p className="text-center text-sm">
-                      {importProgress < 100 ? "Traitement des données..." : "Importation terminée !"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
 
+            {/* Step 3: Generation */}
             {step === 3 && (
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">{t("productImport.generatePlanogrammeIA")}</h3>
-                  <p className="text-sm text-muted-foreground">{t("productImport.generatePlanogrammeIADescr")}</p>
+                  <h3 className="text-lg font-medium">Génération 3D</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Création des meubles 3D basés sur les données Streamlit
+                  </p>
                 </div>
 
                 <div className="border rounded-md p-6 bg-muted/10">
                   <div className="flex items-center justify-center">
                     <div className="text-center space-y-4">
-                      <Wand2 className="h-16 w-16 mx-auto text-primary" />
-                      <h3 className="text-xl font-medium">{t("productImport.generateurPret")}</h3>
-                      <p className="text-muted-foreground max-w-md">{t("productImport.generateurPretDescr")}</p>
-                      <Button size="lg" onClick={generatePlanogram} disabled={isGenerating} className="mt-4">
-                        {isGenerating ? "Génération en cours..." : "Générer le planogramme"}
+                      <Settings className={`h-16 w-16 mx-auto text-primary ${isGenerating ? "animate-spin" : ""}`} />
+                      <h3 className="text-xl font-medium">
+                        {isGenerating ? "Génération en cours..." : "Prêt à générer"}
+                      </h3>
+                      <p className="text-muted-foreground max-w-md">
+                        {isGenerating
+                          ? "Création des meubles 3D avec tous les éléments configurés..."
+                          : "Cliquez pour démarrer la génération des meubles 3D"}
+                      </p>
+                      <Button size="lg" onClick={generateFurniture} disabled={isGenerating} className="mt-4">
+                        {isGenerating ? "Génération en cours..." : "Démarrer la génération"}
                       </Button>
                     </div>
                   </div>
@@ -1509,10 +1345,10 @@ export function PlanogramIA() {
 
                 {isGenerating && (
                   <div className="space-y-4">
-                    <h4 className="font-medium">{t("productImport.progressionIA")}</h4>
+                    <h4 className="font-medium">Progression</h4>
                     <Progress value={generationProgress} className="h-2" />
                     <p className="text-center text-sm text-muted-foreground">
-                      {generationProgress < 100 ? "Création du planogramme en cours..." : "Génération terminée !"}
+                      {generationProgress < 100 ? "Création des meubles en cours..." : "Génération terminée !"}
                     </p>
                   </div>
                 )}
@@ -1525,6 +1361,7 @@ export function PlanogramIA() {
               </div>
             )}
 
+            {/* Step 4: Enhanced Visualization with realistic furniture */}
             {step === 4 && (
               <div className="space-y-6">
                 <div className="flex items-center justify-center p-8">
@@ -1532,115 +1369,161 @@ export function PlanogramIA() {
                     <div className="flex justify-center">
                       <CheckCircle2 className="h-16 w-16 text-green-500" />
                     </div>
-                    <h3 className="text-2xl font-medium">{t("productImport.succesGenerateIA")}</h3>
-                    <p className="text-muted-foreground">{t("productImport.succesGenerateIADescr")}</p>
+                    <h3 className="text-2xl font-medium">Meubles générés avec succès !</h3>
+                    <p className="text-muted-foreground">
+                      {streamlitData
+                        ? `Planogramme "${streamlitData.planogram_info.nom_planogram}" créé en 3D`
+                        : "Vos meubles 3D ont été créés selon vos spécifications"}
+                    </p>
                   </div>
                 </div>
 
+                {/* Enhanced Visualization with 2D/3D toggle */}
                 <div className="space-y-4">
-                  <h4 className="font-medium">{t("productImport.resumePlanogramme")}</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="border rounded-md p-4 space-y-2">
-                      <p className="text-sm text-muted-foreground">{t("productImport.dimensionsGenIA")}</p>
-                      <p className="text-lg font-medium">
-                        {generatedConfig?.rows} étagères × {generatedConfig?.columns} {t("productImport.colone")}
-                      </p>
-                    </div>
-                    <div className="border rounded-md p-4 space-y-2">
-                      <p className="text-sm text-muted-foreground">{t("productImport.produitPlacerIA")}</p>
-                      <p className="text-lg font-medium">
-                        {generatedCells.filter((cell) => cell.instanceId !== null).length} {t("productImport.sur")}{" "}
-                        {planogramParams?.product_placements.length}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Visualisation Interactive Réaliste</h4>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{generatedFurniture.length} meuble(s)</Badge>
+                      <Badge variant="outline">{generatedDisplayItems.length} position(s)</Badge>
 
-                {/* Placement Results Section */}
-                {renderPlacementStatus()}
-
-                {/* Visualization mode selector */}
-                <div className="mt-6">
-                  <h4 className="font-medium mb-4">{t("productImport.visualisationPlanogramIA")}</h4>
-                  <div className="flex justify-center mb-4">
-                    <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "2d" | "3d")}>
-                      <TabsList>
-                        <TabsTrigger value="2d">
-                          <LayoutGrid className="h-4 w-4 mr-2" />
-                          {t("productImport.TwoDview")}
-                        </TabsTrigger>
-                        <TabsTrigger value="3d">
-                          <Cube className="h-4 w-4 mr-2" />
-                          {t("productImport.ThreeDview")}
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </div>
-
-                  {/* Visualization content */}
-                  <div className="overflow-auto">
-                    {viewMode === "2d" ? (
-                      <div>{renderPlanogramPreview()}</div>
-                    ) : (
-                      <div className="h-[500px] border rounded-md">
-                        <Suspense
-                          fallback={
-                            <div className="flex items-center justify-center h-full">
-                              {t("productImport.chargementIA")}
-                            </div>
-                          }
+                      {/* View Mode Toggle */}
+                      <div className="flex items-center border rounded-md">
+                        <Button
+                          variant={viewMode === "3d" ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setViewMode("3d")}
+                          className="rounded-r-none"
+                          disabled={!webglSupported}
                         >
-                          <PlanogramViewer3D
-                            config={generatedConfig}
-                            cells={generatedCells}
-                            products={products}
-                            shelfHeight={30}
-                          />
-                        </Suspense>
+                          <Box className="h-4 w-4 mr-1" />
+                          3D Réaliste
+                        </Button>
+                        <Button
+                          variant={viewMode === "2d" ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setViewMode("2d")}
+                          className="rounded-l-none"
+                        >
+                          <Grid3X3 className="h-4 w-4 mr-1" />
+                          2D
+                        </Button>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* WebGL Support Warning */}
+                  {!webglSupported && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>WebGL non supporté</AlertTitle>
+                      <AlertDescription>
+                        Votre navigateur ne supporte pas WebGL. Seule la visualisation 2D est disponible.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* WebGL Error Alert */}
+                  {webglError && webglSupported && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Erreur de rendu 3D</AlertTitle>
+                      <AlertDescription className="flex items-center justify-between">
+                        <span>Le contexte WebGL a été perdu. La visualisation 3D n'est pas disponible.</span>
+                        <Button variant="outline" size="sm" onClick={resetWebGLContext}>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Réinitialiser
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="h-[600px] border rounded-md overflow-hidden">
+                    {viewMode === "3d" ? (
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                              <Settings className="h-8 w-8 animate-spin mx-auto mb-2" />
+                              <p>Chargement de la vue 3D réaliste...</p>
+                            </div>
+                          </div>
+                        }
+                      >
+                        <Scene3D />
+                      </Suspense>
+                    ) : (
+                      <Scene2D />
                     )}
                   </div>
                 </div>
 
-                <div
-                  className={`flex gap-4 ${i18n.language === "ar" ? "flex-row-reverse justify-center" : "justify-center"}`}
-                >
+                {/* Debug Information */}
+                {streamlitData && (
+                  <Card className="mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-sm">Informations de Debug</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs space-y-2">
+                      <p>
+                        <strong>WebGL Support:</strong> {webglSupported ? "✅ Oui" : "❌ Non"}
+                      </p>
+                      <p>
+                        <strong>WebGL Error:</strong> {webglError ? "❌ Erreur" : "✅ OK"}
+                      </p>
+                      <p>
+                        <strong>Produits générés:</strong> {products.length}
+                      </p>
+                      <p>
+                        <strong>Positions produits:</strong> {streamlitData.product_positions.length}
+                      </p>
+                      <p>
+                        <strong>Meubles générés:</strong> {generatedFurniture.length}
+                      </p>
+                      <p>
+                        <strong>Type de meuble:</strong> {generatedFurniture[0]?.type || "N/A"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-4 justify-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline">
                         <Download className="h-4 w-4 mr-2" />
-                        {t("productImport.exporterIA")}
+                        Exporter
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align={i18n.language === "ar" ? "end" : "start"}>
-                      <DropdownMenuItem onClick={exportAsImage}>
-                        <ImageIcon className="h-4 w-4 mr-2" />
-                        {t("productImport.exporterImageIA")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={exportAsPDF}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        {t("productImport.exporterPDFIA")}
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (streamlitData) {
+                            const jsonStr = JSON.stringify(streamlitData, null, 2)
+                            const blob = new Blob([jsonStr], { type: "application/json" })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement("a")
+                            a.href = url
+                            a.download = `${streamlitData.planogram_info.planogram_id}.json`
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          }
+                        }}
+                      >
+                        <FileJson className="h-4 w-4 mr-2" />
+                        Exporter JSON original
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  <Button onClick={goToPlanogramEditor}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {t("productImport.openeditorIA")}
-                  </Button>
-
-                  <SavePlanogramDialog
-                    planogramConfig={generatedConfig}
-                    cells={generatedCells}
-                    products={products}
-                    productInstances={productInstances}
-                    onSave={savePlanogramToLibrary}
+                  <Button
+                    onClick={() => {
+                      router.push("/planogram-editor")
+                    }}
                   >
-                    <Button variant="outline">
-                      <Package className="h-4 w-4 mr-2" />
-                      {t("productImport.sauvegardeBoutiqueIA")}
-                    </Button>
-                  </SavePlanogramDialog>
+                    <Save className="h-4 w-4 mr-2" />
+                    Ouvrir dans l'éditeur
+                  </Button>
                 </div>
               </div>
             )}

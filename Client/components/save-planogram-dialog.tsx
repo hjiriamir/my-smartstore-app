@@ -1,9 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Grid } from "lucide-react"
+import { Grid, ImageIcon  } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import i18next from "i18next"
+import { FileText as FileTextIcon } from 'lucide-react';
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 import {
   Dialog,
@@ -20,6 +23,31 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { BoxIcon  } from 'lucide-react';
+
+
+interface SavePlanogramDialogProps {
+  planogramConfig: PlanogramConfig;
+  cells: PlanogramCell[];
+  products: Product[];
+  productInstances: ProductInstance[];
+  onSave?: (name: string, description: string, furnitureProducts: any) => void;
+  filesBaseName: string;
+  setFilesBaseName: (name: string) => void;
+  uploadFile: (file: File, fileName: string) => Promise<string>;
+  generateFileName: (suffix: string, extension: string) => string;
+  viewMode: "2D" | "3D";
+  setViewMode: (mode: "2D" | "3D") => void;
+  image2DUrl: string;
+  setImage2DUrl: (url: string) => void;
+  image3DUrl: string;
+  setImage3DUrl: (url: string) => void;
+  pdfUrl: string;
+  setPdfUrl: (url: string) => void;
+  isGeneratingFiles: boolean;
+  setIsGeneratingFiles: (isGenerating: boolean) => void;
+  children: React.ReactNode;
+}
 
 // Interface pour les magasins
 interface Magasin {
@@ -51,7 +79,28 @@ interface FurnitureType {
   nombreFaces?: number
 }
 
-export function SavePlanogramDialog({ planogramConfig, cells, products, productInstances, onSave, children }) {
+export function SavePlanogramDialog({
+  planogramConfig,
+  cells,
+  products,
+  productInstances,
+  onSave,
+  filesBaseName,
+  setFilesBaseName,
+  uploadFile,
+  generateFileName,
+  viewMode,
+  setViewMode,
+  image2DUrl,
+  setImage2DUrl,
+  image3DUrl,
+  setImage3DUrl,
+  pdfUrl,
+  setPdfUrl,
+  isGeneratingFiles,
+  setIsGeneratingFiles,
+  children
+}: SavePlanogramDialogProps) {
   const { t } = useTranslation()
   const { toast } = useToast()
   const [name, setName] = useState(planogramConfig.name)
@@ -65,6 +114,385 @@ export function SavePlanogramDialog({ planogramConfig, cells, products, productI
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingZones, setIsLoadingZones] = useState(false)
   const [isLoadingFurnitureTypes, setIsLoadingFurnitureTypes] = useState(false)
+
+  //const [filesBaseName, setFilesBaseName] = useState(planogramConfig.name);
+  //const [image2DUrl, setImage2DUrl] = useState("");
+  //const [image3DUrl, setImage3DUrl] = useState("");
+  //const [pdfUrl, setPdfUrl] = useState("");
+  //const [isGeneratingFiles, setIsGeneratingFiles] = useState(false);
+  
+
+
+  
+ // Génération image 2D
+ const generate2DImage = async (): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    // Attendre que le rendu 2D soit prêt
+    setTimeout(async () => {
+      try {
+        // Essayer plusieurs sélecteurs possibles
+        const selectors = [
+          '.planogram-2d-container',
+          '.grid.bg-white',
+          '.planogram-grid'
+        ];
+        
+        let element: HTMLElement | null = null;
+        for (const selector of selectors) {
+          element = document.querySelector(selector);
+          if (element) break;
+        }
+
+        if (!element) {
+          throw new Error("Élément 2D non trouvé");
+        }
+
+        const canvas = await html2canvas(element as HTMLElement, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          logging: true,
+          useCORS: true
+        });
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Erreur blob"));
+            return;
+          }
+          const fileName = generateFileName(filesBaseName, "2d-view", "png")
+          resolve(new File([blob], fileName, { type: "image/png" }));
+        }, 'image/png', 0.95);
+      } catch (error) {
+        reject(error);
+      }
+    }, 1000); // Délai pour s'assurer que le rendu est prêt
+  });
+};
+
+const generate3DImage = async (): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    setTimeout(async () => {
+      try {
+        // Essayer plusieurs sélecteurs de canvas
+        const selectors = [
+          '.planogram-3d-container canvas',
+          'canvas[data-engine]',
+          'canvas'
+        ];
+        
+        let threeCanvas: HTMLCanvasElement | null = null;
+        for (const selector of selectors) {
+          threeCanvas = document.querySelector(selector);
+          if (threeCanvas) break;
+        }
+
+        if (!threeCanvas) {
+          throw new Error("Canvas 3D non trouvé");
+        }
+
+        // Vérifier que le canvas est prêt
+        if (threeCanvas.width === 0 || threeCanvas.height === 0) {
+          throw new Error("Canvas 3D pas encore rendu");
+        }
+
+        // Créer un nouveau canvas pour la capture
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = threeCanvas.width;
+        offscreenCanvas.height = threeCanvas.height;
+        
+        const ctx = offscreenCanvas.getContext('2d');
+        if (!ctx) throw new Error("Contexte 2D non disponible");
+
+        // 1. Dessiner un fond blanc
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        
+        // 2. Dessiner le contenu 3D
+        ctx.drawImage(threeCanvas, 0, 0);
+
+        // Convertir en blob avec une meilleure qualité
+        return new Promise((resolveBlob) => {
+          offscreenCanvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error("Échec de la conversion en blob"));
+              return;
+            }
+            const fileName = generateFileName(filesBaseName, "3d-view", "png");
+            resolve(new File([blob], fileName, { type: "image/png" }));
+          }, 'image/png', 1.0); // Qualité maximale
+        });
+
+      } catch (error) {
+        console.error("Erreur lors de la génération 3D:", error);
+        reject(error);
+      }
+    }, 2000); // Augmenter le délai pour le rendu 3D
+  });
+};
+
+const generatePDF = async (): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm"
+      });
+
+      // Couleurs personnalisées
+      const primaryColor = [41, 128, 185];
+      const secondaryColor = [52, 152, 219];
+      const darkColor = [44, 62, 80];
+      const lightColor = [236, 240, 241];
+
+      doc.setFont("helvetica");
+      
+      // Page de couverture
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(36);
+      doc.text("PLANOGRAMME", 105, 40, { align: "center" });
+      doc.setFontSize(24);
+      doc.text(name, 105, 50, { align: "center" });
+      
+      doc.setFontSize(16);
+      doc.text(`Généré le ${new Date().toLocaleDateString()}`, 105, 70, { align: "center" });
+      
+      if (selectedMagasinId) {
+        const magasin = magasins.find(m => m.magasin_id === selectedMagasinId);
+        doc.text(`Magasin: ${magasin?.nom_magasin || ''}`, 105, 80, { align: "center" });
+      }
+      
+      doc.addPage();
+
+      // En-tête de page
+      doc.setFillColor(...lightColor);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 15, 'F');
+      doc.setTextColor(...darkColor);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Détails du planogramme: ${name}`, 10, 10);
+      
+      // Informations principales
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      
+      // Section informations de base
+      doc.setTextColor(...darkColor);
+      doc.setFont("helvetica", "bold");
+      doc.text("Informations de base", 10, 25);
+      
+      doc.setDrawColor(...secondaryColor);
+      doc.line(10, 27, 60, 27);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      
+      const furnitureType = furnitureTypes.find(ft => ft.furniture_type_id === selectedFurnitureTypeId);
+      doc.text(`Type: ${furnitureType?.nomType || ''}`, 10, 35);
+      doc.text(`Dimensions: ${planogramConfig.furnitureDimensions.width}m (L) × ${planogramConfig.furnitureDimensions.height}m (H) × ${planogramConfig.furnitureDimensions.depth}m (P)`, 10, 40);
+      doc.text(`Sections: ${planogramConfig.rows}`, 10, 45);
+      doc.text(`Emplacements: ${planogramConfig.columns}`, 10, 50);
+      doc.text(`Produits placés: ${placedProductsCount}`, 10, 55);
+      
+      // Section produits
+      doc.addPage();
+      doc.setFillColor(...lightColor);
+      doc.rect(0, 0, doc.internal.pageSize.getWidth(), 15, 'F');
+      doc.setTextColor(...darkColor);
+      doc.setFont("helvetica", "bold");
+      doc.text("Détail des produits", 10, 10);
+      
+      doc.setDrawColor(...secondaryColor);
+      doc.line(10, 12, 60, 12);
+      
+      // Tableau des produits
+      const headers = ["Produit", "Code", "Quantité", "Position", "Face"];
+      const columnWidths = [70, 30, 20, 30, 20];
+      const rows: string[][] = [];
+      
+      cells
+        .filter(cell => cell.instanceId !== null && cell.furnitureType === planogramConfig.furnitureType)
+        .forEach((cell) => {
+          const productInstance = productInstances.find(pi => pi.instanceId === cell.instanceId);
+          if (!productInstance) return;
+          
+          const product = products.find(p => p.primary_id === productInstance.productId);
+          if (!product) return;
+          
+          let face = "front";
+          if (planogramConfig.furnitureType === "gondola") {
+            face = cell.x < planogramConfig.columns / 2 ? "front" : "back";
+          } else if (planogramConfig.furnitureType === "shelves-display") {
+            const quarterWidth = planogramConfig.columns / 4;
+            if (cell.x < quarterWidth) {
+              face = "left";
+            } else if (cell.x < quarterWidth * 2) {
+              face = "front";
+            } else if (cell.x < quarterWidth * 3) {
+              face = "back";
+            } else {
+              face = "right";
+            }
+          }
+          
+          // MODIFICATION ICI: Inverser l'étagère pour que 1 soit en bas
+          const etagereNumber = planogramConfig.rows - cell.y;
+          rows.push([
+            product.name,
+            product.primary_id,
+            (cell.quantity || 1).toString(),
+            `E${etagereNumber}C${cell.x + 1}`, // E1 devient la première étagère en bas
+            face
+          ]);
+        });
+      
+      // Style du tableau
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      let yPos = 25;
+      
+      // En-tête du tableau
+      doc.setFillColor(...primaryColor);
+      headers.forEach((header, i) => {
+        doc.rect(
+          headers.slice(0, i).reduce((a, _, j) => a + columnWidths[j], 10),
+          yPos - 8,
+          columnWidths[i],
+          8,
+          'F'
+        );
+        doc.text(
+          header,
+          headers.slice(0, i).reduce((a, _, j) => a + columnWidths[j], 10) + columnWidths[i] / 2,
+          yPos - 3,
+          { align: "center" }
+        );
+      });
+      
+      // Lignes du tableau
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      
+      rows.forEach((row, rowIndex) => {
+        yPos = 25 + (rowIndex + 1) * 8;
+        
+        doc.setFillColor(rowIndex % 2 === 0 ? 255 : 245, 245, 245);
+        row.forEach((cell, cellIndex) => {
+          doc.rect(
+            headers.slice(0, cellIndex).reduce((a, _, j) => a + columnWidths[j], 10),
+            yPos - 8,
+            columnWidths[cellIndex],
+            8,
+            'F'
+          );
+        });
+        
+        row.forEach((cell, cellIndex) => {
+          doc.text(
+            cell,
+            headers.slice(0, cellIndex).reduce((a, _, j) => a + columnWidths[j], 10) + 3,
+            yPos - 3,
+            { maxWidth: columnWidths[cellIndex] - 6 }
+          );
+        });
+        
+        if (yPos > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          yPos = 25;
+        }
+      });
+      
+      // Générer le blob PDF
+      const pdfBlob = doc.output("blob");
+      const fileName = generateFileName(filesBaseName, "planogram", "pdf");
+      resolve(new File([pdfBlob], fileName, { type: "application/pdf" }));
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+const generateAndUploadFiles = async () => {
+  setIsGeneratingFiles(true);
+  
+  try {
+    // Sauvegarder le mode de vue actuel
+    const originalViewMode = viewMode;
+    
+    // Générer l'image 2D
+    setViewMode("2D");
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Délai pour le rendu
+    
+    console.log("Génération image 2D");
+    const image2DFile = await generate2DImage()
+      .then(file => {
+        console.log("2D généré:", file.name);
+        return file;
+      })
+      .catch(e => {
+        console.error("Erreur 2D:", e);
+        return null;
+      }); 
+    
+    // Générer l'image 3D
+    setViewMode("3D");
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Délai plus long pour le rendu 3D
+    
+    const image3DFile = await generate3DImage().catch(e => {
+      console.warn("Échec génération 3D:", e.message);
+      return null;
+    });
+    
+    // Générer le PDF (peut être fait en parallèle)
+    const pdfFile = await generatePDF().catch(e => {
+      console.warn("Échec génération PDF:", e.message);
+      return null;
+    });
+
+    // Restaurer le mode de vue original
+    setViewMode(originalViewMode);
+    
+    // Upload seulement les fichiers générés avec succès
+    const uploadResults = {
+      image2DUrl: "",
+      image3DUrl: "",
+      pdfUrl: ""
+    };
+
+    if (image2DFile) {
+      try {
+        uploadResults.image2DUrl = await uploadFile(image2DFile, image2DFile.name);
+      } catch (e) {
+        console.error("Erreur upload 2D:", e);
+      }
+    }
+    
+    if (image3DFile) {
+      try {
+        uploadResults.image3DUrl = await uploadFile(image3DFile, image3DFile.name);
+      } catch (e) {
+        console.error("Erreur upload 3D:", e);
+      }
+    }
+    
+    if (pdfFile) {
+      try {
+        uploadResults.pdfUrl = await uploadFile(pdfFile, pdfFile.name);
+      } catch (e) {
+        console.error("Erreur upload PDF:", e);
+      }
+    }
+    
+    return uploadResults;
+  } catch (error) {
+    console.error("Erreur lors de la génération des fichiers:", error);
+    throw error;
+  } finally {
+    setIsGeneratingFiles(false);
+  }
+};
 
   const [users, setUsers] = useState<User[]>([])
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
@@ -92,6 +520,27 @@ export function SavePlanogramDialog({ planogramConfig, cells, products, productI
   const isArabic = i18next.language === "ar"
 
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    console.log("State update:", {
+      selectedMagasinId,
+      selectedZoneId,
+      selectedFurnitureTypeId,
+      isLoading,
+      isGeneratingFiles
+    });
+  }, [selectedMagasinId, selectedZoneId, selectedFurnitureTypeId, isLoading, isGeneratingFiles]);
+
+  useEffect(() => {
+    console.log("État actuel :", {
+      magasin: selectedMagasinId,
+      zone: selectedZoneId,
+      typeMeuble: selectedFurnitureTypeId,
+      utilisateur: currentUser?.idUtilisateur,
+      isLoading,
+      isGeneratingFiles
+    });
+  }, [selectedMagasinId, selectedZoneId, selectedFurnitureTypeId, currentUser, isLoading, isGeneratingFiles]);
 
   //useEffect pour récupérer l'utilisateur connecté
   useEffect(() => {
@@ -300,145 +749,234 @@ export function SavePlanogramDialog({ planogramConfig, cells, products, productI
     }
   }
   // Fonction pour récupérer l'ID d'un produit à partir de son code
-const fetchProductIdByCode = async (productCode: string): Promise<number> => {
-  try {
-    const response = await fetch(`http://localhost:8081/api/produits/getProductIdsByCodes/${productCode}`);
-    
-    if (!response.ok) {
-      throw new Error(`Erreur HTTP: ${response.status}`);
-    }
-    
-    const productId = await response.json();
-    return productId;
-  } catch (error) {
-    console.error(`Erreur lors de la récupération de l'ID pour le produit ${productCode}:`, error);
-    throw error;
-  }
-};
-
-
-const handleSave = async () => {
-  // Validate required fields before sending
-      if (!selectedMagasinId || !selectedZoneId || !name || !currentUser) {
-        toast({
-          title: "Erreur",
-          description: "Veuillez remplir tous les champs obligatoires",
-          variant: "destructive",
-        })
-        return
+  const fetchProductIdByCode = async (productCode: string): Promise<number> => {
+    try {
+      const response = await fetch(`http://localhost:8081/api/produits/getProductIdsByCodes/${productCode}`);
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
       }
+      return await response.json(); // Retourne directement l'ID
+    } catch (error) {
+      console.error(`Erreur lors de la récupération de l'ID pour ${productCode}:`, error);
+      throw error;
+    }
+  };
+
+
+  const handleSave = async () => {
+    console.log("handleSave déclenchée !", { currentUser });
+    // 1. Vérification des champs obligatoires
+    if (!selectedMagasinId || !selectedZoneId || !name || !currentUser?.idUtilisateur || !selectedFurnitureTypeId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires (magasin, zone, nom, type de meuble)",
+        variant: "destructive",
+      });
+      return;
+    }
+  
     setIsLoading(true);
   
     try {
-      // Étape 1: Récupérer tous les codes produits uniques
-      const productCodes = Array.from(
-        new Set(
-          cells
-            .filter((cell) => cell.instanceId !== null)
-            .map((cell) => {
-              const productInstance = productInstances.find((pi) => pi.instanceId === cell.instanceId);
-              return productInstance?.productId; // Ceci est le product_code (ex: "P002")
-            })
-            .filter(Boolean)
-        )
-      );
+      /* ------------------------------------------------------------------
+       * 2. Générer et uploader les fichiers (2D, 3D, PDF)
+       * ------------------------------------------------------------------ */
+      let files = { image2DUrl: "", image3DUrl: "", pdfUrl: "" };
   
-      // Étape 2: Récupérer le mapping des IDs
-      const productIdMap = await fetchProductIdsMap(productCodes);
+      try {
+        setIsGeneratingFiles(true);
+        files = await generateAndUploadFiles();
   
-      // Vérifier si tous les produits ont été trouvés
-      const missingProducts = productCodes.filter(code => !productIdMap[code]);
-      if (missingProducts.length > 0) {
-        throw new Error(
-          `Les produits suivants n'ont pas été trouvés: ${missingProducts.join(", ")}`
-        );
+        setImage2DUrl(files.image2DUrl);
+        setImage3DUrl(files.image3DUrl);
+        setPdfUrl(files.pdfUrl);
+      } catch (fileError) {
+        console.error("Erreur lors de la génération des fichiers:", fileError);
+        toast({
+          title: "Avertissement",
+          description: "Le planogramme sera enregistré sans les fichiers joints",
+          variant: "default",
+        });
+      } finally {
+        setIsGeneratingFiles(false);
       }
   
-      // Étape 3: Construire les positions avec les vrais IDs
-      const productPositions = cells
-        .filter((cell) => cell.instanceId !== null)
-        .map((cell) => {
-          const productInstance = productInstances.find((pi) => pi.instanceId === cell.instanceId);
+      /* ------------------------------------------------------------------
+       * 3. Construire les positions produits avec les vrais IDs
+       * ------------------------------------------------------------------ */
+      const productPositionsPromises = cells
+        .filter(
+          (cell) =>
+            cell.instanceId !== null &&
+            cell.furnitureType === planogramConfig.furnitureType
+        )
+        .map(async (cell) => {
+          const productInstance = productInstances.find(
+            (pi) => pi.instanceId === cell.instanceId
+          );
           if (!productInstance) return null;
   
-          const realProductId = productIdMap[productInstance.productId];
-          if (!realProductId) {
-            throw new Error(`ID non trouvé pour le produit ${productInstance.productId}`);
+          const product = products.find(
+            (p) => p.primary_id === productInstance.productId
+          );
+          if (!product) return null;
+  
+          try {
+            // Récupérer l'ID primaire du produit
+            const productPrimaryId = await fetchProductIdByCode(product.primary_id);
+            
+            return {
+              product_id: productPrimaryId, // Utiliser l'ID primaire ici
+              position: cell.x + 1,
+              quantite: cell.quantity || 1,
+              face: cell.face || getFaceFromPosition(cell.x),
+              etagere: cell.etagere || cell.y + 1,
+              colonne: cell.colonne || cell.x + 1
+            };
+          } catch (error) {
+            console.error(`Erreur avec le produit ${product.primary_id}:`, error);
+            return null;
           }
+        });
   
-          return {
-            product_id: realProductId, // Utiliser l'ID numérique ici
-            face: getFaceFromPosition(cell.x, planogramConfig.columns),
-            etagere: cell.y + 1,
-            colonne: cell.x + 1,
-            quantite: cell.quantity || 1,
-          };
-        })
-        .filter(Boolean);
+      // Attendre que toutes les promesses se résolvent
+      const productPositions = (await Promise.all(productPositionsPromises)).filter(Boolean);
   
-      // Étape 4: Construire le payload final
-      const requestBody = {
+      if (productPositions.length === 0) {
+        toast({
+          title: "Erreur",
+          description: "Aucune position produit valide à enregistrer",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      /* ------------------------------------------------------------------
+       * 4. Préparer le payload pour l'API
+       * ------------------------------------------------------------------ */
+      const requestData = {
         magasin_id: selectedMagasinId,
         zone_id: selectedZoneId,
         nom: name,
-        description: description || `Planogramme créé le ${new Date().toLocaleDateString()}`,
+        description,
         created_by: currentUser.id || currentUser.idUtilisateur,
         statut: selectedPlanogramStatus,
         furnitures: [
           {
-            furniture_type_id: Number.parseInt(selectedFurnitureTypeId),
+            furniture_type_id: Number(selectedFurnitureTypeId),
             largeur: planogramConfig.furnitureDimensions.width,
             hauteur: planogramConfig.furnitureDimensions.height,
             profondeur: planogramConfig.furnitureDimensions.depth,
-            productPositions: productPositions,
+            name: name,
+            type: planogramConfig.furnitureType,
+            color: "#f0f0f0",
+            imageUrl_2D: files.image2DUrl,
+            imageUrl_3D: files.image3DUrl,
+            pdfUrl: files.pdfUrl,
+            // Ajout des configurations spécifiques
+            ...(planogramConfig.furnitureType === "planogram" && {
+              nb_colonnes_unique_face: planogramConfig.planogramDetails?.nbre_colonnes,
+              nb_etageres_unique_face: planogramConfig.planogramDetails?.nbre_etageres
+            }),
+            ...(planogramConfig.furnitureType === "gondola" && {
+              nb_colonnes_front_back: planogramConfig.gondolaDetails?.nbre_colonnes_front + planogramConfig.gondolaDetails?.nbre_colonnes_back,
+              nb_etageres_front_back: planogramConfig.gondolaDetails?.nbre_etageres_front + planogramConfig.gondolaDetails?.nbre_etageres_back
+            }),
+            ...(planogramConfig.furnitureType === "shelves-display" && {
+              nb_colonnes_front_back: planogramConfig.shelvesDisplayDetails?.nbre_colonnes_front + planogramConfig.shelvesDisplayDetails?.nbre_colonnes_back,
+              nb_etageres_front_back: planogramConfig.shelvesDisplayDetails?.nbre_etageres_front + planogramConfig.shelvesDisplayDetails?.nbre_etageres_back,
+              nb_colonnes_left_right: planogramConfig.shelvesDisplayDetails?.nb_colonnes_left_right * 2, // *2 pour gauche+droite
+              nb_etageres_left_right: planogramConfig.shelvesDisplayDetails?.nb_etageres_left_right
+            }),
+            productPositions,
           },
         ],
-        tache: selectedUserId
-          ? {
-              idUser: selectedUserId,
-              statut: "à faire",
-              date_debut: new Date().toISOString(),
-              date_fin_prevue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              type: selectedTaskType,
-              commentaire: `Tâche liée au planogramme ${name}`,
-            }
-          : null,
+        tache: selectedUserId ? {
+          idUser: selectedUserId,
+          statut: "à faire",
+          type: selectedTaskType,
+          commentaire: `Tâche liée au planogramme ${name}`,
+        } : undefined,
       };
   
-      console.log("Request payload:", JSON.stringify(requestBody, null, 2));
+      /* ------------------------------------------------------------------
+       * 5. Appel API avec gestion d'erreur détaillée
+       * ------------------------------------------------------------------ */
+      let response;
+      try {
+        response = await fetch(
+          "http://localhost:8081/api/planogram/createFullPlanogram",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestData),
+            credentials: "include",
+          }
+        );
   
-      // Envoyer la requête
-      const response = await fetch("http://localhost:8081/api/planogram/createFullPlanogram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-        credentials: "include",
-      });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw {
+            response: {
+              status: response.status,
+              data: errorData,
+            },
+            message: errorData.message || `Erreur HTTP: ${response.status}`,
+          };
+        }
   
-      const data = await response.json();
+        const result = await response.json();
+        console.log("Réponse API:", result);
   
-      if (!response.ok) {
-        throw new Error(data.details || data.error || "Erreur inconnue");
+        toast({
+          title: "Succès",
+          description: "Planogramme enregistré avec succès",
+          variant: "default",
+        });
+  
+        /* ------------------------------------------------------------------
+         * 6. Callback onSave (si fourni)
+         * ------------------------------------------------------------------ */
+        if (onSave) {
+          onSave(name, description, {
+            products: productPositions,
+            image2DUrl: files.image2DUrl,
+            image3DUrl: files.image3DUrl,
+            pdfUrl: files.pdfUrl,
+          });
+        }
+      } catch (apiError) {
+        throw {
+          response: apiError.response || null,
+          request: !apiError.response,
+          message: apiError.message || "Erreur lors de l'appel API",
+        };
       }
-  
-      toast({
-        title: "Succès",
-        description: `Planogramme créé avec succès (ID: ${data.planogram_id})`,
-        variant: "default",
-      });
-  
-      if (onSave) onSave(data.planogram_id);
-    } catch (error) {
-      console.error("Erreur lors de la création du planogramme:", error);
+    } catch (error: any) {
+      console.error("Erreur complète:", error);
+      let errorMessage = "Une erreur est survenue lors de l'enregistrement";
+      
+      if (error.response) {
+        // Si c'est une erreur HTTP
+        errorMessage = `Erreur ${error.response.status}: ${error.response.data?.message || error.message}`;
+      } else if (error.request) {
+        // La requête a été faite mais aucune réponse n'a été reçue
+        errorMessage = "Pas de réponse du serveur - veuillez vérifier votre connexion";
+      } else {
+        // Quelque chose s'est mal passé lors de la configuration de la requête
+        errorMessage = error.message || "Erreur inconnue";
+      }
+    
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de la création du planogramme",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
   // Fonctions utilitaires
   function getFaceFromPosition(x: number): string {
     if (planogramConfig.furnitureType === "shelves-display") {
@@ -653,6 +1191,21 @@ const handleSave = async () => {
                   </SelectContent>
                 </Select>
               </div>
+
+               {/* Sélection des fichiers */}
+              <div>
+                <label className="text-sm font-medium">Nom des fichiers exportés</label>
+                <Input
+                  value={filesBaseName}
+                  onChange={(e) => setFilesBaseName(e.target.value)}
+                  className="mt-1"
+                  placeholder="Entrez le nom de base pour les fichiers"
+                  dir={isArabic ? "rtl" : "ltr"}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ce nom sera utilisé pour les fichiers image et PDF générés.
+                </p>
+              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t("savePlanogramDialog.previewLabel")}</label>
                 <Card className="p-4 bg-muted/20">
@@ -748,7 +1301,46 @@ const handleSave = async () => {
                           <span>Épaisseur étagère: {planogramConfig.furnitureDimensions.shelfThickness}m</span>
                         </div>
                       </div>
-
+                      {(image2DUrl || image3DUrl || pdfUrl) && (
+  <div className="mt-3 p-3 bg-blue-50 rounded-md">
+    <h5 className="text-xs font-semibold text-blue-700 mb-2">Fichiers générés :</h5>
+    <div className="flex flex-wrap gap-2">
+      {image2DUrl && (
+        <a 
+          href={image2DUrl.startsWith('http') ? image2DUrl : `http://localhost:8081/${image2DUrl}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline flex items-center"
+        >
+          <ImageIcon className="h-4 w-4 mr-1" />
+          Vue 2D
+        </a>
+      )}
+      {image3DUrl && (
+        <a 
+          href={`http://localhost:8081/${image3DUrl}`} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-xs text-blue-600 hover:underline flex items-center"
+        >
+          <BoxIcon className="h-4 w-4 mr-1" />
+          Vue 3D
+        </a>
+      )}
+      {pdfUrl && (
+        <a 
+          href={`http://localhost:8081/${pdfUrl}`} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-xs text-blue-600 hover:underline flex items-center"
+        >
+          <FileTextIcon className="h-4 w-4 mr-1" />
+          Fiche technique
+        </a>
+      )}
+    </div>
+  </div>
+)}
                       {/* Nouvelle section pour afficher les détails des produits placés */}
                       {placedProductsCount > 0 && (
                         <div className="mt-3 p-3 bg-gray-50 rounded-md max-h-40 overflow-y-auto">
@@ -797,16 +1389,28 @@ const handleSave = async () => {
           </div>
 
           <DialogFooter className={isArabic ? "justify-start" : "justify-end"}>
-            <DialogClose asChild>
-              <Button variant="outline">{t("cancel")}</Button>
-            </DialogClose>
-            <Button
-              onClick={handleSave}
-              disabled={!selectedMagasinId || !selectedZoneId || !selectedFurnitureTypeId || isLoading}
-            >
-              {t("save")}
-            </Button>
-          </DialogFooter>
+  <DialogClose asChild>
+    <Button variant="outline">{t("cancel")}</Button>
+  </DialogClose>
+  <Button
+  onClick={handleSave}
+  disabled={isLoading || isGeneratingFiles}
+>
+  {isGeneratingFiles ? (
+    <>
+      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Génération des fichiers...
+    </>
+  ) : isLoading ? (
+    "Enregistrement..."
+  ) : (
+    "Enregistrer"
+  )}
+</Button>
+</DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

@@ -71,6 +71,14 @@
     imageUrl: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    imageUrl_2D: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    imageUrl_3D: {
+      type: DataTypes.STRING,
+      allowNull: true,
     }
   }, {
     timestamps: false,

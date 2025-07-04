@@ -154,9 +154,9 @@ const FURNITURE_TYPE_MAPPING: Record<string, FurnitureType> = {
   "clothing-rack": "clothing-rack",
   "accessory-display": "accessory-display",
   "modular-cube": "modular-cube",
-  "gondola": "gondola",
-  "table": "table",
-  "refrigerator": "refrigerator",
+  gondola: "gondola",
+  table: "table",
+  refrigerator: "refrigerator",
   "refrigerated-showcase": "refrigerated-showcase",
   "clothing-display": "clothing-display",
   "clothing-wall": "clothing-wall",
@@ -168,6 +168,9 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
   const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<"ai" | "import">("ai")
+  const [showDetectedFurnitures, setShowDetectedFurnitures] = useState(false);
+  const [selectedFurniture, setSelectedFurniture] = useState<string | null>(null);
+  const [generatedFurnitureIds, setGeneratedFurnitureIds] = useState<string[]>([]); 
 
   // États pour l'importation JSON
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -177,6 +180,7 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
     furniture: { found: boolean; type: string }[]
     products: { found: boolean; id: string }[]
   } | null>(null)
+  const [selectedFurnitures, setSelectedFurnitures] = useState<string[]>([])
 
   const { products } = useProductStore()
 
@@ -197,11 +201,9 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
       return
     }
 
-    // Optionnel: Écouter les messages de la fenêtre IA
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== "http://localhost:8501") return
 
-      // Si l'IA envoie des données de planogramme
       if (event.data.type === "planogram_generated") {
         try {
           onImport(event.data.planogram)
@@ -225,7 +227,6 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
 
     window.addEventListener("message", handleMessage)
 
-    // Nettoyer l'écouteur quand la fenêtre se ferme
     const checkClosed = setInterval(() => {
       if (aiWindow.closed) {
         window.removeEventListener("message", handleMessage)
@@ -234,7 +235,6 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
     }, 1000)
   }
 
-  // Fonctions pour l'importation JSON (reprises du composant précédent)
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type === "application/json") {
@@ -275,6 +275,12 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
         furniture: furnitureValidation,
         products: productValidation,
       })
+
+      // Sélectionner automatiquement tous les meubles valides
+      const validFurnitureIds = data.furniture
+        .filter((_, index) => furnitureValidation[index].found)
+        .map(f => f.furniture_id)
+      setSelectedFurnitures(validFurnitureIds)
     } catch (error) {
       console.error("Erreur lors du parsing:", error)
       toast({
@@ -285,26 +291,45 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
       setSelectedFile(null)
       setPreviewData(null)
       setValidationResults(null)
+      setSelectedFurnitures([])
     } finally {
       setIsLoading(false)
     }
   }
 
+  const toggleFurnitureSelection = (furnitureId: string) => {
+    setSelectedFurniture(prev => 
+      prev === furnitureId ? null : furnitureId
+    );
+  };
+
   const handleImportFromFile = () => {
-    if (previewData) {
-      onImport(previewData)
+    if (previewData && selectedFurnitures.length > 0) {
+      // Filtrer les données pour ne garder que les meubles sélectionnés
+      const filteredData = {
+        ...previewData,
+        furniture: previewData.furniture.filter(f => 
+          selectedFurnitures.includes(f.furniture_id)
+        ),
+        product_positions: previewData.product_positions.filter(pos =>
+          selectedFurnitures.includes(pos.furniture_id)
+        )
+      }
+
+      onImport(filteredData)
       setIsOpen(false)
       setSelectedFile(null)
       setPreviewData(null)
       setValidationResults(null)
-      setActiveTab("ai") // Reset to AI tab
+      setSelectedFurnitures([])
+      setActiveTab("ai")
     }
   }
 
   const canImport =
     previewData &&
     validationResults &&
-    validationResults.furniture.some((f) => f.found) &&
+    selectedFurnitures.length > 0 &&
     validationResults.products.some((p) => p.found)
 
   return (
@@ -315,186 +340,201 @@ const AIGenerationDialog = ({ onImport }: { onImport: (data: ImportedPlanogram) 
           Générer furniture par IA
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto"> {/* Modifié ici */}
-  <DialogHeader>
-    <DialogTitle>Génération de meuble par IA</DialogTitle>
-    <DialogDescription>
-      Utilisez l'intelligence artificielle pour générer automatiquement des configurations de meubles ou importez
-      un fichier JSON existant
-    </DialogDescription>
-  </DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Génération de meuble par IA</DialogTitle>
+          <DialogDescription>
+            Utilisez l'intelligence artificielle pour générer automatiquement des configurations de meubles ou importez
+            un fichier JSON existant
+          </DialogDescription>
+        </DialogHeader>
 
-  {/* Supprimer la ScrollArea existante */}
-  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "ai" | "import")} className="w-full">
-    <TabsList className="grid w-full grid-cols-2">
-      <TabsTrigger value="ai" className="flex items-center gap-2">
-        <Bot className="h-4 w-4" />
-        Génération IA
-      </TabsTrigger>
-      <TabsTrigger value="import" className="flex items-center gap-2">
-        <Upload className="h-4 w-4" />
-        Import JSON
-      </TabsTrigger>
-    </TabsList>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "ai" | "import")} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              Génération IA
+            </TabsTrigger>
+            <TabsTrigger value="import" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Import JSON
+            </TabsTrigger>
+          </TabsList>
 
-    <TabsContent value="ai" className="space-y-4 mt-4">
-      <TabsContent value="ai" className="space-y-4 mt-4">
-        <div className="text-center space-y-4">
-          <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-            <Bot className="h-16 w-16 mx-auto text-blue-500 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Interface de génération IA</h3>
-            <p className="text-gray-600 mb-4">
-              Cliquez sur le bouton ci-dessous pour ouvrir l'interface de génération de meubles par intelligence
-              artificielle. L'IA vous aidera à créer des configurations optimales basées sur vos critères.
-            </p>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">• Génération automatique de planogrammes</p>
-              <p className="text-sm text-gray-500">• Optimisation basée sur les données de vente</p>
-              <p className="text-sm text-gray-500">• Suggestions de placement intelligent</p>
-            </div>
-          </div>
-
-          <Button onClick={openAIInterface} size="lg" className="w-full">
-            <ExternalLink className="h-5 w-5 mr-2" />
-            Ouvrir l'interface IA
-          </Button>
-
-          <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded-md border border-yellow-200">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="font-medium">Note:</span>
-            </div>
-            <p className="mt-1">
-              L'interface IA s'ouvrira dans une nouvelle fenêtre. Assurez-vous que les popups sont autorisés dans
-              votre navigateur. Une fois la génération terminée, les données seront automatiquement importées dans
-              l'éditeur.
-            </p>
-          </div>
-        </div>
-      </TabsContent>
-    </TabsContent>
-
-    <TabsContent value="import" className="space-y-4 mt-4">
-      <TabsContent value="import" className="space-y-4 mt-4">
-        <div className="space-y-4">
-          {/* File selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Fichier JSON</label>
-            <div className="flex items-center space-x-2">
-              <Input type="file" accept=".json" onChange={handleFileSelect} className="flex-1" />
-              {selectedFile && (
-                <div className="flex items-center text-sm text-green-600">
-                  <FileText className="h-4 w-4 mr-1" />
-                  {selectedFile.name}
+          <TabsContent value="ai" className="space-y-4 mt-4">
+            <div className="text-center space-y-4">
+              <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                <Bot className="h-16 w-16 mx-auto text-blue-500 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Interface de génération IA</h3>
+                <p className="text-gray-600 mb-4">
+                  Cliquez sur le bouton ci-dessous pour ouvrir l'interface de génération de meubles par intelligence
+                  artificielle. L'IA vous aidera à créer des configurations optimales basées sur vos critères.
+                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">• Génération automatique de planogrammes</p>
+                  <p className="text-sm text-gray-500">• Optimisation basée sur les données de vente</p>
+                  <p className="text-sm text-gray-500">• Suggestions de placement intelligent</p>
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Loading */}
-          {isLoading && (
-            <div className="text-center py-4">
-              <div className="text-sm text-muted-foreground">Analyse du fichier...</div>
-            </div>
-          )}
+              <Button onClick={openAIInterface} size="lg" className="w-full">
+                <ExternalLink className="h-5 w-5 mr-2" />
+                Ouvrir l'interface IA
+              </Button>
 
-          {/* Preview and validation */}
-          {previewData && validationResults && (
+              <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="font-medium">Note:</span>
+                </div>
+                <p className="mt-1">
+                  L'interface IA s'ouvrira dans une nouvelle fenêtre. Assurez-vous que les popups sont autorisés dans
+                  votre navigateur. Une fois la génération terminée, les données seront automatiquement importées dans
+                  l'éditeur.
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="import" className="space-y-4 mt-4">
             <div className="space-y-4">
-              {/* Planogram info */}
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="font-medium mb-2">Informations du planogramme</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>ID: {previewData.planogram_info.planogram_id}</div>
-                    <div>Nom: {previewData.planogram_info.nom_planogram}</div>
-                    <div>Magasin: {previewData.planogram_info.magasin_id}</div>
-                    <div>Catégorie: {previewData.planogram_info.categorie_id}</div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* File selection */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fichier JSON</label>
+                <div className="flex items-center space-x-2">
+                  <Input type="file" accept=".json" onChange={handleFileSelect} className="flex-1" />
+                  {selectedFile && (
+                    <div className="flex items-center text-sm text-green-600">
+                      <FileText className="h-4 w-4 mr-1" />
+                      {selectedFile.name}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              {/* Furniture validation */}
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="font-medium mb-2">Meubles ({previewData.furniture.length})</h4>
-                  <div className="space-y-2">
-                    {validationResults.furniture.map((result, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm">
-                        <span>{result.type}</span>
-                        <div className="flex items-center">
-                          {result.found ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-red-500" />
-                          )}
-                          <span className={`ml-1 ${result.found ? "text-green-600" : "text-red-600"}`}>
-                            {result.found ? "Trouvé" : "Non trouvé"}
-                          </span>
-                        </div>
+              {/* Loading */}
+              {isLoading && (
+                <div className="text-center py-4">
+                  <div className="text-sm text-muted-foreground">Analyse du fichier...</div>
+                </div>
+              )}
+
+              {/* Preview and validation */}
+              {previewData && validationResults && (
+                <div className="space-y-4">
+                  {/* Planogram info */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-2">Informations du planogramme</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>ID: {previewData.planogram_info.planogram_id}</div>
+                        <div>Nom: {previewData.planogram_info.nom_planogram}</div>
+                        <div>Magasin: {previewData.planogram_info.magasin_id}</div>
+                        <div>Catégorie: {previewData.planogram_info.categorie_id}</div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
 
-              {/* Products validation */}
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="font-medium mb-2">Produits ({previewData.product_positions.length})</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {validationResults.products.map((result, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm">
-                        <span className="truncate">{result.id}</span>
-                        <div className="flex items-center">
-                          {result.found ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-red-500" />
-                          )}
-                          <span className={`ml-1 ${result.found ? "text-green-600" : "text-red-600"}`}>
-                            {result.found ? "Trouvé" : "Non trouvé"}
-                          </span>
-                        </div>
+                  {/* Furniture selection */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-2">Sélection des meubles ({selectedFurnitures.length}/{previewData.furniture.length})</h4>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {previewData.furniture.map((furniture, index) => {
+  const isValid = validationResults.furniture[index].found;
+  return (
+    <div 
+      key={furniture.furniture_id} 
+      className={`flex items-center justify-between p-2 rounded-md cursor-pointer 
+        ${selectedFurniture === furniture.furniture_id ? 'bg-primary/10 border border-primary' : 'hover:bg-muted/50'}
+        ${!isValid ? 'opacity-50' : ''}
+      `}
+      onClick={() => isValid && toggleFurnitureSelection(furniture.furniture_id)}
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="radio"
+          checked={selectedFurniture === furniture.furniture_id}
+          disabled={!isValid}
+          onChange={() => isValid && toggleFurnitureSelection(furniture.furniture_id)}
+          className="h-4 w-4"
+        />
+        <span className={!isValid ? 'line-through' : ''}>
+          {furniture.furniture_type_name} (ID: {furniture.furniture_id})
+        </span>
+      </div>
+      <div className="flex items-center">
+        {isValid ? (
+          <CheckCircle className="h-4 w-4 text-green-500" />
+        ) : (
+          <AlertCircle className="h-4 w-4 text-red-500" />
+        )}
+      </div>
+    </div>
+  )
+})}
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    {validationResults.products.filter((p) => p.found).length} / {validationResults.products.length}{" "}
-                    produits trouvés
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
 
-              {/* Warnings */}
-              {!canImport && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <div className="flex items-center">
-                    <AlertCircle className="h-4 w-4 text-yellow-600 mr-2" />
-                    <span className="text-sm text-yellow-800">
-                      Aucun meuble ou produit compatible trouvé. Vérifiez votre bibliothèque.
-                    </span>
-                  </div>
+                  {/* Products validation */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-2">Produits ({previewData.product_positions.length})</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {validationResults.products.map((result, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <span className="truncate">{result.id}</span>
+                            <div className="flex items-center">
+                              {result.found ? (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                              )}
+                              <span className={`ml-1 ${result.found ? "text-green-600" : "text-red-600"}`}>
+                                {result.found ? "Trouvé" : "Non trouvé"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {validationResults.products.filter((p) => p.found).length} / {validationResults.products.length}{" "}
+                        produits trouvés
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Warnings */}
+                  {!canImport && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <div className="flex items-center">
+                        <AlertCircle className="h-4 w-4 text-yellow-600 mr-2" />
+                        <span className="text-sm text-yellow-800">
+                          {selectedFurnitures.length === 0 
+                            ? "Aucun meuble sélectionné. Veuillez sélectionner au moins un meuble valide."
+                            : "Aucun produit compatible trouvé. Vérifiez votre bibliothèque."}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </TabsContent>
-    </TabsContent>
-  </Tabs>
+          </TabsContent>
+        </Tabs>
 
-  <DialogFooter className="flex justify-between">
-    <DialogClose asChild>
-      <Button variant="outline">Fermer</Button>
-    </DialogClose>
-    {activeTab === "import" && (
-      <Button onClick={handleImportFromFile} disabled={!canImport || isLoading}>
-        Importer depuis JSON
-      </Button>
-    )}
-  </DialogFooter>
-</DialogContent>
+        <DialogFooter className="flex justify-between">
+          <DialogClose asChild>
+            <Button variant="outline">Fermer</Button>
+          </DialogClose>
+          {activeTab === "import" && (
+            <Button onClick={handleImportFromFile} disabled={!canImport || isLoading}>
+              Importer les meubles sélectionnés
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   )
 }
@@ -1593,168 +1633,261 @@ export function FurnitureEditor() {
   })
 
   // Fonction d'importation de planogramme
+  const [generatedFurnitures, setGeneratedFurnitures] = useState<FurnitureItem[]>([]);
+
   const handleImportPlanogram = (importedData: ImportedPlanogram) => {
     try {
-      console.log("Importation des données:", importedData)
-
-      // Prendre le premier meuble du fichier importé
-      const firstFurniture = importedData.furniture[0]
-      if (!firstFurniture) {
+      console.log("Importation des données:", importedData);
+  
+      if (!importedData.furniture || importedData.furniture.length === 0) {
         toast({
           title: "Erreur",
           description: "Aucun meuble trouvé dans le fichier",
           variant: "destructive",
-        })
-        return
+        });
+        return;
       }
-
-      // Mapper le type de meuble
-      const mappedType = FURNITURE_TYPE_MAPPING[firstFurniture.furniture_type_name]
-      if (!mappedType) {
-        toast({
-          title: "Attention",
-          description: `Type de meuble "${firstFurniture.furniture_type_name}" non supporté, utilisation du type par défaut`,
-          variant: "destructive",
-        })
-      }
-
-      // Mettre à jour le meuble actuel
-      const newFurniture: FurnitureItem = {
-        id: `imported-${Date.now()}`,
-        type: mappedType || "wall-display",
-        name: importedData.planogram_info.nom_planogram || "Meuble importé",
-        sections: firstFurniture.nb_etageres_unique_face,
-        slots: firstFurniture.nb_colonnes_unique_face,
-        width: firstFurniture.largeur / 100, // Convertir cm en m
-        height: firstFurniture.hauteur / 100,
-        depth: firstFurniture.profondeur / 100,
-        color: "#f0f0f0",
-        x: 0,
-        y: 0,
-        z: 0,
-        rotation: 0,
-      }
-
-      console.log("Nouveau meuble créé:", newFurniture)
-
-      // Créer les nouvelles cellules vides d'abord
-      const newCells = []
-      for (let section = 0; section < newFurniture.sections; section++) {
-        for (let slot = 0; slot < newFurniture.slots; slot++) {
-          newCells.push({
-            id: `cell-${section}-${slot}`,
-            x: slot,
-            y: section,
-            productId: null,
-            quantity: 1,
-          })
+  
+      // Créer tous les meubles importés
+      const importedFurnitures = importedData.furniture.map(furniture => {
+        const mappedType = FURNITURE_TYPE_MAPPING[furniture.furniture_type_name];
+        
+        if (!mappedType) {
+          toast({
+            title: "Attention",
+            description: `Type de meuble "${furniture.furniture_type_name}" non supporté, utilisation du type par défaut`,
+            variant: "destructive",
+          });
         }
+  
+        // Filtrer les positions de produits pour ce meuble
+        const furnitureProductPositions = importedData.product_positions
+          .filter(pos => pos.furniture_id === furniture.furniture_id)
+          .map(pos => ({
+            ...pos,
+            // Convertir les coordonnées selon le type de meuble
+            x: getXPosition(pos, furniture),
+            y: getYPosition(pos, furniture)
+          }));
+  
+        return {
+          id: `imported-${furniture.furniture_id}`,
+          type: mappedType || "wall-display",
+          name: `${importedData.planogram_info.nom_planogram} - ${furniture.furniture_type_name}`,
+          sections: furniture.nb_etageres_unique_face,
+          slots: furniture.nb_colonnes_unique_face,
+          width: furniture.largeur / 100, // Convertir cm en m
+          height: furniture.hauteur / 100,
+          depth: furniture.profondeur / 100,
+          color: "#f0f0f0",
+          x: 0,
+          y: 0,
+          z: 0,
+          rotation: 0,
+          importedId: furniture.furniture_id,
+          productPositions: furnitureProductPositions
+        };
+      });
+  
+      setGeneratedFurnitures(importedFurnitures);
+  
+      // Afficher le premier meuble par défaut
+      if (importedFurnitures.length > 0) {
+        displayFurniture(importedFurnitures[0]);
       }
-
-      console.log("Cellules créées:", newCells.length)
-
-      // Filtrer les positions pour ce meuble
-      const positionsForFurniture = importedData.product_positions.filter(
-        (pos) => pos.furniture_id === firstFurniture.furniture_id,
-      )
-
-      console.log("Positions à traiter:", positionsForFurniture)
-
-      let placedProductsCount = 0
-      let skippedProductsCount = 0
-
-      // Placer les produits selon les positions importées
-      positionsForFurniture.forEach((position, index) => {
-        console.log(`Traitement position ${index + 1}:`, position)
-
-        // Vérifier si le produit existe dans la bibliothèque
-        const productExists = products.find((p) => p.primary_id === position.produit_id)
-
-        if (productExists) {
-          // Convertir les coordonnées (étagère et colonne commencent à 1 dans le JSON, 0 dans le code)
-          const targetX = position.colonne - 1
-          const targetY = position.etagere - 1
-
-          console.log(`Produit ${position.produit_id} trouvé, placement à x:${targetX}, y:${targetY}`)
-
-          // Vérifier que les coordonnées sont valides
-          if (targetX >= 0 && targetX < newFurniture.slots && targetY >= 0 && targetY < newFurniture.sections) {
-            const cellIndex = newCells.findIndex((cell) => cell.x === targetX && cell.y === targetY)
-
+  
+      toast({
+        title: "Importation réussie",
+        description: `${importedFurnitures.length} meuble(s) importé(s) avec succès.`,
+        variant: "default",
+      });
+  
+    } catch (error) {
+      console.error("Erreur lors de l'importation:", error);
+      toast({
+        title: "Erreur d'importation",
+        description: "Une erreur est survenue lors de l'importation du planogramme",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Helper functions pour convertir les positions
+  const getXPosition = (position: ProductPosition, furniture: ImportedFurniture) => {
+    if (position.face === "front") return position.colonne - 1;
+    if (position.face === "back") return furniture.nb_colonnes_unique_face / 2 + position.colonne - 1;
+    if (position.face === "left") return 0;
+    if (position.face === "right") return furniture.nb_colonnes_unique_face - 1;
+    return position.colonne - 1;
+  };
+  
+  const getYPosition = (position: ProductPosition) => {
+    return position.etagere - 1;
+  };
+  
+  // Nouvelle fonction pour afficher un meuble spécifique
+  const displayFurniture = (furniture: FurnitureItem) => {
+    // Mettre à jour le meuble courant et le marquer comme généré
+    setCurrentFurniture(furniture);
+    if (!generatedFurnitureIds.includes(furniture.id)) {
+      setGeneratedFurnitureIds([...generatedFurnitureIds, furniture.id]);
+    }
+  
+    // Créer les cellules vides avec une meilleure gestion des IDs
+    const newCells = Array.from({ length: furniture.sections * furniture.slots }, (_, index) => {
+      const section = Math.floor(index / furniture.slots);
+      const slot = index % furniture.slots;
+      return {
+        id: `cell-${furniture.id}-${section}-${slot}`, // ID unique incluant l'ID du meuble
+        x: slot,
+        y: section,
+        productId: null,
+        quantity: 1,
+      };
+    });
+  
+    // Placer les produits correspondants avec gestion améliorée des positions
+    let placedProductsCount = 0;
+    let skippedProductsCount = 0;
+    const missingProducts: string[] = [];
+  
+    if (furniture.productPositions && furniture.productPositions.length > 0) {
+      furniture.productPositions.forEach(position => {
+        const product = products.find(p => p.primary_id === position.produit_id);
+        
+        if (product) {
+          // Convertir les coordonnées selon le type de meuble
+          let targetX = position.colonne - 1;
+          let targetY = position.etagere - 1;
+  
+          // Ajustement spécial pour les meubles avec faces multiples
+          if (furniture.type === 'gondola' && position.face === 'back') {
+            targetX += Math.floor(furniture.slots / 2);
+          }
+  
+          if (targetX >= 0 && targetX < furniture.slots && targetY >= 0 && targetY < furniture.sections) {
+            const cellIndex = newCells.findIndex(cell => cell.x === targetX && cell.y === targetY);
+            
             if (cellIndex !== -1) {
               newCells[cellIndex] = {
                 ...newCells[cellIndex],
                 productId: position.produit_id,
                 quantity: position.quantite || 1,
-              }
-              placedProductsCount++
-              console.log(`✅ Produit ${position.produit_id} placé avec succès à la position ${cellIndex}`)
+                // Ajout des informations de face pour le debug
+                face: position.face || 'front',
+                originalPosition: `${position.face}-${position.etagere}-${position.colonne}`
+              };
+              placedProductsCount++;
             } else {
-              console.log(`❌ Cellule non trouvée pour x:${targetX}, y:${targetY}`)
-              skippedProductsCount++
+              skippedProductsCount++;
+              console.warn(`Position invalide pour ${product.name}: x=${targetX}, y=${targetY}`);
             }
           } else {
-            console.log(
-              `❌ Coordonnées invalides pour ${position.produit_id}: x:${targetX}, y:${targetY} (limites: ${newFurniture.slots}x${newFurniture.sections})`,
-            )
-            skippedProductsCount++
+            skippedProductsCount++;
+            console.warn(`Position hors limites pour ${product.name}: x=${targetX}, y=${targetY}`);
           }
         } else {
-          console.log(`❌ Produit ${position.produit_id} non trouvé dans la bibliothèque`)
-          skippedProductsCount++
+          skippedProductsCount++;
+          missingProducts.push(position.produit_id);
         }
-      })
-
-      // Mettre à jour l'état du meuble et des cellules
-      setCurrentFurniture(newFurniture)
-
-      // Attendre un peu pour que le meuble soit mis à jour, puis mettre à jour les cellules
-      setTimeout(() => {
-        setCells(newCells)
-        console.log(
-          "Cellules mises à jour:",
-          newCells.filter((cell) => cell.productId !== null),
-        )
-
-        // Forcer la mise à jour des produits pour l'affichage 3D
-        setTimeout(() => {
-          const updatedProductsForDisplay = newCells
-            .filter((cell) => cell.productId !== null)
-            .map((cell) => ({
-              id: `product-${cell.id}`,
-              productId: cell.productId,
-              section: cell.y,
-              position: cell.x,
-              furnitureId: newFurniture.id,
-              quantity: cell.quantity || 1,
-            }))
-
-          setProductsForDisplay(updatedProductsForDisplay)
-          console.log("Produits pour affichage 3D:", updatedProductsForDisplay)
-        }, 100)
-      }, 100)
-
-      // Message de succès avec statistiques détaillées
-      toast({
-        title: "Importation réussie",
-        description: `Planogramme "${importedData.planogram_info.nom_planogram}" importé avec succès. ${placedProductsCount} produits placés${skippedProductsCount > 0 ? `, ${skippedProductsCount} ignorés` : ""}.`,
-        variant: "default",
-      })
-
-      console.log(`=== RÉSUMÉ IMPORTATION ===`)
-      console.log(`Meuble: ${newFurniture.name} (${newFurniture.sections}x${newFurniture.slots})`)
-      console.log(`Produits placés: ${placedProductsCount}`)
-      console.log(`Produits ignorés: ${skippedProductsCount}`)
-      console.log(`Total positions: ${positionsForFurniture.length}`)
-    } catch (error) {
-      console.error("Erreur lors de l'importation:", error)
-      toast({
-        title: "Erreur d'importation",
-        description: "Une erreur est survenue lors de l'importation du planogramme",
-        variant: "destructive",
-      })
+      });
     }
-  }
+  
+    setCells(newCells);
+  
+    // Mettre à jour l'affichage 3D avec vérification des produits
+    const updatedProductsForDisplay = newCells
+      .filter(cell => {
+        if (cell.productId) {
+          const productExists = products.some(p => p.primary_id === cell.productId);
+          if (!productExists) {
+            console.warn(`Produit non trouvé: ${cell.productId} dans la cellule ${cell.id}`);
+            return false;
+          }
+          return true;
+        }
+        return false;
+      })
+      .map(cell => ({
+        id: `product-${cell.id}`,
+        productId: cell.productId!,
+        section: cell.y,
+        position: cell.x,
+        furnitureId: furniture.id,
+        quantity: cell.quantity || 1,
+        // Ajout des métadonnées pour le debug
+        debugInfo: {
+          face: cell.face,
+          originalPosition: cell.originalPosition
+        }
+      }));
+  
+    setProductsForDisplay(updatedProductsForDisplay);
+  
+    // Notification avec plus de détails
+    const toastMessage = [
+      `Le meuble "${furniture.name}" a été chargé avec ${placedProductsCount} produits.`,
+      skippedProductsCount > 0 && `${skippedProductsCount} positions ignorées.`,
+      missingProducts.length > 0 && `${missingProducts.length} produits non trouvés dans la bibliothèque.`
+    ].filter(Boolean).join(' ');
+  
+    toast({
+      title: "Meuble chargé",
+      description: toastMessage,
+      variant: skippedProductsCount > 0 || missingProducts.length > 0 ? "destructive" : "default",
+    });
+  
+    // Journalisation détaillée
+    console.groupCollapsed(`=== CHARGEMENT MEUBLE ${furniture.name} ===`);
+    console.log('Type:', furniture.type);
+    console.log('Dimensions:', `${furniture.sections} sections × ${furniture.slots} emplacements`);
+    console.log('Produits placés:', placedProductsCount);
+    
+    if (skippedProductsCount > 0) {
+      console.warn('Positions ignorées:', skippedProductsCount);
+    }
+    
+    if (missingProducts.length > 0) {
+      console.warn('Produits manquants:', missingProducts);
+    }
+    
+    console.log('Cellules:', newCells);
+    console.log('Produits pour affichage 3D:', updatedProductsForDisplay);
+    console.groupEnd();
+  
+    // Retourner les stats pour un éventuel suivi
+    return {
+      success: placedProductsCount > 0,
+      placedProductsCount,
+      skippedProductsCount,
+      missingProducts
+    };
+  };
+  
+  // Ajouter dans le composant principal pour permettre la sélection des meubles
+  {generatedFurnitures.length > 1 && (
+    <div className="mb-4">
+      <Label>Sélection du meuble à afficher</Label>
+      <Select
+        value={currentFurniture.id}
+        onValueChange={(id) => {
+          const selected = generatedFurnitures.find(f => f.id === id);
+          if (selected) displayFurniture(selected);
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Sélectionner un meuble" />
+        </SelectTrigger>
+        <SelectContent>
+          {generatedFurnitures.map(furniture => (
+            <SelectItem key={furniture.id} value={furniture.id}>
+              {furniture.name} ({furniture.type})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )}
 
   // Fonction pour forcer la synchronisation des vues après importation
   const forceSynchronization = () => {
@@ -2274,6 +2407,70 @@ export function FurnitureEditor() {
               </div>
 
               <div className="flex items-center space-x-2">
+                {/* le sélecteur de meubles générés */}
+                {generatedFurnitures.length > 0 && (
+                     <Dialog open={showDetectedFurnitures} onOpenChange={setShowDetectedFurnitures}>
+                     <DialogTrigger asChild>
+                       <Button variant="outline" onClick={() => setShowDetectedFurnitures(true)}>
+                         <Package className="h-4 w-4 mr-2" />
+                         Voir les meubles détectés ({generatedFurnitures.length})
+                       </Button>
+                     </DialogTrigger>
+                     <DialogContent className="sm:max-w-[800px]">
+                       <DialogHeader>
+                         <DialogTitle>Meubles détectés</DialogTitle>
+                         <DialogDescription>
+                           Liste des meubles importés depuis le fichier JSON
+                         </DialogDescription>
+                       </DialogHeader>
+                       <div className="grid grid-cols-2 gap-4">
+                         {generatedFurnitures.map(furniture => (
+                           <Card 
+                             key={furniture.id} 
+                             className={`cursor-pointer ${currentFurniture.id === furniture.id ? 'border-primary' : ''}`}
+                             onClick={() => {
+                               displayFurniture(furniture);
+                               setShowDetectedFurnitures(false);
+                             }}
+                           >
+                             <CardContent className="p-4">
+                               <div className="flex items-center gap-3">
+                                 {getFurnitureIcon(furniture.type)}
+                                 <div>
+                                   <h4 className="font-medium">{furniture.name}</h4>
+                                   <p className="text-sm text-muted-foreground">
+                                     {furniture.sections} sections × {furniture.slots} emplacements
+                                   </p>
+                                   <p className="text-xs text-muted-foreground">
+                                     {furniture.productPositions?.length || 0} produits placés
+                                   </p>
+                                 </div>
+                               </div>
+                             </CardContent>
+                           </Card>
+                         ))}
+                       </div>
+                     </DialogContent>
+                   </Dialog>
+                  <Select
+                    value={currentFurniture.id}
+                    onValueChange={(id) => {
+                      const selected = generatedFurnitures.find(f => f.id === id);
+                      if (selected) displayFurniture(selected);
+                    }}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Sélectionner un meuble" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {generatedFurnitures.map(furniture => (
+                        <SelectItem key={furniture.id} value={furniture.id}>
+                          {furniture.name} ({furniture.type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <div className="flex border rounded-md mr-2">
                   <Button
                     variant={viewMode === "2D" ? "default" : "ghost"}

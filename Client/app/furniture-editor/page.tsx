@@ -1,4 +1,4 @@
-import { FurnitureEditor } from "@/components/editor2D/furniture-editor"
+import { FurnitureEditor } from "@/components/editor2D/FurnitureEditor/furniture-editor"
 
 export default function FurnitureEditorPage() {
   return <FurnitureEditor />

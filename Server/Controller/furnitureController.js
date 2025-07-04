@@ -4,6 +4,8 @@ import FurnitureType from '../Model/FurnitureType.js';
 import Planogram from '../Model/Planogram.js';
 import ProductPosition from '../Model/ProductPosition.js';
 import Produit  from '../Model/Produit.js';
+import path from 'path';
+import fs from 'fs';
 
 export const createFurniture = async (req, res) => {
   try {
@@ -94,3 +96,20 @@ export const getFurnituresByUser = async (req, res) => {
     });
   }
 };
+
+export const uploadFile = async(req,res) => {
+  console.log("Fichier reçu :1", req.file);
+  if (!req.file) {
+    return res.status(400).json({ error: 'Aucun fichier téléchargé.' });
+  }
+  console.log("Fichier reçu :2", req.file);
+   // Exemple : uploads/1720033221345-file.pdf
+   const filePath = `uploads/${req.file.filename}`;
+
+   res.status(200).json({
+    message: 'Fichier uploadé avec succès.',
+    filePath
+  });
+};
+
+
