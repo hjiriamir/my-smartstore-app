@@ -79,6 +79,7 @@ interface FurnitureType {
   nombreFaces?: number
 }
 
+
 export function SavePlanogramDialog({
   planogramConfig,
   cells,
@@ -122,7 +123,61 @@ export function SavePlanogramDialog({
   //const [isGeneratingFiles, setIsGeneratingFiles] = useState(false);
   
 
-
+  const generateMultiAngle3DImage = async (): Promise<File> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Créer un canvas composite
+        const compositeCanvas = document.createElement('canvas');
+        compositeCanvas.width = 2000; // Largeur suffisante pour 4 vues
+        compositeCanvas.height = 1000;
+        const ctx = compositeCanvas.getContext('2d');
+        if (!ctx) throw new Error("Contexte 2D non disponible");
+  
+        // Dessiner un fond blanc
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
+  
+        // Liste des angles de vue
+        const views = [
+          { name: "Front", position: [0, height * 0.5, depth * 1.5], rotation: [0, 0, 0] },
+          { name: "Left", position: [-width * 1.5, height * 0.5, 0], rotation: [0, Math.PI / 2, 0] },
+          { name: "Back", position: [0, height * 0.5, -depth * 1.5], rotation: [0, Math.PI, 0] },
+          { name: "Right", position: [width * 1.5, height * 0.5, 0], rotation: [0, -Math.PI / 2, 0] }
+        ];
+  
+        // Capturer chaque vue
+        for (let i = 0; i < views.length; i++) {
+          const view = views[i];
+          // Ici vous devrez implémenter la logique pour positionner la caméra
+          // et capturer chaque vue (cela dépend de votre implémentation Three.js)
+          // Ceci est un exemple simplifié
+          const viewCanvas = await capture3DView(view.position, view.rotation);
+          
+          // Dessiner la vue sur le canvas composite
+          const x = (i % 2) * 1000;
+          const y = Math.floor(i / 2) * 500;
+          ctx.drawImage(viewCanvas, x, y, 1000, 500);
+          
+          // Ajouter un label
+          ctx.fillStyle = '#000000';
+          ctx.font = '20px Arial';
+          ctx.fillText(view.name, x + 20, y + 30);
+        }
+  
+        // Convertir en fichier
+        compositeCanvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Échec de la conversion en blob"));
+            return;
+          }
+          const fileName = generateFileName(filesBaseName, "3d-multi-view", "png");
+          resolve(new File([blob], fileName, { type: "image/png" }));
+        }, 'image/png', 0.95);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
   
  // Génération image 2D
  const generate2DImage = async (): Promise<File> => {
@@ -173,29 +228,38 @@ const generate3DImage = async (): Promise<File> => {
   return new Promise((resolve, reject) => {
     setTimeout(async () => {
       try {
-        // Essayer plusieurs sélecteurs de canvas
-        const selectors = [
-          '.planogram-3d-container canvas',
-          'canvas[data-engine]',
-          'canvas'
-        ];
-        
+        // Try to find the canvas more reliably
         let threeCanvas: HTMLCanvasElement | null = null;
-        for (const selector of selectors) {
-          threeCanvas = document.querySelector(selector);
-          if (threeCanvas) break;
+        
+        // First try the specific class
+        threeCanvas = document.querySelector('.planogram-3d-container canvas');
+        
+        // Fallback to any canvas with data-engine attribute
+        if (!threeCanvas) {
+          threeCanvas = document.querySelector('canvas[data-engine]');
+        }
+        
+        // Final fallback to any canvas
+        if (!threeCanvas) {
+          threeCanvas = document.querySelector('canvas');
         }
 
         if (!threeCanvas) {
           throw new Error("Canvas 3D non trouvé");
         }
 
-        // Vérifier que le canvas est prêt
+        // Wait for canvas to be rendered
+        let attempts = 0;
+        while ((threeCanvas.width === 0 || threeCanvas.height === 0) && attempts < 10) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          attempts++;
+        }
+
         if (threeCanvas.width === 0 || threeCanvas.height === 0) {
           throw new Error("Canvas 3D pas encore rendu");
         }
 
-        // Créer un nouveau canvas pour la capture
+        // Create offscreen canvas
         const offscreenCanvas = document.createElement('canvas');
         offscreenCanvas.width = threeCanvas.width;
         offscreenCanvas.height = threeCanvas.height;
@@ -203,30 +267,28 @@ const generate3DImage = async (): Promise<File> => {
         const ctx = offscreenCanvas.getContext('2d');
         if (!ctx) throw new Error("Contexte 2D non disponible");
 
-        // 1. Dessiner un fond blanc
+        // Draw white background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
         
-        // 2. Dessiner le contenu 3D
+        // Draw 3D content
         ctx.drawImage(threeCanvas, 0, 0);
 
-        // Convertir en blob avec une meilleure qualité
-        return new Promise((resolveBlob) => {
-          offscreenCanvas.toBlob((blob) => {
-            if (!blob) {
-              reject(new Error("Échec de la conversion en blob"));
-              return;
-            }
-            const fileName = generateFileName(filesBaseName, "3d-view", "png");
-            resolve(new File([blob], fileName, { type: "image/png" }));
-          }, 'image/png', 1.0); // Qualité maximale
-        });
+        // Convert to blob
+        offscreenCanvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Échec de la conversion en blob"));
+            return;
+          }
+          const fileName = generateFileName(filesBaseName, "3d-view", "png");
+          resolve(new File([blob], fileName, { type: "image/png" }));
+        }, 'image/png', 1.0);
 
       } catch (error) {
         console.error("Erreur lors de la génération 3D:", error);
         reject(error);
       }
-    }, 2000); // Augmenter le délai pour le rendu 3D
+    }, 2000); // Increased delay for 3D rendering
   });
 };
 
@@ -278,7 +340,7 @@ const generatePDF = async (): Promise<File> => {
       doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
       
-      // Section informations de base
+      // Section informations de base - MODIFIÉE
       doc.setTextColor(...darkColor);
       doc.setFont("helvetica", "bold");
       doc.text("Informations de base", 10, 25);
@@ -288,13 +350,40 @@ const generatePDF = async (): Promise<File> => {
       
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0, 0, 0);
-      
+
       const furnitureType = furnitureTypes.find(ft => ft.furniture_type_id === selectedFurnitureTypeId);
-      doc.text(`Type: ${furnitureType?.nomType || ''}`, 10, 35);
+
+      // Nouvelle section pour les faces
+      let facesDescription = "";
+      if (planogramConfig.furnitureType === "planogram") {
+        facesDescription = "1 face (frontale)";
+      } else if (planogramConfig.furnitureType === "gondola") {
+        facesDescription = "2 faces (avant/arrière)";
+      } else if (planogramConfig.furnitureType === "shelves-display") {
+        facesDescription = "4 faces (gauche/front/arrière/droite)";
+      }
+
+      doc.text(`Type: ${furnitureType?.nomType || ''} - ${facesDescription}`, 10, 35);
       doc.text(`Dimensions: ${planogramConfig.furnitureDimensions.width}m (L) × ${planogramConfig.furnitureDimensions.height}m (H) × ${planogramConfig.furnitureDimensions.depth}m (P)`, 10, 40);
       doc.text(`Sections: ${planogramConfig.rows}`, 10, 45);
       doc.text(`Emplacements: ${planogramConfig.columns}`, 10, 50);
       doc.text(`Produits placés: ${placedProductsCount}`, 10, 55);
+
+      // Ajoutez une section détaillée sur les faces
+      doc.setFont("helvetica", "bold");
+      doc.text("Configuration des faces:", 10, 65);
+
+      if (planogramConfig.furnitureType === "gondola" && planogramConfig.gondolaDetails) {
+        doc.setFont("helvetica", "normal");
+        doc.text(`- Face avant: ${planogramConfig.gondolaDetails.nbre_colonnes_front} colonnes × ${planogramConfig.gondolaDetails.nbre_etageres_front} étagères`, 15, 70);
+        doc.text(`- Face arrière: ${planogramConfig.gondolaDetails.nbre_colonnes_back} colonnes × ${planogramConfig.gondolaDetails.nbre_etageres_back} étagères`, 15, 75);
+      } else if (planogramConfig.furnitureType === "shelves-display" && planogramConfig.shelvesDisplayDetails) {
+        doc.setFont("helvetica", "normal");
+        doc.text(`- Face gauche: ${planogramConfig.shelvesDisplayDetails.nb_colonnes_left_right} colonnes × ${planogramConfig.shelvesDisplayDetails.nb_etageres_left_right} étagères`, 15, 70);
+        doc.text(`- Face avant: ${planogramConfig.shelvesDisplayDetails.nbre_colonnes_front} colonnes × ${planogramConfig.rows} étagères`, 15, 75);
+        doc.text(`- Face arrière: ${planogramConfig.shelvesDisplayDetails.nbre_colonnes_back} colonnes × ${planogramConfig.rows} étagères`, 15, 80);
+        doc.text(`- Face droite: ${planogramConfig.shelvesDisplayDetails.nb_colonnes_left_right} colonnes × ${planogramConfig.shelvesDisplayDetails.nb_etageres_left_right} étagères`, 15, 85);
+      }
       
       // Section produits
       doc.addPage();
@@ -418,43 +507,37 @@ const generateAndUploadFiles = async () => {
   setIsGeneratingFiles(true);
   
   try {
-    // Sauvegarder le mode de vue actuel
     const originalViewMode = viewMode;
     
     // Générer l'image 2D
     setViewMode("2D");
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Délai pour le rendu
-    
-    console.log("Génération image 2D");
-    const image2DFile = await generate2DImage()
-      .then(file => {
-        console.log("2D généré:", file.name);
-        return file;
-      })
-      .catch(e => {
-        console.error("Erreur 2D:", e);
-        return null;
-      }); 
-    
-    // Générer l'image 3D
-    setViewMode("3D");
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Délai plus long pour le rendu 3D
-    
-    const image3DFile = await generate3DImage().catch(e => {
-      console.warn("Échec génération 3D:", e.message);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const image2DFile = await generate2DImage().catch(e => {
+      console.error("Erreur 2D:", e);
       return null;
+    }); 
+    
+    // Générer l'image 3D multi-angles
+    setViewMode("3D");
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const image3DFile = await generateMultiAngle3DImage().catch(e => {
+      console.warn("Échec génération 3D multi-angles:", e.message);
+      // Fallback à la vue simple si échec
+      return generate3DImage().catch(e => {
+        console.warn("Échec génération 3D simple:", e.message);
+        return null;
+      });
     });
     
-    // Générer le PDF (peut être fait en parallèle)
+    // Générer le PDF
     const pdfFile = await generatePDF().catch(e => {
       console.warn("Échec génération PDF:", e.message);
       return null;
     });
 
-    // Restaurer le mode de vue original
     setViewMode(originalViewMode);
     
-    // Upload seulement les fichiers générés avec succès
+    // Upload des fichiers
     const uploadResults = {
       image2DUrl: "",
       image3DUrl: "",

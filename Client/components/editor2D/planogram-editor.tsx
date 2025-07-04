@@ -537,23 +537,23 @@ const Gondola = ({ position, dimensions, rows, columns }) => {
 
 // Composant ShelvesDisplay amélioré
 const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }) => {
-  const { width, height, depth, baseHeight, shelfThickness } = dimensions
+  const { width, height, depth, baseHeight, shelfThickness } = dimensions;
 
   // Récupérer les configurations spécifiques
-  const shelvesRows = planogramConfig?.shelvesConfig?.rows || rows
-  const frontBackColumns = planogramConfig?.shelvesConfig?.frontBackColumns || 3
-  const leftRightColumns = planogramConfig?.shelvesConfig?.leftRightColumns || 1
+  const shelvesRows = planogramConfig?.shelvesConfig?.rows || rows;
+  const frontBackColumns = planogramConfig?.shelvesConfig?.frontBackColumns || 3;
+  const leftRightColumns = planogramConfig?.shelvesConfig?.leftRightColumns || 1;
 
-  const shelfSpacing = height / shelvesRows
+  const shelfSpacing = height / shelvesRows;
 
   // Colors for the shelves display - matching the image
-  const baseColor = "#f5f5f5"
-  const shelfColor = "#ffffff"
-  const metalColor = "#e0e0e0"
-  const structureColor = "#f0f0f0"
-  const backPanelColor = "#f8f8f8"
-  const leftSideColor = "#f0f0f0"
-  const rightSideColor = "#e8e8e8"
+  const baseColor = "#f5f5f5";
+  const shelfColor = "#ffffff";
+  const metalColor = "#e0e0e0";
+  const structureColor = "#f0f0f0";
+  const backPanelColor = "#f8f8f8";
+  const leftSideColor = "#f0f0f0";
+  const rightSideColor = "#e8e8e8";
 
   return (
     <group position={position}>
@@ -584,7 +584,7 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
 
         {/* Shelves - for all four sides with unified row configuration */}
         {Array.from({ length: shelvesRows }).map((_, rowIndex) => {
-          const shelfY = (rowIndex + 1) * shelfSpacing
+          const shelfY = (rowIndex + 1) * shelfSpacing;
 
           return (
             <group key={`shelf-group-${rowIndex}`}>
@@ -645,8 +645,35 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
             </group>
-          )
+          );
         })}
+      </group>
+
+      {/* Ajoutez des indicateurs de face */}
+      <group position={[0, height * 0.8, 0]}>
+        {/* Indicateur face gauche */}
+        <mesh position={[-width/2 - 0.2, 0, 0]} rotation={[0, Math.PI/2, 0]}>
+          <textGeometry args={["GAUCHE", { font, size: 0.2, height: 0.01 }]} />
+          <meshBasicMaterial color="black" />
+        </mesh>
+
+        {/* Indicateur face avant */}
+        <mesh position={[0, 0, depth/2 + 0.2]}>
+          <textGeometry args={["AVANT", { font, size: 0.2, height: 0.01 }]} />
+          <meshBasicMaterial color="black" />
+        </mesh>
+
+        {/* Indicateur face arrière */}
+        <mesh position={[0, 0, -depth/2 - 0.2]} rotation={[0, Math.PI, 0]}>
+          <textGeometry args={["ARRIÈRE", { font, size: 0.2, height: 0.01 }]} />
+          <meshBasicMaterial color="black" />
+        </mesh>
+
+        {/* Indicateur face droite */}
+        <mesh position={[width/2 + 0.2, 0, 0]} rotation={[0, -Math.PI/2, 0]}>
+          <textGeometry args={["DROITE", { font, size: 0.2, height: 0.01 }]} />
+          <meshBasicMaterial color="black" />
+        </mesh>
       </group>
 
       {/* Ceiling lighting */}
@@ -659,8 +686,8 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
         ))}
       </group>
     </group>
-  )
-}
+  );
+};
 
 //  la fonction createTransparentTexture
 const createTransparentTexture = (imageUrl) => {
@@ -906,9 +933,6 @@ const SceneCapture = ({ onCapture }) => {
   return null;
 };
 
-
-
-
 // 3D Planogram Scene
 const PlanogramScene = ({
   planogramConfig,
@@ -925,19 +949,26 @@ const PlanogramScene = ({
   captureRef?: React.MutableRefObject<((callback: (dataUrl: string) => void) => void) | null>
   productSizeScale?: number
 }) => {
+  const {
+    width,
+    height,
+    depth,
+    baseHeight,
+    shelfThickness  // Make sure this is included
+  } = planogramConfig.furnitureDimensions;
   const [capturing, setCapturing] = useState(false)
   const [captureCallback, setCaptureCallback] = useState<((dataUrl: string) => void) | null>(null)
   const { scene, gl, camera } = useThree()
-
-  const [isSceneReady, setIsSceneReady] = useState(false);
+  const [isSceneReady, setIsSceneReady] = useState(false)
+  const [activeView, setActiveView] = useState<'default' | 'left' | 'front' | 'back' | 'right'>('default')
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsSceneReady(true);
-    }, 1000); // Délai pour s'assurer que tout est chargé
+      setIsSceneReady(true)
+    }, 1000)
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => clearTimeout(timer)
+  }, [])
 
   // Force un rendu explicite
   const forceRender = useCallback(() => {
@@ -953,13 +984,12 @@ const PlanogramScene = ({
   useEffect(() => {
     if (captureRef && isSceneReady) {
       captureRef.current = (callback) => {
-        setCapturing(true);
-        setCaptureCallback(() => callback);
-        // Force un rendu explicite
-        gl.render(scene, camera);
-      };
+        setCapturing(true)
+        setCaptureCallback(() => callback)
+        gl.render(scene, camera)
+      }
     }
-  }, [captureRef, isSceneReady, gl, scene, camera]);
+  }, [captureRef, isSceneReady, gl, scene, camera])
 
   // Handle capture completion
   const handleCapture = useCallback(
@@ -973,8 +1003,49 @@ const PlanogramScene = ({
     [captureCallback]
   )
 
+  // Handle view change
+  const handleViewChange = useCallback((view: 'default' | 'left' | 'front' | 'back' | 'right') => {
+    setActiveView(view)
+    switch (view) {
+      case 'left':
+        camera.position.set(-width * 1.5, height * 0.5, 0)
+        camera.rotation.set(0, Math.PI / 2, 0)
+        break
+      case 'front':
+        camera.position.set(0, height * 0.5, depth * 1.5)
+        camera.rotation.set(0, 0, 0)
+        break
+      case 'back':
+        camera.position.set(0, height * 0.5, -depth * 1.5)
+        camera.rotation.set(0, Math.PI, 0)
+        break
+      case 'right':
+        camera.position.set(width * 1.5, height * 0.5, 0)
+        camera.rotation.set(0, -Math.PI / 2, 0)
+        break
+      default:
+        // Reset to default view
+        camera.position.set(
+          planogramConfig.furnitureType === FurnitureTypes.GONDOLA
+            ? 4
+            : planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY
+            ? 0
+            : 0,
+          planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY
+            ? planogramConfig.rows * 0.5
+            : planogramConfig.rows * 0.2,
+          planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY
+            ? planogramConfig.rows * 2
+            : planogramConfig.rows * 1.5
+        )
+        camera.rotation.set(0, 0, 0)
+        break
+    }
+    forceRender()
+  }, [camera, width, height, depth, planogramConfig, forceRender])
+
   // Récupérer les dimensions du meuble
-  const { width, height, depth, shelfThickness } = planogramConfig.furnitureDimensions
+ // const { width, height, depth, shelfThickness } = planogramConfig.furnitureDimensions
   const shelfSpacing = height / planogramConfig.rows
 
   // Calculer la taille standard des produits basée sur les dimensions des étagères
@@ -993,7 +1064,7 @@ const PlanogramScene = ({
       {/* Debug info */}
       <DebugInfo />
   
-      {/* Camera setup */}
+      {/* Main camera */}
       <PerspectiveCamera
         makeDefault
         position={[
@@ -1051,7 +1122,6 @@ const PlanogramScene = ({
         {/* Éclairage supplémentaire pour les côtés */}
         {planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY && (
           <>
-            {/* Lumières latérales plus intenses et mieux positionnées */}
             <spotLight
               position={[-width / 2 - 1.5, height / 2, 0]}
               intensity={1.2}
@@ -1073,7 +1143,6 @@ const PlanogramScene = ({
               castShadow
             />
 
-            {/* Lumières d'appoint pour éviter les zones d'ombre */}
             <pointLight position={[-width / 2 - 0.5, height / 4, 0]} intensity={0.8} distance={2} decay={1} />
             <pointLight position={[width / 2 + 0.5, height / 4, 0]} intensity={0.8} distance={2} decay={1} />
             <pointLight position={[-width / 2 - 0.5, (height * 3) / 4, 0]} intensity={0.8} distance={2} decay={1} />
@@ -1149,78 +1218,60 @@ const PlanogramScene = ({
 
           // Calcul précis de la position Y pour que le produit soit exactement sur l'étagère
           const shelfY = (planogramConfig.rows -1 - cell.y) * shelfSpacing
-          // Positionner le produit exactement sur l'étagère
           let y = shelfY + shelfThickness / 2
 
-          let z = -depth / 2 + standardProductDepth / 2 // Positionner près du bord avant
+          let z = -depth / 2 + standardProductDepth / 2
 
-          // For gondola, adjust z position based on which side
           if (planogramConfig.furnitureType === FurnitureTypes.GONDOLA) {
             const midColumn = planogramConfig.columns / 2
             if (cell.x < midColumn) {
-              z = -depth / 4 // Face A (front)
+              z = -depth / 4
             } else {
-              z = depth / 4 // Face B (back)
+              z = depth / 4
             }
+          } else if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
+            const leftRightColumns = planogramConfig.shelvesConfig?.leftRightColumns || 1
+            const frontBackColumns = planogramConfig.shelvesConfig?.frontBackColumns || 3
+
+            const leftLimit = leftRightColumns
+            const frontLimit = leftLimit + frontBackColumns
+            const backLimit = frontLimit + frontBackColumns
+
+            const shelfY = (cell.etagere - 1) * shelfSpacing
+
+            if (cell.x < leftLimit) {
+              z = -depth / 2 + 0.7
+              x = -width / 2 - 0.1
+              if (leftRightColumns > 1) {
+                const positionRatio = (cell.colonne - 0.5) / leftRightColumns
+                z = -depth / 2 + 0.2 + (depth - 0.4) * positionRatio
+              }
+              productInstance.rotation = [0, Math.PI / 2, 0]
+            } else if (cell.x >= leftLimit && cell.x < frontLimit) {
+              z = depth / 2 - 0.2
+              const relativeCol = cell.colonne - 1
+              const columnWidth = width / frontBackColumns
+              x = -width / 2 + columnWidth * (relativeCol + 0.5)
+              productInstance.rotation = [0, 0, 0]
+            } else if (cell.x >= frontLimit && cell.x < backLimit) {
+              z = -depth / 2 + 0.2
+              const relativeCol = cell.colonne - 1
+              const columnWidth = width / frontBackColumns
+              x = -width / 2 + columnWidth * (relativeCol + 0.5)
+              productInstance.rotation = [0, Math.PI, 0]
+            } else {
+              z = 0
+              x = width / 2 - 0.15
+              if (leftRightColumns > 1) {
+                const positionRatio = (cell.colonne - 0.5) / leftRightColumns
+                z = depth / 2 - 0.2 - (depth - 0.4) * positionRatio
+              }
+              productInstance.rotation = [0, Math.PI / 2, 0]
+            }
+            
+            y = shelfY + shelfThickness / 2
           }
-          // la partie du code qui gère le positionnement des produits pour le ShelvesDisplay
-          // la partie du code qui gère le positionnement des produits pour le ShelvesDisplay
-else if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
-  const leftRightColumns = planogramConfig.shelvesConfig?.leftRightColumns || 1
-  const frontBackColumns = planogramConfig.shelvesConfig?.frontBackColumns || 3
 
-  // Calculer les limites de chaque section
-  const leftLimit = leftRightColumns
-  const frontLimit = leftLimit + frontBackColumns
-  const backLimit = frontLimit + frontBackColumns
-
-  // MODIFICATION ICI: Inverser la position Y pour que l'étagère 1 soit en bas
-  // Ancien calcul: (planogramConfig.rows - cell.etagere + 1) * shelfSpacing
-  const shelfY = (cell.etagere - 1) * shelfSpacing
-
-  if (cell.x < leftLimit) {
-    // Left side
-    z = -depth / 2 + 0.7
-    x = -width / 2 - 0.1
-    // Position horizontale précise basée sur la colonne
-    if (leftRightColumns > 1) {
-      const positionRatio = (cell.colonne - 0.5) / leftRightColumns
-      z = -depth / 2 + 0.2 + (depth - 0.4) * positionRatio
-    }
-    productInstance.rotation = [0, Math.PI / 2, 0]
-  } else if (cell.x >= leftLimit && cell.x < frontLimit) {
-    // Front side
-    z = depth / 2 - 0.2
-    // Position horizontale précise basée sur la colonne
-    const relativeCol = cell.colonne - 1
-    const columnWidth = width / frontBackColumns
-    x = -width / 2 + columnWidth * (relativeCol + 0.5)
-    productInstance.rotation = [0, 0, 0]
-  } else if (cell.x >= frontLimit && cell.x < backLimit) {
-    // Back side
-    z = -depth / 2 + 0.2
-    // Position horizontale précise basée sur la colonne
-    const relativeCol = cell.colonne - 1
-    const columnWidth = width / frontBackColumns
-    x = -width / 2 + columnWidth * (relativeCol + 0.5)
-    productInstance.rotation = [0, Math.PI, 0]
-  } else {
-    // Right side
-    z = 0
-    x = width / 2 - 0.15
-    // Position horizontale précise basée sur la colonne
-    if (leftRightColumns > 1) {
-      const positionRatio = (cell.colonne - 0.5) / leftRightColumns
-      z = depth / 2 - 0.2 - (depth - 0.4) * positionRatio
-    }
-    productInstance.rotation = [0, Math.PI / 2, 0]
-  }
-  
-  // Ajuster la position Y pour être exactement sur l'étagère
-  y = shelfY + shelfThickness / 2
-}
-
-          // Utiliser la quantité spécifiée ou 1 par défaut
           const quantity = cell.quantity || 1
 
           return (
@@ -1232,10 +1283,46 @@ else if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
               quantity={quantity}
               displayMode={planogramConfig.displayMode}
               cellIndex={cellIndex}
-              rotation={productInstance.rotation || [0, 0, 0]} // Utiliser la rotation définie plus haut
+              rotation={productInstance.rotation || [0, 0, 0]}
             />
           )
         })}
+
+      {/* View controls for SHELVES_DISPLAY */}
+      {planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY && (
+        <group position={[0, height + 1, 0]}>
+          <Button 
+            onClick={() => handleViewChange('left')} 
+            style={{ backgroundColor: activeView === 'left' ? '#1890ff' : undefined }}
+          >
+            Vue gauche
+          </Button>
+          <Button 
+            onClick={() => handleViewChange('front')}
+            style={{ backgroundColor: activeView === 'front' ? '#1890ff' : undefined }}
+          >
+            Vue avant
+          </Button>
+          <Button 
+            onClick={() => handleViewChange('back')}
+            style={{ backgroundColor: activeView === 'back' ? '#1890ff' : undefined }}
+          >
+            Vue arrière
+          </Button>
+          <Button 
+            onClick={() => handleViewChange('right')}
+            style={{ backgroundColor: activeView === 'right' ? '#1890ff' : undefined }}
+          >
+            Vue droite
+          </Button>
+          <Button 
+            onClick={() => handleViewChange('default')}
+            style={{ backgroundColor: activeView === 'default' ? '#1890ff' : undefined }}
+          >
+            Vue par défaut
+          </Button>
+        </group>
+      )}
 
       <OrbitControls
         enablePan={true}
@@ -1244,8 +1331,8 @@ else if (planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY) {
         minDistance={2}
         maxDistance={20}
         target={[0, planogramConfig.rows / 2, 0]}
-        minPolarAngle={Math.PI / 6} // Limit how low the camera can go
-        maxPolarAngle={Math.PI / 2} // Limit how high the camera can go
+        minPolarAngle={Math.PI / 6}
+        maxPolarAngle={Math.PI / 2}
       />
 
       {capturing && <SceneCapture onCapture={handleCapture} />}
