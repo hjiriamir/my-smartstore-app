@@ -1,0 +1,42 @@
+{
+  "planogram_info": {
+    "planogram_id": "PLANO_20250628_224717",
+    "nom_planogram": "Planogramme MG001_CAT001",
+    "statut": "generated",
+    "date_creation": "2025-06-28T22:47:17.527563",
+    "magasin_id": "MG001",
+    "categorie_id": "CAT001"
+  },
+  "furniture": [
+    {
+      "furniture_id": "FURN_001",
+      "furniture_type_id": 2,
+      "furniture_type_name": "gondola",
+      "faces": 1,
+      "available_faces": [
+        "front"
+      ],
+      "largeur": 120.0,
+      "hauteur": 180.0,
+      "profondeur": 40.0,
+      "imageUrl": "/images/furniture_2.png",
+      "nb_etageres_unique_face": 4,
+      "nb_colonnes_unique_face": 5,
+      "nb_etageres_front_back": 0,
+      "nb_colonnes_front_back": 0,
+      "nb_etageres_left_right": 0,
+      "nb_colonnes_left_right": 0
+    }
+  ],
+  "product_positions": [
+    {
+      "position_id": "POS_001",
+      "furniture_id": "FURN_001",
+      "produit_id": "P002",
+      "face": "front",
+      "etagere": 4,
+      "colonne": 1,
+      "quantite": 5
+    }
+  ]
+}

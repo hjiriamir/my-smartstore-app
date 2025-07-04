@@ -1,0 +1,29 @@
+# Core ML Libraries
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.1.0
+xgboost>=1.6.0
+
+# Web Frameworks
+streamlit>=1.25.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+
+# Data Visualization
+plotly>=5.15.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Utilities
+python-multipart>=0.0.6
+python-dateutil>=2.8.0
+openpyxl>=3.0.0
+
+# Optional: Advanced ML
+# lightgbm>=3.3.0
+# catboost>=1.1.0
+
+# Development
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0

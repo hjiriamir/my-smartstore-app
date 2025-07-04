@@ -1,0 +1,49 @@
+{
+  "planogram_info": {
+    "planogram_id": "PLANO_20250704_165342",
+    "nom_planogram": "Planogramme MG001_CAT001",
+    "statut": "generated",
+    "date_creation": "2025-07-04T16:53:42.364910",
+    "magasin_id": "MG001",
+    "categorie_id": "CAT001"
+  },
+  "furniture": [
+    {
+      "furniture_id": "FURN_001",
+      "furniture_type_id": 6,
+      "furniture_type_name": "accessory-display",
+      "faces": 1,
+      "available_faces": [
+        "front"
+      ],
+      "largeur": 120.0,
+      "hauteur": 180.0,
+      "profondeur": 40.0,
+      "imageUrl": "/images/furniture_6.png",
+      "nb_etageres_unique_face": 4,
+      "nb_colonnes_unique_face": 5,
+      "nb_etageres_front_back": 0,
+      "nb_colonnes_front_back": 0,
+      "nb_etageres_left_right": 0,
+      "nb_colonnes_left_right": 0
+    }
+  ],
+  "product_positions": [
+    {
+      "position_id": "POS_001",
+      "furniture_id": "FURN_001",
+      "produit_id": "P002",
+      "face": "front",
+      "etagere": 4,
+      "colonne": 1,
+      "quantite": 5
+    }
+  ],
+  "_transfer_meta": {
+    "timestamp": "2025-07-04T16:53:42.368880",
+    "file_path": "C:\\Users\\Dell\\Desktop\\Smart-Store\\SmartStore-IA\\planogram-ia\\transfer\\planogram_transfer.json",
+    "transfer_method": "direct_file",
+    "streamlit_port": 8501,
+    "react_port": 3000
+  }
+}
