@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Edit, Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface FAQ {
   id: number
@@ -23,6 +25,11 @@ interface Entreprise {
 }
 
 export function FAQContent() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null)
   const [faqs, setFaqs] = useState<FAQ[]>([])
@@ -205,11 +212,11 @@ export function FAQContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des FAQ</h1>
-          <p className="text-gray-600 mt-2">Gérez les questions fréquemment posées</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("back.gestionFaq.gestion")}</h1>
+          <p className="text-gray-600 mt-2">{t("back.gestionFaq.gestionDescr")}</p>
         </div>
       </div>
 
@@ -217,13 +224,13 @@ export function FAQContent() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Liste des FAQ</CardTitle>
-              <CardDescription>Gérez vos questions et réponses</CardDescription>
+              <CardTitle>{t("back.gestionFaq.listeFaq")}</CardTitle>
+              <CardDescription>{t("back.gestionFaq.gererQuestion")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-4 flex gap-2">
                 <Input 
-                  placeholder="Rechercher une FAQ..." 
+                  placeholder={t("back.gestionFaq.rechercherFaq")}
                   className="flex-1" 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -240,16 +247,16 @@ export function FAQContent() {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-medium text-gray-900">{faq.question}</h3>
-              <Badge variant="default">Publié</Badge>
+              <Badge variant="default">{t("back.gestionFaq.publier")}</Badge>
             </div>
             <Badge variant="outline" className="mb-2">
               {faq.categorie}
             </Badge>
             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{faq.reponse}</p>
             <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span>{faq.vues} vues</span>
-              <span>{faq.personnes_aidees} votes utiles</span>
-              <span>Créé le {new Date(faq.date_creation).toLocaleDateString()}</span>
+              <span>{faq.vues} {t("back.gestionFaq.vues")}</span>
+              <span>{faq.personnes_aidees} {t("back.gestionFaq.voteUtiles")}</span>
+              <span>{t("back.gestionFaq.creeLe")} {new Date(faq.date_creation).toLocaleDateString()}</span>
             </div>
           </div>
           <div className="flex gap-1 ml-4">
@@ -265,7 +272,8 @@ export function FAQContent() {
     ))
   ) : (
     <div className="text-center py-8 text-gray-500">
-      {searchTerm ? "Aucune FAQ ne correspond à votre recherche" : "Aucune FAQ disponible"}
+      {searchTerm ? t("back.gestionFaq.pasCorrespondanceRech") : t("back.gestionFaq.pasDisponible")}
+
     </div>
   )}
 </div>
@@ -276,28 +284,28 @@ export function FAQContent() {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Ajouter une FAQ</CardTitle>
+              <CardTitle>{t("back.gestionFaq.ajouterFaq")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Question</label>
+                <label className="text-sm font-medium">{t("back.gestionFaq.question")}</label>
                 <Input 
-                  placeholder="Entrez votre question..." 
+                  placeholder={t("back.gestionFaq.entrezQuestion")}
                   value={newFaq.question}
                   onChange={(e) => setNewFaq({...newFaq, question: e.target.value})}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Réponse</label>
+                <label className="text-sm font-medium">{t("back.gestionFaq.reponse")}</label>
                 <Textarea 
-                  placeholder="Entrez la réponse..." 
+                  placeholder={t("back.gestionFaq.entrezReponse")}
                   rows={4}
                   value={newFaq.reponse}
                   onChange={(e) => setNewFaq({...newFaq, reponse: e.target.value})}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Catégorie</label>
+                <label className="text-sm font-medium">{t("back.gestionFaq.categorie")}</label>
                 <select 
                   className="w-full p-2 border rounded-md"
                   value={newFaq.categorie}
@@ -314,7 +322,7 @@ export function FAQContent() {
                 className="w-full"
                 onClick={handleCreateFaq}
               >
-                Ajouter la FAQ
+                {t("back.gestionFaq.ajouterLaFaq")}
               </Button>
               {error && <div className="text-red-500 text-sm">{error}</div>}
             </CardContent>

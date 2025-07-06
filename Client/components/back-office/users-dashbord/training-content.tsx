@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Plus, Play, Users, Clock, BookOpen, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 import {
   Dialog,
   DialogContent,
@@ -16,6 +18,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 export function TrainingContent() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [currentUserEntrepriseId, setCurrentUserEntrepriseId] = useState<number | null>(null);
   const [trainings, setTrainings] = useState<any[]>([]);
   const [filteredTrainings, setFilteredTrainings] = useState<any[]>([]);
@@ -260,7 +267,7 @@ export function TrainingContent() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       {/* Viewer de média */}
       {currentMedia.type && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -301,25 +308,25 @@ export function TrainingContent() {
 
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des formations</h1>
-          <p className="text-gray-600 mt-2">Créez et gérez vos formations</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("back.gestionFormation.gestionForm")}</h1>
+          <p className="text-gray-600 mt-2">{t("back.gestionFormation.gestionFormDescr")}</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Nouvelle formation
+              {t("back.gestionFormation.nouvForm")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Créer une nouvelle formation</DialogTitle>
+              <DialogTitle>{t("back.gestionFormation.creerForm")}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="titre" className="text-right">
-                  Titre
+                {t("back.gestionFormation.titre")}
                 </Label>
                 <Input
                   id="titre"
@@ -330,7 +337,7 @@ export function TrainingContent() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
-                  Description
+                {t("back.gestionFormation.description")}
                 </Label>
                 <Textarea
                   id="description"
@@ -341,7 +348,7 @@ export function TrainingContent() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="url_video" className="text-right">
-                  URL Vidéo
+                {t("back.gestionFormation.urlVideo")}
                 </Label>
                 <Input
                   id="url_video"
@@ -352,7 +359,7 @@ export function TrainingContent() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="url_pdf" className="text-right">
-                  URL PDF
+                {t("back.gestionFormation.urlPDF")}
                 </Label>
                 <Input
                   id="url_pdf"
@@ -364,7 +371,7 @@ export function TrainingContent() {
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Annuler
+              {t("back.gestionFormation.annuler")}
               </Button>
               <Button 
                 onClick={handleCreateTraining}
@@ -380,25 +387,27 @@ export function TrainingContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total formations</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("back.gestionFormation.totalForm")}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{trainings.length}</div>
-            <p className="text-xs text-muted-foreground">+0 ce mois</p>
+            <p className="text-xs text-muted-foreground">{t("back.gestionFormation.ceMois")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Participants actifs</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("back.gestionFormation.participantsActif")}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading.activeUsers ? "Chargement..." : activeUsers.count}
+            {loading.activeUsers ? t("back.gestionFormation.chargement") : activeUsers.count}
+
             </div>
             <p className="text-xs text-muted-foreground">
-              {loading.activeUsers ? "" : `+${activeUsers.count} ce mois`}
+            {loading.activeUsers ? "" : `+${activeUsers.count} ${t("back.gestionFormation.ceMois1")}`}
+
             </p>
           </CardContent>
         </Card>
@@ -407,13 +416,13 @@ export function TrainingContent() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des formations</CardTitle>
-          <CardDescription>Gérez vos formations existantes</CardDescription>
+          <CardTitle>{t("back.gestionFormation.listeForm")}</CardTitle>
+          <CardDescription>{t("back.gestionFormation.gererForm")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
             <Input 
-              placeholder="Rechercher une formation..." 
+              placeholder={t("back.gestionFormation.rechercherForm")}
               className="max-w-sm" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -422,7 +431,7 @@ export function TrainingContent() {
           
           {loading.trainings ? (
             <div className="flex justify-center items-center h-32">
-              <p>Chargement des formations...</p>
+              <p>{t("back.gestionFormation.chargementForm")}</p>
             </div>
           ) : error ? (
             <div className="flex justify-center items-center h-32">
@@ -442,12 +451,12 @@ export function TrainingContent() {
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          Créé le {formatDate(training.date_creation)}
+                          {t("back.gestionFormation.creeLe")} {formatDate(training.date_creation)}
                         </div>
                         {training.duree && (
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            Durée: {training.duree} min
+                            {t("back.gestionFormation.duree")} {training.duree} min
                           </div>
                         )}
                       </div>
@@ -460,10 +469,10 @@ export function TrainingContent() {
                         onClick={() => handleAccessTraining(training)}
                         disabled={!training.url_video && !training.url_pdf}
                       >
-                        Accéder
+                        {t("back.gestionFormation.acceder")}
                       </Button>
                       <Button variant="outline" size="sm">
-                        Statistiques
+                      {t("back.gestionFormation.statistiques")}
                       </Button>
                     </div>
                   </div>

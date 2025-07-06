@@ -461,7 +461,7 @@ export default function Communication() {
   const currentConversation = conversations.find((c) => c.id === selectedConversation)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-150px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-150px)]" dir={textDirection}>
       {/* Liste des conversations - plus large */}
       <Card className="lg:col-span-2 border-0 shadow-none">
         <CardHeader className="p-4 pb-2">

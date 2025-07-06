@@ -408,7 +408,7 @@ const handleDownloadImage = async (planogram: Planogram) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       {/* Dialog pour afficher l'image en grand */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-4xl">

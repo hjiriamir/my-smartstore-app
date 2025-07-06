@@ -543,7 +543,7 @@ export default function FurnitureVisualization() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       {/* Contrôles de visualisation */}
       <Card>
         <CardHeader>

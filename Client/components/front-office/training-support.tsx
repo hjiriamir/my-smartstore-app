@@ -879,7 +879,7 @@ useEffect(() => {
   ? (completedModules.length / trainingModules.length) * 100 
   : 0
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
   
       <Tabs defaultValue="training" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -889,7 +889,7 @@ useEffect(() => {
         </TabsList>
   
         {/* Modules de formation */}
-        <TabsContent value="training" className="space-y-6">
+        <TabsContent value="training" className="space-y-6" dir={textDirection}>
           <Card>
             <CardHeader>
               <CardTitle>{t("front.support.moduleFormation")}</CardTitle>
@@ -1003,7 +1003,7 @@ useEffect(() => {
         </TabsContent>
   
         {/* FAQ */}
-        <TabsContent value="faq" className="space-y-6">
+        <TabsContent value="faq" className="space-y-6" dir={textDirection}>
   <Card>
     <CardHeader>
       <CardTitle>{t("front.support.questionsFrequent")}</CardTitle>
@@ -1065,7 +1065,7 @@ useEffect(() => {
   
         
         {/* Support */}
-<TabsContent value="support" className="space-y-6">
+<TabsContent value="support" className="space-y-6" dir={textDirection}>
   <Card>
     <CardHeader>
       <CardTitle> {t("front.support.gestionCompte")}</CardTitle>

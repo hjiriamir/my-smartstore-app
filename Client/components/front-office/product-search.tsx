@@ -435,7 +435,7 @@ export default function ProductSearch() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       {/* Barre de recherche */}
       <Card>
         <CardHeader>

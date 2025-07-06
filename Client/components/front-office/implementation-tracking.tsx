@@ -556,7 +556,7 @@ export default function ImplementationTracking() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       {/* Vue d'ensemble */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card>

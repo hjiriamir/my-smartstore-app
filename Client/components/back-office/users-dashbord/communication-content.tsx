@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Send, MessageCircle, Paperclip, PlusCircle, Loader2, Users, X } from "lucide-react"
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 import {
   Dialog,
   DialogContent,
@@ -64,6 +66,11 @@ interface User {
 }
 
 export function CommunicationContent() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [currentUserEntrepriseId, setCurrentUserEntrepriseId] = useState<number | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -393,10 +400,10 @@ export function CommunicationContent() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Messagerie</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">Communiquez avec votre équipe en temps réel</p>
+    <div className="space-y-6" dir={textDirection}>
+      <div className={isRTL ? 'text-right' : 'text-left'}>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t("back.communication.messagerie")}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">{t("back.communication.messagerieDescr")}</p>
       </div>
 
       <AnimatePresence>
@@ -419,14 +426,14 @@ export function CommunicationContent() {
             <CardHeader className="border-b">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <MessageCircle className="h-5 w-5 text-blue-600" />
-                <span className="text-gray-800 dark:text-white">Conversations</span>
+                <span className="text-gray-800 dark:text-white">{t("back.communication.conversations")}</span>
                 <Button 
                   size="sm" 
                   className="ml-auto"
                   onClick={() => setIsNewConversationOpen(true)}
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Nouvelle
+                  {t("back.communication.nouvelle")}
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -437,7 +444,7 @@ export function CommunicationContent() {
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
-                  Aucune conversation trouvée
+                  {t("back.communication.aucunConversation")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -461,7 +468,7 @@ export function CommunicationContent() {
                       </div>
                       <div className="flex items-center mt-1 space-x-2">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {conversation.nbParticipants} participant{conversation.nbParticipants > 1 ? 's' : ''}
+                          {conversation.nbParticipants} {t("back.communication.participant")}{conversation.nbParticipants > 1 ? 's' : ''}
                         </span>
                         <span className="text-xs text-gray-400 dark:text-gray-500">
                           • {formatConversationDate(conversation.date_creation)}
@@ -491,7 +498,7 @@ export function CommunicationContent() {
                 </div>
                 <div className="flex items-center mt-1 text-sm text-gray-600 dark:text-gray-400">
                   <span className="truncate">
-                    Avec {getParticipantNames(selectedConversation)}
+                  {t("back.communication.avec")} {getParticipantNames(selectedConversation)}
                   </span>
                 </div>
               </CardHeader>
@@ -505,8 +512,8 @@ export function CommunicationContent() {
                   ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
                       <MessageCircle className="h-12 w-12 mb-4 opacity-30" />
-                      <p>Aucun message dans cette conversation</p>
-                      <p className="text-sm mt-2">Envoyez le premier message !</p>
+                      <p>{t("back.communication.aucunMessage")}</p>
+                      <p className="text-sm mt-2">{t("back.communication.envoyerPremierMess")}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -549,7 +556,7 @@ export function CommunicationContent() {
                                   className="inline-flex items-center mt-2 p-2 bg-white/10 dark:bg-black/20 rounded hover:underline"
                                 >
                                   <Paperclip className="inline mr-2" size={16} />
-                                  Fichier joint
+                                  {t("back.communication.fichierJoint")}
                                 </a>
                               ) : (
                                 message.message
@@ -576,7 +583,7 @@ export function CommunicationContent() {
                 {/* Zone d'envoi de message */}
                 <div className="border-t p-4 bg-gray-50 dark:bg-gray-800/50 rounded-b-lg">
                   <Textarea
-                    placeholder="Écrivez votre message ici..."
+                    placeholder= {t("back.communication.ecrivezMessage")}
                     className="min-h-[80px] bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
@@ -596,7 +603,7 @@ export function CommunicationContent() {
                       className="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
                       <Paperclip className="mr-2 h-4 w-4" />
-                      Joindre un fichier
+                      {t("back.communication.joindreFichier")}
                     </Button>
                     <Button 
                       onClick={handleSendMessage}
@@ -606,12 +613,12 @@ export function CommunicationContent() {
                       {loading.sending ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Envoi...
+                          {t("back.communication.envoi")}
                         </>
                       ) : (
                         <>
                           <Send className="mr-2 h-4 w-4" />
-                          Envoyer
+                          {t("back.communication.envoyer")}
                         </>
                       )}
                     </Button>
@@ -623,16 +630,16 @@ export function CommunicationContent() {
             <Card className="h-full flex items-center justify-center shadow-sm">
               <CardContent className="p-8 text-center">
                 <MessageCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Aucune conversation sélectionnée</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t("back.communication.aucuneConvSelectionner")}</h3>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Sélectionnez une conversation existante ou créez-en une nouvelle
+                {t("back.communication.aucuneConvSelectionnerDescr")}
                 </p>
                 <Button 
                   className="mt-4"
                   onClick={() => setIsNewConversationOpen(true)}
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Nouvelle conversation
+                  {t("back.communication.nouvConversation")}
                 </Button>
               </CardContent>
             </Card>
@@ -644,26 +651,26 @@ export function CommunicationContent() {
       <Dialog open={isNewConversationOpen} onOpenChange={setIsNewConversationOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Nouvelle conversation</DialogTitle>
+            <DialogTitle>{t("back.communication.nouvConversation")}</DialogTitle>
             <DialogDescription>
-              Créez une nouvelle conversation avec vos collègues
+            {t("back.communication.creerConversation")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Titre de la conversation
+              {t("back.communication.titre")}
               </label>
               <Input
                 id="title"
-                placeholder="Entrez un titre..."
+                placeholder={t("back.communication.entrezTitre")}
                 value={newConversationTitle}
                 onChange={(e) => setNewConversationTitle(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <label htmlFor="participants" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Participants
+              {t("back.communication.participants")}
               </label>
               {loading.users ? (
                 <div className="flex justify-center items-center h-20">
@@ -678,7 +685,7 @@ export function CommunicationContent() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez des utilisateurs..." />
+                    <SelectValue placeholder={t("back.communication.selectUtilisateurs")} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableUsers
@@ -695,7 +702,7 @@ export function CommunicationContent() {
               {/* Liste des participants sélectionnés */}
               {selectedUsers.length > 0 && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Participants sélectionnés:</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t("back.communication.participantsSelectionne")}</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedUsers.map(userId => {
                       const user = availableUsers.find(u => u.id === userId);
@@ -729,7 +736,7 @@ export function CommunicationContent() {
                 setSelectedUsers([]);
               }}
             >
-              Annuler
+              {t("back.communication.annuler")}
             </Button>
             <Button 
               onClick={handleCreateConversation}
@@ -738,10 +745,10 @@ export function CommunicationContent() {
               {loading.creatingConversation ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Création...
+                  {t("back.communication.creation")}
                 </>
               ) : (
-                'Créer la conversation'
+                t("back.communication.creerLaConv")
               )}
             </Button>
           </div>

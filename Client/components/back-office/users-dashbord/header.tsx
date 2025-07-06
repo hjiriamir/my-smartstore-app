@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Bell, Search, User, Settings } from "lucide-react"
 import type { ActiveTab } from "./dashboard"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface HeaderProps {
   activeTab: ActiveTab
@@ -10,12 +12,17 @@ interface HeaderProps {
 }
 
 export function Header({ activeTab, setActiveTab }: HeaderProps) {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const tabs = [
-    { id: "dashboard" as ActiveTab, label: "Tableau de bord" },
-    { id: "communication" as ActiveTab, label: "Communication" },
-    { id: "training" as ActiveTab, label: "Gestion des formations" },
-    { id: "faq" as ActiveTab, label: "Gestion des FAQ" },
-    { id: "users" as ActiveTab, label: "Gestion des utilisateurs" },
+    { id: "dashboard" as ActiveTab, label: t("back.navBar.tabBord") },
+    { id: "communication" as ActiveTab, label: t("back.navBar.communication") },
+    { id: "training" as ActiveTab, label: t("back.navBar.gestionFormations") },
+    { id: "faq" as ActiveTab, label: t("back.navBar.gestionFaqs") },
+    { id: "users" as ActiveTab, label: t("back.navBar.gestionUtilisateurs") },
   ]
 
   return (

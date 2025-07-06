@@ -816,10 +816,7 @@ export function FurnitureEditor() {
 
                 <AIGenerationDialog onImport={handleImportPlanogram} />
 
-                <Button variant="outline" size="sm" onClick={forceSynchronization} className="mr-2 bg-transparent">
-                  <Grid className="h-4 w-4 mr-2" />
-                  Synchroniser
-                </Button>
+              
 
                 <Button
                   variant="outline"

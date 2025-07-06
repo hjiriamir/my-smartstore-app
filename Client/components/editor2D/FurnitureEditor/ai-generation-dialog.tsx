@@ -3,11 +3,12 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,12 @@ interface AIGenerationDialogProps {
 }
 
 export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
-  const { t } = useTranslation()
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
+  //const { t } = useTranslation()
   const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<"ai" | "import">("ai")
@@ -270,31 +276,37 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
     validationResults.products.some((p) => p.found)
 
   return (
+    
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <Bot className="h-4 w-4 mr-2" />
-          Générer furniture par IA
+          {t("back.furnitureEditorIA.generationParIA")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+          className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto"
+          dir={textDirection} 
+        >
         <DialogHeader>
-          <DialogTitle>Génération de meuble par IA</DialogTitle>
-          <DialogDescription>
-            Utilisez l'intelligence artificielle pour générer automatiquement des configurations de meubles ou importez
-            un fichier JSON existant
-          </DialogDescription>
-        </DialogHeader>
+  <div dir={i18n.language === "ar" ? "rtl" : "ltr"} className="space-y-1">
+    <DialogTitle>{t("back.furnitureEditorIA.generationMeubleIA")}</DialogTitle>
+    <DialogDescription>
+      {t("back.furnitureEditorIA.generationParIADescr")}
+    </DialogDescription>
+  </div>
+</DialogHeader>
+
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "ai" | "import")} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="ai" className="flex items-center gap-2">
               <Bot className="h-4 w-4" />
-              Génération IA
+              {t("back.furnitureEditorIA.generationIA")}
             </TabsTrigger>
             <TabsTrigger value="import" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              Import JSON
+              {t("back.furnitureEditorIA.importJSON")}
             </TabsTrigger>
           </TabsList>
 
@@ -303,30 +315,28 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
             <div className="text-center space-y-4">
               <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                 <Bot className="h-16 w-16 mx-auto text-blue-500 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Interface de génération IA</h3>
+                <h3 className="text-lg font-semibold mb-2">{t("back.furnitureEditorIA.interfaceIA")}</h3>
                 <p className="text-gray-600 mb-4">
-                  Cliquez sur le bouton ci-dessous pour ouvrir l'interface de génération de meubles par intelligence
-                  artificielle. L'IA vous aidera à créer des configurations optimales basées sur vos critères.
+                {t("back.furnitureEditorIA.interfaceIADescr")}
                 </p>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">• Génération automatique de planogrammes</p>
-                  <p className="text-sm text-gray-500">• Optimisation basée sur les données de vente</p>
-                  <p className="text-sm text-gray-500">• Suggestions de placement intelligent</p>
+                <div className="space-y-2" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
+                  <p className="text-sm text-gray-500">• {t("back.furnitureEditorIA.generationAutomatique")}</p>
+                  <p className="text-sm text-gray-500">• {t("back.furnitureEditorIA.optimisationBaseVente")}</p>
+                  <p className="text-sm text-gray-500">• {t("back.furnitureEditorIA.suggestionEmplacement")}</p>
                 </div>
               </div>
               <Button onClick={openAIInterface} size="lg" className="w-full">
                 <ExternalLink className="h-5 w-5 mr-2" />
-                Ouvrir l'interface IA
+                {t("back.furnitureEditorIA.ouvrirInterfaceIA")}
               </Button>
               <div className="text-xs text-gray-500 bg-yellow-50 p-3 rounded-md border border-yellow-200">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <span className="font-medium">Note:</span>
-                </div>
+              <div className="flex items-center gap-2" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
+  <AlertCircle className="h-4 w-4 text-yellow-600" />
+  <span className="font-medium">{t("back.furnitureEditorIA.note")}</span>
+</div>
+
                 <p className="mt-1">
-                  L'interface IA s'ouvrira dans une nouvelle fenêtre. Assurez-vous que les popups sont autorisés dans
-                  votre navigateur. Une fois la génération terminée, les données seront automatiquement importées dans
-                  l'éditeur.
+                {t("back.furnitureEditorIA.ouvrirInterfaceIADescr")}
                 </p>
               </div>
             </div>
@@ -336,7 +346,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
             <div className="space-y-4">
               {/* File selection */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Fichier JSON</label>
+                <label className="text-sm font-medium">{t("back.furnitureEditorIA.fichierJSON")}</label>
                 <div className="flex items-center space-x-2">
                   <Input type="file" accept=".json" onChange={handleFileSelect} className="flex-1" />
                   {selectedFile && (
@@ -347,30 +357,35 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                   )}
                   {savedPlanogramData && (
                     <Button variant="outline" size="sm" onClick={clearSavedData}>
-                      Effacer données
+                      {t("back.furnitureEditorIA.effacerDonne")}
                     </Button>
                   )}
                 </div>
 
                 {/* Message informatif si des données sont sauvegardées */}
                 {savedPlanogramData && !selectedFile && (
-                  <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-md border border-blue-200">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>Données précédemment importées disponibles</span>
-                    </div>
-                    <div className="text-xs mt-1">
-                      Planogramme: {savedPlanogramData.planogram_info.nom_planogram} |
-                      {savedPlanogramData.furniture.length} meuble(s) |{generatedFurnitureIds.size} déjà généré(s)
-                    </div>
-                  </div>
+                 <div
+                 className="text-sm text-blue-600 bg-blue-50 p-2 rounded-md border border-blue-200"
+                 dir={i18n.language === "ar" ? "rtl" : "ltr"}
+               >
+                 <div className="flex items-center gap-2">
+                   <CheckCircle className="h-4 w-4" />
+                   <span>{t("back.furnitureEditorIA.donneDisponible")}</span>
+                 </div>
+                 <div className="text-xs mt-1">
+                   {t("back.furnitureEditorIA.planogramme")} {savedPlanogramData.planogram_info.nom_planogram} |
+                   {savedPlanogramData.furniture.length} {t("back.furnitureEditorIA.meubles1")} |
+                   {generatedFurnitureIds.size} {t("back.furnitureEditorIA.dejaGenerer")}
+                 </div>
+               </div>
+               
                 )}
               </div>
 
               {/* Loading */}
               {isLoading && (
                 <div className="text-center py-4">
-                  <div className="text-sm text-muted-foreground">Analyse du fichier...</div>
+                  <div className="text-sm text-muted-foreground">{t("back.furnitureEditorIA.analyseFichier")} </div>
                 </div>
               )}
 
@@ -378,23 +393,23 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
               {(previewData || savedPlanogramData) && validationResults && (
                 <div className="space-y-4">
                   {/* Planogram info */}
-                  <Card>
+                  <Card dir={textDirection}>
                     <CardContent className="p-4">
-                      <h4 className="font-medium mb-2">Informations du planogramme</h4>
+                      <h4 className="font-medium mb-2">{t("back.furnitureEditorIA.infoPlanogramme")}</h4>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>ID: {(previewData || savedPlanogramData)?.planogram_info.planogram_id}</div>
-                        <div>Nom: {(previewData || savedPlanogramData)?.planogram_info.nom_planogram}</div>
-                        <div>Magasin: {(previewData || savedPlanogramData)?.planogram_info.magasin_id}</div>
-                        <div>Catégorie: {(previewData || savedPlanogramData)?.planogram_info.categorie_id}</div>
+                        <div>{t("back.furnitureEditorIA.id")} {(previewData || savedPlanogramData)?.planogram_info.planogram_id}</div>
+                        <div>{t("back.furnitureEditorIA.nom")} {(previewData || savedPlanogramData)?.planogram_info.nom_planogram}</div>
+                        <div>{t("back.furnitureEditorIA.magasin")} {(previewData || savedPlanogramData)?.planogram_info.magasin_id}</div>
+                        <div>{t("back.furnitureEditorIA.categorie")} {(previewData || savedPlanogramData)?.planogram_info.categorie_id}</div>
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Furniture selection */}
-                  <Card>
+                  <Card dir={textDirection}>
                     <CardContent className="p-4">
                       <h4 className="font-medium mb-2">
-                        Sélectionner un meuble ({(previewData || savedPlanogramData)?.furniture.length})
+                      {t("back.furnitureEditorIA.selectMeuble")} ({(previewData || savedPlanogramData)?.furniture.length})
                       </h4>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {(previewData || savedPlanogramData)?.furniture.map((furniture, index) => {
@@ -429,12 +444,12 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                                     <span className="font-medium text-sm">{furniture.furniture_type_name}</span>
                                     {isGenerated && (
                                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                                        Déjà généré
+                                        {t("back.furnitureEditorIA.dejaGenerer")}
                                       </span>
                                     )}
                                   </div>
                                   <div className="text-xs text-gray-500 mt-1 ml-5">
-                                    ID: {furniture.furniture_id} | {furniture.nb_etageres_unique_face}×
+                                  {t("back.furnitureEditorIA.id")} {furniture.furniture_id} | {furniture.nb_etageres_unique_face}×
                                     {furniture.nb_colonnes_unique_face} | {furniture.largeur}×{furniture.hauteur}×
                                     {furniture.profondeur}cm
                                   </div>
@@ -448,7 +463,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                                   <span
                                     className={`ml-1 text-xs ${furnitureValidation.found ? "text-green-600" : "text-red-600"}`}
                                   >
-                                    {furnitureValidation.found ? "Compatible" : "Non compatible"}
+                                    {furnitureValidation.found ? t("back.furnitureEditorIA.compatible") : t("back.furnitureEditorIA.nonCompatible")}
                                   </span>
                                 </div>
                               </div>
@@ -460,7 +475,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                       {selectedFurnitureId && (
                         <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md">
                           <div className="text-sm text-blue-800">
-                            <strong>Meuble sélectionné:</strong>{" "}
+                            <strong>{t("back.furnitureEditorIA.meubleSelectionner")}</strong>{" "}
                             {
                               (previewData || savedPlanogramData)?.furniture.find(
                                 (f) => f.furniture_id === selectedFurnitureId,
@@ -473,24 +488,24 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                                 (p) => p.furniture_id === selectedFurnitureId,
                               ).length
                             }{" "}
-                            produits associés
+                            {t("back.furnitureEditorIA.produitAssocier")}
                           </div>
                         </div>
                       )}
 
                       {(previewData || savedPlanogramData)?.furniture.length > 0 && !selectedFurnitureId && (
                         <div className="mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded-md border border-amber-200">
-                          Veuillez sélectionner un meuble pour continuer l'importation
+                          {t("back.furnitureEditorIA.veuillezSelectionnerMeuble")}
                         </div>
                       )}
                     </CardContent>
                   </Card>
 
                   {/* Products validation */}
-                  <Card>
+                  <Card dir={textDirection}>
                     <CardContent className="p-4">
                       <h4 className="font-medium mb-2">
-                        Produits ({(previewData || savedPlanogramData)?.product_positions.length})
+                      {t("back.furnitureEditorIA.produits")} ({(previewData || savedPlanogramData)?.product_positions.length})
                       </h4>
                       <div className="space-y-1 max-h-32 overflow-y-auto">
                         {validationResults.products.map((result, index) => (
@@ -503,7 +518,8 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                                 <AlertCircle className="h-4 w-4 text-red-500" />
                               )}
                               <span className={`ml-1 ${result.found ? "text-green-600" : "text-red-600"}`}>
-                                {result.found ? "Trouvé" : "Non trouvé"}
+                              {result.found ? t("back.furnitureEditorIA.trouve") : t("back.furnitureEditorIA.nonTrouve")}
+
                               </span>
                             </div>
                           </div>
@@ -511,7 +527,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                       </div>
                       <div className="mt-2 text-xs text-muted-foreground">
                         {validationResults.products.filter((p) => p.found).length} / {validationResults.products.length}{" "}
-                        produits trouvés
+                        {t("back.furnitureEditorIA.produitsTrouves")}
                       </div>
                     </CardContent>
                   </Card>
@@ -522,7 +538,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
                       <div className="flex items-center">
                         <AlertCircle className="h-4 w-4 text-yellow-600 mr-2" />
                         <span className="text-sm text-yellow-800">
-                          Aucun meuble ou produit compatible trouvé. Vérifiez votre bibliothèque.
+                        {t("back.furnitureEditorIA.aucunMeubleComptible")}
                         </span>
                       </div>
                     </div>
@@ -535,11 +551,14 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
 
         <DialogFooter className="flex justify-between">
           <DialogClose asChild>
-            <Button variant="outline">Fermer</Button>
+            <Button variant="outline">{t("back.furnitureEditorIA.fermer")}</Button>
           </DialogClose>
           {activeTab === "import" && (
             <Button onClick={handleImportFromFile} disabled={!canImport || isLoading || !selectedFurnitureId}>
-              {selectedFurnitureId ? "Importer le meuble sélectionné" : "Sélectionner un meuble"}
+              {selectedFurnitureId
+                ? t("back.furnitureEditorIA.importerDepuisJSON")
+                : t("back.furnitureEditorIA.selectMeuble")}
+
             </Button>
           )}
         </DialogFooter>

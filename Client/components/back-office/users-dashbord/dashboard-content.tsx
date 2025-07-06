@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Users, MessageSquare, GraduationCap, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 export function DashboardContent() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [entreprise, setEntreprise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -140,32 +147,40 @@ export function DashboardContent() {
   // Calculate stats
   const stats = [
     {
-      title: "Utilisateurs actifs",
+      title:t("back.dashboard.utilisateurActifs"),
       value: activeUsers.length.toString(),
-      description: monthlyUsers.length > 0 ? `+${monthlyUsers.length} ce mois-ci` : "Aucun nouveau ce mois-ci",
+      description: monthlyUsers.length > 0
+  ? `+${monthlyUsers.length} ${t("back.dashboard.ceMois")}`
+  : t("back.dashboard.aucunCeMois")
+,
       icon: Users,
       color: "text-blue-600",
     },
     {
-      title: "Messages envoyés",
+      title: t("back.dashboard.messageEnvoyer"),
       value: messages.reduce((acc, user) => acc + (user.nombre_messages || 0), 0).toString(),
-      description: `Envoyés par ${messages.length} utilisateurs`,
+      description: `${t("back.dashboard.envoyerPar")} ${messages.length} ${t("back.dashboard.utilisateurs")}`
+,
       icon: MessageSquare,
       color: "text-green-600",
     },
     {
-      title: "Formations disponibles",
+      title:  t("back.dashboard.formationsDispo"),
       value: formations.length.toString(),
-      description: monthlyFormations.length > 0 ? `+${monthlyFormations.length} ce mois-ci` : "Aucune nouvelle ce mois-ci",
+      description: monthlyFormations.length > 0
+  ? `+${monthlyFormations.length} ${t("back.dashboard.ceMois")}`
+  : t("back.dashboard.aucunFormCeMois")
+,
       icon: GraduationCap,
       color: "text-purple-600",
     },
     {
-      title: "FAQ disponibles",
+      title: t("back.dashboard.faqDispo"),
       value: faqs.length.toString(),
-      description: faqs.length > 0 
-        ? `Dans ${new Set(faqs.map(faq => faq.categorie)).size} catégories` 
-        : "Aucune FAQ disponible",
+      description: faqs.length > 0
+  ? `${t("back.dashboard.dans")} ${new Set(faqs.map(faq => faq.categorie)).size} ${t("back.dashboard.categories")}`
+  : t("back.dashboard.aucunFaq")
+,
       icon: BarChart3,
       color: "text-orange-600",
     },
@@ -175,7 +190,7 @@ export function DashboardContent() {
   const recentActivities = comments
     .flatMap(user => 
       (user.comments || []).map((comment: any) => ({
-        user: user.utilisateur || { name: 'Utilisateur inconnu' },
+        user: user.utilisateur || { name: t("back.dashboard.utilisateurInconue") },
         comment,
         date: new Date(comment.date_creation || new Date())
       }))
@@ -188,7 +203,7 @@ export function DashboardContent() {
     return (
       <div className="flex justify-center items-center h-64 flex-col gap-2">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p>Chargement des données...</p>
+        <p>{t("back.dashboard.chargementDonnees")} </p>
       </div>
     );
   }
@@ -210,11 +225,15 @@ export function DashboardContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t("back.dashboard.tabBord")}</h1>
         <p className="text-gray-600 mt-2">
-          {entreprise ? `Vue d'ensemble pour ${entreprise.nomEntreprise}` : "Vue d'ensemble de votre plateforme"}
+        {entreprise 
+  ? `${t("back.dashboard.vueEnsemble")} ${entreprise.nomEntreprise}` 
+  : t("back.dashboard.vueEnsemble1")
+}
+
         </p>
       </div>
 
@@ -223,8 +242,8 @@ export function DashboardContent() {
           const Icon = stat.icon;
           return (
             <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">{stat.title}</CardTitle>
+              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isRTL ? 'text-right' : 'text-left'}`}>
+              <CardTitle className={`text-sm font-medium text-gray-600 ${isRTL ? 'text-right' : 'text-left'}`}>{stat.title}</CardTitle>
                 <Icon className={`h-5 w-5 ${stat.color}`} />
               </CardHeader>
               <CardContent>
@@ -239,8 +258,8 @@ export function DashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Activité récente</CardTitle>
-            <CardDescription>Les derniers commentaires sur la plateforme</CardDescription>
+            <CardTitle>{t("back.dashboard.activiteRecent")}</CardTitle>
+            <CardDescription>{t("back.dashboard.activiteRecentDescr")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -252,7 +271,7 @@ export function DashboardContent() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">Aucune activité récente</p>
+                <p className="text-sm text-gray-500">{t("back.dashboard.aucunActivite")}</p>
               )}
             </div>
           </CardContent>
@@ -260,22 +279,22 @@ export function DashboardContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Statistiques mensuelles</CardTitle>
-            <CardDescription>Performance du mois en cours</CardDescription>
+            <CardTitle>{t("back.dashboard.statistiques")}</CardTitle>
+            <CardDescription>{t("back.dashboard.performance")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Nouveaux utilisateurs</span>
+                <span className="text-sm text-gray-600">{t("back.dashboard.nouvUtilisateur")}</span>
                 <span className="font-semibold">+{monthlyUsers.length}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Nouvelles formations</span> 
+                <span className="text-sm text-gray-600">{t("back.dashboard.nouvFormation")}</span> 
                 <span className="font-semibold">{monthlyFormations.length}</span>
               </div>
               
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">FAQ mises à jour</span>
+                <span className="text-sm text-gray-600">{t("back.dashboard.faqMisJour")}</span>
                 <span className="font-semibold">{faqs.length}</span>
               </div>
             </div>

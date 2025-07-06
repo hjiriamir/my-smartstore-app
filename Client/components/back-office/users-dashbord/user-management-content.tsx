@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Plus, Search, Edit, Trash2, Users, UserCheck, UserX, Crown } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 import {
   Dialog,
   DialogContent,
@@ -17,6 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function UserManagementContent() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState({
     users: false,
@@ -338,12 +345,15 @@ const [selectedRole, setSelectedRole] = useState("all")
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={textDirection}>
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t("back.gestionUtilisateur.gestion")}</h1>
           <p className="text-gray-600 mt-2">
-            {entrepriseName ? `Utilisateurs de ${entrepriseName}` : "Gérez les comptes utilisateurs et leurs permissions"}
+          {entrepriseName 
+            ? `${t("back.gestionUtilisateur.utilisateurDe")} ${entrepriseName}` 
+            : t("back.gestionUtilisateur.gererCompte")}
+
           </p>
         </div>
         
@@ -351,50 +361,50 @@ const [selectedRole, setSelectedRole] = useState("all")
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Nouvel utilisateur
+              {t("back.gestionUtilisateur.nouvUtilisateur")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-hidden">
             <ScrollArea className="h-full max-h-[80vh] pr-4">
               <DialogHeader>
-                <DialogTitle>Ajouter un nouvel utilisateur</DialogTitle>
+                <DialogTitle>{t("back.gestionUtilisateur.ajoutNouvUtilisateur")}</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom complet</Label>
+                  <Label htmlFor="name">{t("back.gestionUtilisateur.nomCompte")}</Label>
                   <Input
                     id="name"
                     value={newUser.name}
                     onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                    placeholder="Nom complet"
+                    placeholder={t("back.gestionUtilisateur.nomCompte")}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("back.gestionUtilisateur.email")}</Label>
                   <Input
                     id="email"
                     type="email"
                     value={newUser.email}
                     onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                    placeholder="Email"
+                    placeholder={t("back.gestionUtilisateur.email")}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
+                  <Label htmlFor="password">{t("back.gestionUtilisateur.motDePasse")}</Label>
                   <Input
                     id="password"
                     type="password"
                     value={newUser.password}
                     onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                    placeholder="Mot de passe"
+                    placeholder={t("back.gestionUtilisateur.motDePasse")}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Rôle</Label>
+                  <Label htmlFor="role">{t("back.gestionUtilisateur.role")}</Label>
                   <Select
                     value={newUser.role}
                     onValueChange={(value) => setNewUser({...newUser, role: value})}
@@ -403,19 +413,19 @@ const [selectedRole, setSelectedRole] = useState("all")
                       <SelectValue placeholder="Sélectionner un rôle" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="store_manager">Gérant de magasin</SelectItem>
-                      <SelectItem value="chef de rayon">Chef de rayon</SelectItem>
-                      <SelectItem value="back_office_user">Back office</SelectItem>
-                      <SelectItem value="seller">Vendeur</SelectItem>
-                      <SelectItem value="cashier">Caissier</SelectItem>
-                      <SelectItem value="support_technician">Support technique</SelectItem>
+                      <SelectItem value="admin">{t("back.gestionUtilisateur.admin")}</SelectItem>
+                      <SelectItem value="store_manager">{t("back.gestionUtilisateur.gerantMagasin")}</SelectItem>
+                      <SelectItem value="chef de rayon">{t("back.gestionUtilisateur.chefRayon")}</SelectItem>
+                      <SelectItem value="back_office_user">{t("back.gestionUtilisateur.backOffice")}</SelectItem>
+                      <SelectItem value="seller">{t("back.gestionUtilisateur.vendeur")}</SelectItem>
+                      <SelectItem value="cashier">{t("back.gestionUtilisateur.caissier")}</SelectItem>
+                      <SelectItem value="support_technician">{t("back.gestionUtilisateur.support")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="company">Entreprise</Label>
+                  <Label htmlFor="company">{t("back.gestionUtilisateur.entreprise")}</Label>
                   <Input
                     id="company"
                     value={entrepriseName}
@@ -424,14 +434,15 @@ const [selectedRole, setSelectedRole] = useState("all")
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="magasin">Magasin</Label>
+                  <Label htmlFor="magasin">{t("back.gestionUtilisateur.magasin")}</Label>
                   <Select
                     value={newUser.magasin_id}
                     onValueChange={(value) => setNewUser({...newUser, magasin_id: value})}
                     disabled={loading.magasins}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={loading.magasins ? "Chargement..." : "Sélectionner un magasin"} />
+                    <SelectValue placeholder={loading.magasins ? t("back.gestionUtilisateur.chargement") : t("back.gestionUtilisateur.selectMagasin")} />
+
                     </SelectTrigger>
                     <SelectContent>
                       {magasins.map((magasin) => (
@@ -450,7 +461,8 @@ const [selectedRole, setSelectedRole] = useState("all")
                   disabled={loading.addUser}
                   className="w-full"
                 >
-                  {loading.addUser ? "Ajout en cours..." : "Ajouter l'utilisateur"}
+                  {loading.addUser ? t("back.gestionUtilisateur.AjoutEnCours") : t("back.gestionUtilisateur.ajouterUtilisateur")}
+
                 </Button>
               </div>
             </ScrollArea>
@@ -461,17 +473,17 @@ const [selectedRole, setSelectedRole] = useState("all")
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total utilisateurs</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("back.gestionUtilisateur.totalUtilisateurs")}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{users.length}</div>
-            <p className="text-xs text-muted-foreground">Dans votre entreprise</p>
+            <p className="text-xs text-muted-foreground">{t("back.gestionUtilisateur.dansEntreprise")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs actifs</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("back.gestionUtilisateur.utilisateursActifs")}</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
         </Card>
@@ -479,15 +491,18 @@ const [selectedRole, setSelectedRole] = useState("all")
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des utilisateurs</CardTitle>
+          <CardTitle>{t("back.gestionUtilisateur.listesUtilisateurs")}</CardTitle>
           <CardDescription>
-            {entrepriseName ? `Utilisateurs de ${entrepriseName}` : "Liste des utilisateurs"}
+          {entrepriseName 
+            ? `${t("back.gestionUtilisateur.utilisateurDe")} ${entrepriseName}` 
+            : t("back.gestionUtilisateur.listesUtilisateurs")}
+
           </CardDescription>
         </CardHeader>
         <CardContent>
         <div className="mb-4 flex gap-2">
   <Input 
-    placeholder="Rechercher un utilisateur..." 
+    placeholder={t("back.gestionUtilisateur.rechrcherUtilisateur")}
     className="flex-1" 
     value={searchTerm}
     onChange={(e) => setSearchTerm(e.target.value)}
@@ -497,10 +512,10 @@ const [selectedRole, setSelectedRole] = useState("all")
     onValueChange={setSelectedMagasin}
   >
     <SelectTrigger className="w-[180px]">
-      <SelectValue placeholder="Tous les magasins" />
+      <SelectValue placeholder={t("back.gestionUtilisateur.tousMagasins")}/>
     </SelectTrigger>
     <SelectContent>
-      <SelectItem value="all">Tous les magasins</SelectItem>
+      <SelectItem value="all">{t("back.gestionUtilisateur.tousMagasins")}</SelectItem>
       {magasins.map((magasin) => (
         <SelectItem key={magasin.id} value={magasin.magasin_id}>
           {magasin.nom_magasin}
@@ -513,17 +528,17 @@ const [selectedRole, setSelectedRole] = useState("all")
     onValueChange={setSelectedRole}
   >
     <SelectTrigger className="w-[180px]">
-      <SelectValue placeholder="Tous les rôles" />
+      <SelectValue placeholder={t("back.gestionUtilisateur.tousRoles")} />
     </SelectTrigger>
     <SelectContent>
-      <SelectItem value="all">Tous les rôles</SelectItem>
-      <SelectItem value="admin">Admin</SelectItem>
-      <SelectItem value="store_manager">Gérant de magasin</SelectItem>
-      <SelectItem value="chef de rayon">Chef de rayon</SelectItem>
-      <SelectItem value="back_office_user">Back office</SelectItem>
-      <SelectItem value="seller">Vendeur</SelectItem>
-      <SelectItem value="cashier">Caissier</SelectItem>
-      <SelectItem value="support_technician">Support technique</SelectItem>
+      <SelectItem value="all">{t("back.gestionUtilisateur.tousRoles")}</SelectItem>
+      <SelectItem value="admin">{t("back.gestionUtilisateur.admin")}</SelectItem>
+      <SelectItem value="store_manager">{t("back.gestionUtilisateur.gerantMagasin")}</SelectItem>
+      <SelectItem value="chef de rayon">{t("back.gestionUtilisateur.chefRayon")}</SelectItem>
+      <SelectItem value="back_office_user">{t("back.gestionUtilisateur.backOffice")}</SelectItem>
+      <SelectItem value="seller">{t("back.gestionUtilisateur.vendeur")}</SelectItem>
+      <SelectItem value="cashier">{t("back.gestionUtilisateur.caissier")}</SelectItem>
+      <SelectItem value="support_technician">{t("back.gestionUtilisateur.support")} </SelectItem>
     </SelectContent>
   </Select>
   <Button variant="outline" onClick={refreshUsers} disabled={loading.users}>
@@ -553,7 +568,7 @@ const [selectedRole, setSelectedRole] = useState("all")
           
           {loading.users ? (
             <div className="flex justify-center py-8">
-              <p>Chargement des utilisateurs...</p>
+              <p>{t("back.gestionUtilisateur.chargmentUtilisateurs")} </p>
             </div>
           ) : error ? (
             <div className="flex justify-center py-8 text-red-500">
@@ -579,7 +594,7 @@ const [selectedRole, setSelectedRole] = useState("all")
                             </div>
                             <p className="text-sm text-gray-600">{user.email}</p>
                             <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                              <span>Magasin: {user.magasin_id || "Non attribué"}</span>
+                              <span>{t("back.gestionUtilisateur.magasin")} {user.magasin_id || "Non attribué"}</span>
                             </div>
                           </div>
                         </div>
@@ -596,7 +611,7 @@ const [selectedRole, setSelectedRole] = useState("all")
                   ))
                 ) : (
                   <div className="flex justify-center py-8">
-                    <p>Aucun utilisateur trouvé</p>
+                    <p>{t("back.gestionUtilisateur.aucunUtilisateur")}</p>
                   </div>
                 )}
               </div>

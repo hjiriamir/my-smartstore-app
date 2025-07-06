@@ -442,17 +442,17 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
   }, [userId, i18n.language]); // Ajoutez i18n.language comme dépendance
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-14">
+    <div className="min-h-screen bg-gray-50 mt-14" dir={textDirection}>
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex justify-between items-center h-16">
-      <div className="flex items-center">
-        <Package className="h-8 w-8 text-blue-600 mr-3" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className={`flex justify-between items-center h-16 ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <Package className={`h-8 w-8 text-blue-600 ${isRTL ? 'ml-3' : 'mr-3'}`} />
         <h1 className="text-xl font-semibold text-gray-900">Smart Store</h1>
       </div>
       
-      <div className="flex items-center space-x-6">
+      <div className={`flex items-center space-x-6 ${isRTL ? 'space-x-reverse' : ''}`}>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
           {notifications.filter(n => !n.lu).length > 0 && (
@@ -479,7 +479,11 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
       <User className="h-4 w-4 text-gray-600" />
     </Button>
   </DropdownMenuTrigger>
-  <DropdownMenuContent className="w-56" align="end" forceMount>
+  <DropdownMenuContent 
+  className="w-56" 
+  align={isRTL ? "start" : "end"} 
+  forceMount
+>
     <DropdownMenuLabel className="font-normal">
       <div className="flex flex-col space-y-1">
         <p className="text-sm font-medium leading-none">
@@ -493,7 +497,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
     <DropdownMenuSeparator />
     <DropdownMenuItem onClick={() => setActiveTab("support")}>
       <User className="mr-2 h-4 w-4" />
-      <span>Profil</span>
+      <span>{t("front.navBar.profil")}</span>
     </DropdownMenuItem>
     <DropdownMenuSeparator />
     <DropdownMenuItem 
@@ -501,7 +505,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
   onClick={handleLogout} 
 >
   <LogOut className="mr-2 h-4 w-4" />
-  <span>Déconnexion</span>
+  <span>{t("front.navBar.deconnexion")}</span>
 </DropdownMenuItem>
   </DropdownMenuContent>
 </DropdownMenu>
@@ -513,7 +517,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
       {/* Navigation Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-6">
+        <TabsList className={`grid w-full grid-cols-7 mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
             <TabsTrigger value="dashboard">{t("front.navBar.tabledDeBoard")}</TabsTrigger>
             <TabsTrigger value="library">{t("front.navBar.bibliotheque")}</TabsTrigger>
             <TabsTrigger value="visualization">{t("front.navBar.visualisation")}</TabsTrigger>
@@ -528,8 +532,8 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
             {/* Statistiques principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{t("front.dashboard.tacheEnAttent")}</CardTitle>
+              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <CardTitle className={`text-sm font-medium ${isRTL ? 'text-right' : 'text-left'}`}>{t("front.dashboard.tacheEnAttent")}</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -539,7 +543,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <CardTitle className="text-sm font-medium">{t("front.dashboard.termineAujourd")}</CardTitle>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 </CardHeader>
@@ -549,7 +553,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <CardTitle className="text-sm font-medium">{t("front.dashboard.totalPlanogram")}</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -560,7 +564,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <CardTitle className="text-sm font-medium">{t("front.dashboard.tauxImpl")}</CardTitle>
                   <TrendingUp className="h-4 w-4 text-blue-600" />
                 </CardHeader>
@@ -577,21 +581,26 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               {/* Planogrammes récents */}
               <Card>
   <CardHeader>
-    <CardTitle>{t("front.dashboard.recentPlanogram")}</CardTitle>
-    <CardDescription>{t("front.dashboard.recentPlanogramDesr")}</CardDescription>
+    <CardTitle className={isRTL ? 'text-right' : 'text-left'}>{t("front.dashboard.recentPlanogram")}</CardTitle>
+    <CardDescription className={isRTL ? 'text-right' : 'text-left'}>{t("front.dashboard.recentPlanogramDesr")}</CardDescription>
   </CardHeader>
   <CardContent>
     <div className="h-[400px] overflow-y-auto"> {/* Conteneur avec hauteur fixe et scroll */}
       <div className="space-y-4 min-h-[300px]"> {/* Conteneur interne pour l'espacement */}
         {recentPlanograms.map((planogram) => (
           <div 
-            key={planogram.id} 
-            className="flex items-center justify-between p-3 border rounded-lg"
-            style={{ minHeight: '80px' }} /* Hauteur minimale pour chaque carte */
-          >
+          key={planogram.id} 
+          className={`flex items-center justify-between p-3 border rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}
+          style={{ minHeight: '80px' }}
+        >
             <div className="flex-1">
-              <h4 className="font-medium">{planogram.name}</h4>
-              <p className="text-sm text-muted-foreground">{planogram.description}</p>
+            <h4 className={`font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+              {planogram.name}
+            </h4>
+            <p className={`text-sm text-muted-foreground ${isRTL ? 'text-right' : 'text-left'}`}>
+              {planogram.description}
+            </p>
+
             </div>
             <div className="flex items-center space-x-2">
               <Badge
@@ -616,8 +625,8 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               {/* Notifications */}
               <Card>
   <CardHeader>
-    <CardTitle>{t("front.dashboard.notif")}</CardTitle>
-    <CardDescription>{t("front.dashboard.notifDescr")}</CardDescription>
+    <CardTitle className={isRTL ? 'text-right' : 'text-left'}>{t("front.dashboard.notif")}</CardTitle>
+    <CardDescription className={isRTL ? 'text-right' : 'text-left'}>{t("front.dashboard.notifDescr")}</CardDescription>
   </CardHeader>
   <CardContent>
   <div className="h-[400px] overflow-y-auto">
@@ -626,13 +635,13 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
       {notifications.length > 0 ? (
         notifications.map((notification) => (
           <div 
-              key={notification.id} 
-              className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                !notification.lu ? "bg-blue-50 border-blue-200" : ""
-              }`}
-              onClick={() => markAsRead(notification.id)}
-              style={{ minHeight: '80px' }} /* Hauteur minimale pour chaque notification */
-            >
+            key={notification.id} 
+            className={`flex items-start space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+              !notification.lu ? "bg-blue-50 border-blue-200" : ""
+            } ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}
+            onClick={() => markAsRead(notification.id)}
+            style={{ minHeight: '80px' }}
+          >
             <div
               className={`w-2 h-2 rounded-full mt-2 ${
                 !notification.lu 
@@ -640,17 +649,18 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
                   : "bg-gray-300"
               }`}
             />
-            <div className="flex-1">
+            <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
               <p className="text-sm font-medium">
-              {notification.type === "nouveau planogramme" && t("front.dashboard.nouvPlanogram")}
-              {notification.type === "confirmation requise" && "Confirmation requise"}
-                {notification.type === "retard" && "Retard détecté"}
+                {notification.type === "nouveau planogramme" && t("front.dashboard.nouvPlanogram")}
+                {notification.type === "confirmation requise" && t("front.dashboard.confirmationRequise")}
+                {notification.type === "retard" && t("front.dashboard.retardDetecte")}
               </p>
               <p className="text-sm">{notification.contenu}</p>
               <p className="text-xs text-muted-foreground mt-1">
                 {formatNotificationDate(notification.date_envoi)}
               </p>
             </div>
+
             {!notification.lu && (
               <span className="text-xs text-blue-500">{t("front.dashboard.nouveau")}</span>
             )}
