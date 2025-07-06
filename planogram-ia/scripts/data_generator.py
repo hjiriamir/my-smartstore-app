@@ -281,7 +281,7 @@ if __name__ == "__main__":
     print("=" * 50)
 
     # Génération du dataset principal
-    df_main = generate_comprehensive_dataset(1000, "data/dataset.csv")
+    df_main = generate_comprehensive_dataset(1000, "data/datasete.csv")
 
     # Génération d'un mini dataset pour les tests
     df_mini = generate_mini_dataset(100, "data/mini_dataset.csv")

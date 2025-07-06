@@ -1,9 +1,9 @@
 {
   "planogram_info": {
-    "planogram_id": "PLANO_20250704_165342",
+    "planogram_id": "PLANO_20250706_170029",
     "nom_planogram": "Planogramme MG001_CAT001",
     "statut": "generated",
-    "date_creation": "2025-07-04T16:53:42.364910",
+    "date_creation": "2025-07-06T17:00:29.975352",
     "magasin_id": "MG001",
     "categorie_id": "CAT001"
   },
@@ -40,7 +40,7 @@
     }
   ],
   "_transfer_meta": {
-    "timestamp": "2025-07-04T16:53:42.368880",
+    "timestamp": "2025-07-06T17:00:29.977143",
     "file_path": "C:\\Users\\Dell\\Desktop\\Smart-Store\\SmartStore-IA\\planogram-ia\\transfer\\planogram_transfer.json",
     "transfer_method": "direct_file",
     "streamlit_port": 8501,

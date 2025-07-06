@@ -20,8 +20,8 @@ except ImportError as e:
     st.stop()
 
 # Configuration du chemin (en haut du fichier)
-DATA_PATH = r"C:\Users\Dell\Desktop\Smart-Store\SmartStore-IA\dataset.csv"
-
+#DATA_PATH = r"C:\Users\Dell\Desktop\Smart-Store\SmartStore-IA\dataset.csv"
+DATA_PATH = 'data/dataset.csv'
 # NOUVEAU: Chemin pour le fichier de transfert DIRECT
 TRANSFER_FILE = "planogram_transfer.json"
 TRANSFER_DIR = "transfer"
