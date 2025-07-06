@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, Clock, AlertTriangle, Camera, MessageSquare, Upload, Calendar, User } from "lucide-react"
 import axios from "axios"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface PlanogramImplementation {
   id: number
@@ -101,6 +103,11 @@ interface Implementation {
 }
 
 export default function ImplementationTracking() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [selectedImplementation, setSelectedImplementation] = useState<Implementation | null>(null)
   const [comment, setComment] = useState("")
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
@@ -554,7 +561,7 @@ export default function ImplementationTracking() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card>
   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-    <CardTitle className="text-sm font-medium">En cours</CardTitle>
+    <CardTitle className="text-sm font-medium">{t("front.library.enCours")}</CardTitle>
     <Clock className="h-4 w-4 text-yellow-600" />
   </CardHeader>
   <CardContent>
@@ -566,7 +573,7 @@ export default function ImplementationTracking() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">À implémenter</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("front.dashboard.aImplementer")}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -578,7 +585,7 @@ export default function ImplementationTracking() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Terminées</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("front.tracing.termines")}</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -613,7 +620,7 @@ export default function ImplementationTracking() {
               {/* Progression */}
 <div>
   <div className="flex justify-between items-center mb-2">
-    <span className="text-sm font-medium">Progression</span>
+    <span className="text-sm font-medium">{t("front.tracing.progression")}</span>
     <span className="text-sm text-muted-foreground">{implementation.progress}%</span>
   </div>
   <Progress value={implementation.progress} className="h-2" />
@@ -622,14 +629,14 @@ export default function ImplementationTracking() {
               {/* Informations temporelles */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">Échéance:</span>
+                  <span className="font-medium">{t("front.tracing.echeance")}:</span>
                   <div className="flex items-center space-x-1 mt-1">
                     <Calendar className="h-3 w-3" />
                     <span>{implementation.dueDate}</span>
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium">Temps estimé:</span>
+                  <span className="font-medium">{t("front.tracing.tempsEstime")}:</span>
                   <div className="mt-1">{implementation.estimatedTime}</div>
                 </div>
               </div>
@@ -638,7 +645,7 @@ export default function ImplementationTracking() {
               {/* Tâches */}
 <div>
   <h4 className="font-medium mb-2">
-    Tâches ({implementation.tasks.filter((t) => t.completed).length}/{implementation.tasks.length})
+  {t("front.tracing.taches")} ({implementation.tasks.filter((t) => t.completed).length}/{implementation.tasks.length})
   </h4>
   <div className="space-y-1">
     {implementation.tasks.slice(0, 3).map((task) => (
@@ -654,7 +661,7 @@ export default function ImplementationTracking() {
     ))}
     {implementation.tasks.length > 3 && (
       <div className="text-xs text-muted-foreground">
-        +{implementation.tasks.length - 3} autres tâches
+        +{implementation.tasks.length - 3}  {t("front.tracing.autreTaches")}
       </div>
     )}
   </div>
@@ -666,11 +673,11 @@ export default function ImplementationTracking() {
                   <>
                     <Button size="sm" onClick={() => handleValidateImplementation(implementation.id)}>
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Valider
+                      {t("front.tracing.valider")}
                     </Button>
                     <Button size="sm" variant="outline">
                       <Camera className="h-4 w-4 mr-2" />
-                      Photo
+                      {t("front.tracing.photo")}
                     </Button>
                   </>
                 )}
@@ -680,7 +687,7 @@ export default function ImplementationTracking() {
   onClick={() => handleSelectImplementation(implementation)}
 >
   <MessageSquare className="h-4 w-4 mr-2" />
-  Détails
+  {t("front.tracing.details")}
 </Button>
               </div>
             </CardContent>
@@ -693,7 +700,7 @@ export default function ImplementationTracking() {
         <Card className="border-2 border-blue-200">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Détails - {selectedImplementation.planogramName}</CardTitle>
+              <CardTitle> {t("front.tracing.details")} - {selectedImplementation.planogramName}</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setSelectedImplementation(null)}>
                 ✕
               </Button>
@@ -702,7 +709,7 @@ export default function ImplementationTracking() {
           <CardContent className="space-y-6">
             {/* Commentaires */}
 <div>
-  <h4 className="font-medium mb-3">Commentaires et historique</h4>
+  <h4 className="font-medium mb-3"> {t("front.tracing.commentHistorique")}</h4>
   <div className="space-y-3 max-h-40 overflow-y-auto">
   {selectedImplementation.comments.map((comment) => (
     <div key={comment.id} className="flex space-x-3 p-3 bg-gray-50 rounded-lg">
@@ -721,7 +728,7 @@ export default function ImplementationTracking() {
               className="inline-flex items-center text-sm text-blue-600 hover:underline"
             >
               <Camera className="h-4 w-4 mr-1" />
-              Voir la photo jointe
+              {t("front.tracing.photoJointe")}
             </a>
           </div>
         )}
@@ -733,10 +740,10 @@ export default function ImplementationTracking() {
 
             {/* Ajouter un commentaire */}
             <div>
-              <h4 className="font-medium mb-2">Ajouter un commentaire</h4>
+              <h4 className="font-medium mb-2">{t("front.tracing.ajouterComment")}</h4>
               <div className="space-y-3">
                 <Textarea
-                  placeholder="Votre commentaire..."
+                  placeholder={t("front.tracing.votreComment")}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
@@ -744,12 +751,12 @@ export default function ImplementationTracking() {
               <div className="flex space-x-2">
   <Button size="sm" onClick={handleAddComment}>
     <MessageSquare className="h-4 w-4 mr-2" />
-    Ajouter
+    {t("front.tracing.ajouter")}
   </Button>
   <Button size="sm" variant="outline" asChild>
     <label className="cursor-pointer">
       <Upload className="h-4 w-4 mr-2" />
-      Joindre photos
+      {t("front.tracing.joindresPhotos")}
       <input 
         type="file" 
         multiple 
@@ -766,7 +773,7 @@ export default function ImplementationTracking() {
             {/* Photos jointes */}
             {photos.length > 0 && (
   <div className="mt-4">
-    <h4 className="font-medium mb-2">Photos à joindre</h4>
+    <h4 className="font-medium mb-2">{t("front.tracing.photoAjoindre")}</h4>
     <div className="flex flex-wrap gap-3">
       {photos.map((photo, index) => (
         <div key={`${photo.name}-${index}`} className="relative group">

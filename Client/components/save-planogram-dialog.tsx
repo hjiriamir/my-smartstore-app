@@ -116,12 +116,47 @@ export function SavePlanogramDialog({
   const [isLoadingZones, setIsLoadingZones] = useState(false)
   const [isLoadingFurnitureTypes, setIsLoadingFurnitureTypes] = useState(false)
 
+  // stocker les planogrammes existants
+  const [existingPlanograms, setExistingPlanograms] = useState<any[]>([]);
+  const [selectedPlanogramId, setSelectedPlanogramId] = useState<string | null>(null);
+
+
+  // Charger les planogrammes existants quand un magasin est sélectionné
+  useEffect(() => {
+    if (selectedMagasinId) {
+      const fetchPlanograms = async () => {
+        try {
+          const response = await fetch(`http://localhost:8081/api/planogram/fetchPlanogramByStore/${selectedMagasinId}`);
+          if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+          }
+          const data = await response.json();
+          // Extraire le tableau 'rows' de la réponse
+          const planograms = data.rows || [];
+          setExistingPlanograms(Array.isArray(planograms) ? planograms : []);
+        } catch (error) {
+          console.error("Erreur lors du chargement des planogrammes:", error);
+          setExistingPlanograms([]);
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger la liste des planogrammes existants",
+            variant: "destructive",
+          });
+        }
+      };
+  
+      fetchPlanograms();
+    } else {
+      setExistingPlanograms([]);
+      setSelectedPlanogramId(null);
+    }
+  }, [selectedMagasinId, toast]);
   //const [filesBaseName, setFilesBaseName] = useState(planogramConfig.name);
   //const [image2DUrl, setImage2DUrl] = useState("");
   //const [image3DUrl, setImage3DUrl] = useState("");
   //const [pdfUrl, setPdfUrl] = useState("");
   //const [isGeneratingFiles, setIsGeneratingFiles] = useState(false);
-  
+  const [dateFinPrevue, setDateFinPrevue] = useState<string>("");
 
   const generateMultiAngle3DImage = async (): Promise<File> => {
     return new Promise(async (resolve, reject) => {
@@ -300,19 +335,23 @@ const generatePDF = async (): Promise<File> => {
         unit: "mm"
       });
 
-      // Couleurs personnalisées
-      const primaryColor = [41, 128, 185];
-      const secondaryColor = [52, 152, 219];
-      const darkColor = [44, 62, 80];
-      const lightColor = [236, 240, 241];
+      // Définition des couleurs
+      const colors = {
+        primary: [41, 128, 185],    // Bleu primaire
+        secondary: [52, 152, 219],  // Bleu secondaire
+        dark: [44, 62, 80],         // Texte foncé
+        light: [236, 240, 241],     // Fond clair
+        white: [255, 255, 255],     // Blanc
+        rowEven: [255, 255, 255],   // Ligne paire
+        rowOdd: [245, 245, 245],     // Ligne impaire
+        headerBlue: [33, 150, 243]
+      };
 
-      doc.setFont("helvetica");
-      
       // Page de couverture
-      doc.setFillColor(...primaryColor);
+      doc.setFillColor(...colors.primary);
       doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
       
-      doc.setTextColor(255, 255, 255);
+      doc.setTextColor(...colors.white);
       doc.setFontSize(36);
       doc.text("PLANOGRAMME", 105, 40, { align: "center" });
       doc.setFontSize(24);
@@ -328,24 +367,23 @@ const generatePDF = async (): Promise<File> => {
       
       doc.addPage();
 
-      // En-tête de page
-      doc.setFillColor(...lightColor);
+      // Page d'informations
+      doc.setFillColor(...colors.light);
       doc.rect(0, 0, doc.internal.pageSize.getWidth(), 15, 'F');
-      doc.setTextColor(...darkColor);
+      doc.setTextColor(...colors.dark);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text(`Détails du planogramme: ${name}`, 10, 10);
       
-      // Informations principales
+      // Informations de base
       doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
       
-      // Section informations de base - MODIFIÉE
-      doc.setTextColor(...darkColor);
+      doc.setTextColor(...colors.dark);
       doc.setFont("helvetica", "bold");
       doc.text("Informations de base", 10, 25);
       
-      doc.setDrawColor(...secondaryColor);
+      doc.setDrawColor(...colors.secondary);
       doc.line(10, 27, 60, 27);
       
       doc.setFont("helvetica", "normal");
@@ -353,7 +391,6 @@ const generatePDF = async (): Promise<File> => {
 
       const furnitureType = furnitureTypes.find(ft => ft.furniture_type_id === selectedFurnitureTypeId);
 
-      // Nouvelle section pour les faces
       let facesDescription = "";
       if (planogramConfig.furnitureType === "planogram") {
         facesDescription = "1 face (frontale)";
@@ -369,7 +406,7 @@ const generatePDF = async (): Promise<File> => {
       doc.text(`Emplacements: ${planogramConfig.columns}`, 10, 50);
       doc.text(`Produits placés: ${placedProductsCount}`, 10, 55);
 
-      // Ajoutez une section détaillée sur les faces
+      // Configuration des faces
       doc.setFont("helvetica", "bold");
       doc.text("Configuration des faces:", 10, 65);
 
@@ -385,124 +422,129 @@ const generatePDF = async (): Promise<File> => {
         doc.text(`- Face droite: ${planogramConfig.shelvesDisplayDetails.nb_colonnes_left_right} colonnes × ${planogramConfig.shelvesDisplayDetails.nb_etageres_left_right} étagères`, 15, 85);
       }
       
-      // Section produits
+      // Page des produits
       doc.addPage();
-      doc.setFillColor(...lightColor);
+      doc.setFillColor(...colors.light);
       doc.rect(0, 0, doc.internal.pageSize.getWidth(), 15, 'F');
-      doc.setTextColor(...darkColor);
+      doc.setTextColor(...colors.dark);
       doc.setFont("helvetica", "bold");
       doc.text("Détail des produits", 10, 10);
       
-      doc.setDrawColor(...secondaryColor);
+      doc.setDrawColor(...colors.secondary);
       doc.line(10, 12, 60, 12);
-      
-      // Tableau des produits
+
+      // Configuration du tableau
       const headers = ["Produit", "Code", "Quantité", "Position", "Face"];
       const columnWidths = [70, 30, 20, 30, 20];
-      const rows: string[][] = [];
-      
-      cells
+      const startX = 10;
+      let startY = 25;
+      const rowHeight = 8;
+
+      // Fonction pour dessiner l'en-tête du tableau
+      const drawTableHeader = (y: number) => {
+        doc.setFillColor(...colors.headerBlue); // Utilisation du bleu pour l'arrière-plan
+        doc.setTextColor(...colors.white);
+        doc.setFont("helvetica", "bold");
+        
+        let xPos = startX;
+        headers.forEach((header, i) => {
+          doc.rect(xPos, y, columnWidths[i], rowHeight, 'F');
+          doc.text(
+            header,
+            xPos + columnWidths[i] / 2,
+            y + rowHeight / 2 + 2,
+            { align: "center" }
+          );
+          xPos += columnWidths[i];
+        });
+      };
+
+      // Préparation des données
+      const rows = cells
         .filter(cell => cell.instanceId !== null && cell.furnitureType === planogramConfig.furnitureType)
-        .forEach((cell) => {
+        .map((cell) => {
           const productInstance = productInstances.find(pi => pi.instanceId === cell.instanceId);
-          if (!productInstance) return;
+          if (!productInstance) return null;
           
           const product = products.find(p => p.primary_id === productInstance.productId);
-          if (!product) return;
+          if (!product) return null;
           
           let face = "front";
           if (planogramConfig.furnitureType === "gondola") {
             face = cell.x < planogramConfig.columns / 2 ? "front" : "back";
           } else if (planogramConfig.furnitureType === "shelves-display") {
             const quarterWidth = planogramConfig.columns / 4;
-            if (cell.x < quarterWidth) {
-              face = "left";
-            } else if (cell.x < quarterWidth * 2) {
-              face = "front";
-            } else if (cell.x < quarterWidth * 3) {
-              face = "back";
-            } else {
-              face = "right";
-            }
+            if (cell.x < quarterWidth) face = "left";
+            else if (cell.x < quarterWidth * 2) face = "front";
+            else if (cell.x < quarterWidth * 3) face = "back";
+            else face = "right";
           }
           
-          // MODIFICATION ICI: Inverser l'étagère pour que 1 soit en bas
           const etagereNumber = planogramConfig.rows - cell.y;
-          rows.push([
+          return [
             product.name,
             product.primary_id,
             (cell.quantity || 1).toString(),
-            `E${etagereNumber}C${cell.x + 1}`, // E1 devient la première étagère en bas
+            `E${etagereNumber}C${cell.x + 1}`,
             face
-          ]);
-        });
-      
-      // Style du tableau
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      let yPos = 25;
-      
-      // En-tête du tableau
-      doc.setFillColor(...primaryColor);
-      headers.forEach((header, i) => {
-        doc.rect(
-          headers.slice(0, i).reduce((a, _, j) => a + columnWidths[j], 10),
-          yPos - 8,
-          columnWidths[i],
-          8,
-          'F'
-        );
-        doc.text(
-          header,
-          headers.slice(0, i).reduce((a, _, j) => a + columnWidths[j], 10) + columnWidths[i] / 2,
-          yPos - 3,
-          { align: "center" }
-        );
-      });
-      
-      // Lignes du tableau
+          ];
+        })
+        .filter(Boolean) as string[][];
+
+      // Dessin du tableau
+      drawTableHeader(startY);
+      startY += rowHeight;
+
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0, 0, 0);
-      
+
       rows.forEach((row, rowIndex) => {
-        yPos = 25 + (rowIndex + 1) * 8;
+        // Nouvelle page si nécessaire
+        if (startY > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          startY = 25;
+          drawTableHeader(startY);
+          startY += rowHeight;
+        }
+
+        // Fond alterné
+        doc.setFillColor(...(rowIndex % 2 === 0 ? colors.rowEven : colors.rowOdd));
         
-        doc.setFillColor(rowIndex % 2 === 0 ? 255 : 245, 245, 245);
+        // Dessin des cellules
+        let xPos = startX;
         row.forEach((cell, cellIndex) => {
-          doc.rect(
-            headers.slice(0, cellIndex).reduce((a, _, j) => a + columnWidths[j], 10),
-            yPos - 8,
-            columnWidths[cellIndex],
-            8,
-            'F'
-          );
+          doc.rect(xPos, startY, columnWidths[cellIndex], rowHeight, 'F');
+          xPos += columnWidths[cellIndex];
         });
-        
+
+        // Texte des cellules
+        xPos = startX;
         row.forEach((cell, cellIndex) => {
           doc.text(
             cell,
-            headers.slice(0, cellIndex).reduce((a, _, j) => a + columnWidths[j], 10) + 3,
-            yPos - 3,
-            { maxWidth: columnWidths[cellIndex] - 6 }
+            xPos + 3,
+            startY + rowHeight / 2 + 2,
+            { 
+              maxWidth: columnWidths[cellIndex] - 6,
+              align: cellIndex === 0 ? "left" : "center"
+            }
           );
+          xPos += columnWidths[cellIndex];
         });
-        
-        if (yPos > doc.internal.pageSize.getHeight() - 20) {
-          doc.addPage();
-          yPos = 25;
-        }
+
+        startY += rowHeight;
       });
-      
-      // Générer le blob PDF
+
+      // Génération du fichier PDF
       const pdfBlob = doc.output("blob");
       const fileName = generateFileName(filesBaseName, "planogram", "pdf");
       resolve(new File([pdfBlob], fileName, { type: "application/pdf" }));
     } catch (error) {
+      console.error("Erreur lors de la génération du PDF:", error);
       reject(error);
     }
   });
 };
-
 const generateAndUploadFiles = async () => {
   setIsGeneratingFiles(true);
   
@@ -845,9 +887,58 @@ const generateAndUploadFiles = async () => {
     }
   };
 
+  // send email
+  const sendAssignmentEmail = async (receiverEmail: string) => {
+    try {
+      if (!currentUser?.email) {
+        console.warn("Aucun email d'expéditeur disponible");
+        return;
+      }
+  
+      const response = await fetch("http://localhost:8081/api/emails/sendBasicEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          senderEmail: currentUser.email,
+          receiverEmail: receiverEmail,
+          subject: `Nouvelle tâche assignée: ${name}`,
+          message: `Bonjour,\n\nUne nouvelle tâche de type "${selectedTaskType}" vous a été assignée concernant le planogramme "${name}".\n\nCordialement,\n${currentUser.username}`
+        }),
+        credentials: "include"
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+  
+      console.log("Email envoyé avec succès");
+      toast({
+        title: "Email envoyé",
+        description: `Un email a été envoyé à ${receiverEmail}`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'email:", error);
+      toast({
+        title: "Erreur",
+        description: "L'email n'a pas pu être envoyé",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSave = async () => {
-    console.log("handleSave déclenchée !", { currentUser });
+    if (selectedUserId && !dateFinPrevue) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une date de fin prévue pour la tâche",
+        variant: "destructive",
+      });
+      return;
+    }
     // 1. Vérification des champs obligatoires
     if (!selectedMagasinId || !selectedZoneId || !name || !currentUser?.idUtilisateur || !selectedFurnitureTypeId) {
       toast({
@@ -887,43 +978,41 @@ const generateAndUploadFiles = async () => {
       /* ------------------------------------------------------------------
        * 3. Construire les positions produits avec les vrais IDs
        * ------------------------------------------------------------------ */
-      const productPositionsPromises = cells
-        .filter(
-          (cell) =>
-            cell.instanceId !== null &&
-            cell.furnitureType === planogramConfig.furnitureType
-        )
-        .map(async (cell) => {
-          const productInstance = productInstances.find(
-            (pi) => pi.instanceId === cell.instanceId
-          );
-          if (!productInstance) return null;
+      const productPositions = (await Promise.all(
+        cells
+          .filter(
+            (cell) =>
+              cell.instanceId !== null &&
+              cell.furnitureType === planogramConfig.furnitureType
+          )
+          .map(async (cell) => {
+            const productInstance = productInstances.find(
+              (pi) => pi.instanceId === cell.instanceId
+            );
+            if (!productInstance) return null;
   
-          const product = products.find(
-            (p) => p.primary_id === productInstance.productId
-          );
-          if (!product) return null;
+            const product = products.find(
+              (p) => p.primary_id === productInstance.productId
+            );
+            if (!product) return null;
   
-          try {
-            // Récupérer l'ID primaire du produit
-            const productPrimaryId = await fetchProductIdByCode(product.primary_id);
-            
-            return {
-              product_id: productPrimaryId, // Utiliser l'ID primaire ici
-              position: cell.x + 1,
-              quantite: cell.quantity || 1,
-              face: cell.face || getFaceFromPosition(cell.x),
-              etagere: cell.etagere || cell.y + 1,
-              colonne: cell.colonne || cell.x + 1
-            };
-          } catch (error) {
-            console.error(`Erreur avec le produit ${product.primary_id}:`, error);
-            return null;
-          }
-        });
-  
-      // Attendre que toutes les promesses se résolvent
-      const productPositions = (await Promise.all(productPositionsPromises)).filter(Boolean);
+            try {
+              const productPrimaryId = await fetchProductIdByCode(product.primary_id);
+              
+              return {
+                product_id: productPrimaryId,
+                position: cell.x + 1,
+                quantite: cell.quantity || 1,
+                face: cell.face || getFaceFromPosition(cell.x),
+                etagere: cell.etagere || cell.y + 1,
+                colonne: cell.colonne || cell.x + 1
+              };
+            } catch (error) {
+              console.error(`Erreur avec le produit ${product.primary_id}:`, error);
+              return null;
+            }
+          })
+      )).filter(Boolean);
   
       if (productPositions.length === 0) {
         toast({
@@ -938,6 +1027,7 @@ const generateAndUploadFiles = async () => {
        * 4. Préparer le payload pour l'API
        * ------------------------------------------------------------------ */
       const requestData = {
+        planogram_id: selectedPlanogramId || undefined,
         magasin_id: selectedMagasinId,
         zone_id: selectedZoneId,
         nom: name,
@@ -979,6 +1069,8 @@ const generateAndUploadFiles = async () => {
           statut: "à faire",
           type: selectedTaskType,
           commentaire: `Tâche liée au planogramme ${name}`,
+          date_debut: new Date().toISOString().split('T')[0], // Date du jour
+          date_fin_prevue: dateFinPrevue || null,
         } : undefined,
       };
   
@@ -988,7 +1080,7 @@ const generateAndUploadFiles = async () => {
       let response;
       try {
         response = await fetch(
-          "http://localhost:8081/api/planogram/createFullPlanogram",
+          "http://localhost:8081/api/planogram/createFullPlanogramm",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1013,9 +1105,19 @@ const generateAndUploadFiles = async () => {
   
         toast({
           title: "Succès",
-          description: "Planogramme enregistré avec succès",
+          description: selectedPlanogramId 
+            ? "Meubles ajoutés au planogramme existant avec succès"
+            : "Nouveau planogramme créé avec succès",
           variant: "default",
         });
+  
+        // Envoyer l'email si un utilisateur est sélectionné
+        if (selectedUserId) {
+          const selectedUser = users.find(u => u.id === selectedUserId);
+          if (selectedUser?.email) {
+            await sendAssignmentEmail(selectedUser.email);
+          }
+        }
   
         /* ------------------------------------------------------------------
          * 6. Callback onSave (si fourni)
@@ -1060,6 +1162,24 @@ const generateAndUploadFiles = async () => {
     }
   };
 
+// Effet pour pré-remplir les champs quand un planogramme est sélectionné
+useEffect(() => {
+  if (selectedPlanogramId) {
+    const selectedPlanogram = existingPlanograms.find(
+      (p) => p.planogram_id.toString() === selectedPlanogramId
+    );
+    if (selectedPlanogram) {
+      setName(selectedPlanogram.nom);
+      setDescription(selectedPlanogram.description || ""); // Pré-remplit la description
+    }
+  } else {
+    // Réinitialiser si aucun planogramme n'est sélectionné
+    setName(planogramConfig.name);
+    setDescription("");
+  }
+}, [selectedPlanogramId, existingPlanograms, planogramConfig.name]);
+
+
   // Fonctions utilitaires
   function getFaceFromPosition(x: number): string {
     if (planogramConfig.furnitureType === "shelves-display") {
@@ -1092,47 +1212,8 @@ const generateAndUploadFiles = async () => {
         <div className="overflow-y-auto max-h-[calc(90vh-150px)] pr-2">
           <div className="space-y-4 mt-4">
             <div className="space-y-4 mt-4">
-              <div>
-                <label className="text-sm font-medium">{t("savePlanogramDialog.nameLabel")}</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1"
-                  placeholder={t("savePlanogramDialog.namePlaceholder")}
-                  dir={isArabic ? "rtl" : "ltr"}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">{t("savePlanogramDialog.descriptionLabel")}</label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="mt-1"
-                  placeholder={t("savePlanogramDialog.descriptionPlaceholder")}
-                  dir={isArabic ? "rtl" : "ltr"}
-                />
-              </div>
-
-              {/* Sélection du statut du planogramme */}
-              <div>
-                <label className="text-sm font-medium">Statut du planogramme</label>
-                <Select value={selectedPlanogramStatus} onValueChange={setSelectedPlanogramStatus}>
-                  <SelectTrigger className="mt-1" dir={isArabic ? "rtl" : "ltr"}>
-                    <SelectValue placeholder="Sélectionner un statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {planogramStatusOptions.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Sélection du magasin */}
-              <div>
+               {/* Sélection du magasin */}
+               <div>
                 <label className="text-sm font-medium">Magasin</label>
                 <Select
                   value={selectedMagasinId}
@@ -1161,6 +1242,98 @@ const generateAndUploadFiles = async () => {
                   </SelectContent>
                 </Select>
               </div>
+              {/* Sélection d'un planogramme existant */}
+              <div>
+                <label className="text-sm font-medium">Planogramme existant</label>
+                <Select 
+                  value={selectedPlanogramId || ""} 
+                  onValueChange={setSelectedPlanogramId}
+                  disabled={isLoading || !selectedMagasinId || existingPlanograms.length === 0}
+                >
+                  <SelectTrigger className="mt-1" dir={isArabic ? "rtl" : "ltr"}>
+                    <SelectValue placeholder={
+                      !selectedMagasinId 
+                        ? "Sélectionnez d'abord un magasin" 
+                        : existingPlanograms.length === 0
+                          ? "Aucun planogramme disponible"
+                          : "Sélectionner un planogramme existant"
+                    } />
+                  </SelectTrigger>
+                  {existingPlanograms.length > 0 && (
+                    <SelectContent>
+                      {existingPlanograms.map((planogram) => (
+                        <SelectItem key={planogram.planogram_id} value={planogram.planogram_id.toString()}>
+                          {planogram.nom} (ID: {planogram.planogram_id}, Magasin: {planogram.magasin_id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  )}
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sélectionnez un planogramme existant pour y ajouter des meubles au lieu d'en créer un nouveau
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">{t("savePlanogramDialog.nameLabel")}</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1"
+                  placeholder={t("savePlanogramDialog.namePlaceholder")}
+                  dir={isArabic ? "rtl" : "ltr"}
+                  disabled={!!selectedPlanogramId} // Désactivé si un planogramme est sélectionné
+                />
+                {selectedPlanogramId && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le nom est verrouillé car vous modifiez un planogramme existant
+                  </p>
+                )}
+              </div>
+                  {/* Sélection du description du planogramme */}
+                                <div>
+                    <label className="text-sm font-medium">{t("savePlanogramDialog.descriptionLabel")}</label>
+                    <Input
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="mt-1"
+                      placeholder={t("savePlanogramDialog.descriptionPlaceholder")}
+                      dir={isArabic ? "rtl" : "ltr"}
+                      disabled={!!selectedPlanogramId} // Désactivé si un planogramme est sélectionné
+                    />
+                    {selectedPlanogramId && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        La description est verrouillée car vous modifiez un planogramme existant
+                      </p>
+                    )}
+                  </div>
+
+              {/* Sélection du statut du planogramme */}
+              <div>
+                <label className="text-sm font-medium">Statut du planogramme</label>
+                <Select 
+                  value={selectedPlanogramStatus} 
+                  onValueChange={setSelectedPlanogramStatus}
+                  disabled={!!selectedPlanogramId} // Désactivé si un planogramme existant est sélectionné
+                >
+                  <SelectTrigger className="mt-1" dir={isArabic ? "rtl" : "ltr"}>
+                    <SelectValue placeholder="Sélectionner un statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {planogramStatusOptions.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedPlanogramId && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le statut est verrouillé pour les planogrammes existants
+                  </p>
+                )}
+              </div>
+
+             
 
               {/* Sélection de la zone */}
               <div>
@@ -1274,6 +1447,19 @@ const generateAndUploadFiles = async () => {
                   </SelectContent>
                 </Select>
               </div>
+
+                  {/* Sélection du date de fin prevu */}
+                <div>
+                  <label className="text-sm font-medium">Date de fin prévue</label>
+                  <Input
+                    type="date"
+                    value={dateFinPrevue}
+                    onChange={(e) => setDateFinPrevue(e.target.value)}
+                    className="mt-1"
+                    dir={isArabic ? "rtl" : "ltr"}
+                    min={new Date().toISOString().split('T')[0]} // Date minimum = aujourd'hui
+                  />
+                </div>
 
                {/* Sélection des fichiers */}
               <div>

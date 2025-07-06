@@ -93,6 +93,42 @@
         { value: "en cours", label: "En cours" },
     ]
 
+    const [planograms, setPlanograms] = useState<any[]>([]);
+    const [selectedPlanogramId, setSelectedPlanogramId] = useState<number | null>(null);
+    const [isLoadingPlanograms, setIsLoadingPlanograms] = useState(false);
+
+    // Charger les planogrammes selon le magasin
+useEffect(() => {
+    if (selectedMagasinId) {
+        const fetchPlanograms = async () => {
+            setIsLoadingPlanograms(true);
+            try {
+                const response = await fetch(`http://localhost:8081/api/planogram/fetchPlanogramByStore/${selectedMagasinId}`);
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+                const data = await response.json();
+                setPlanograms(data.rows || []);
+                setSelectedPlanogramId(null);
+            } catch (error) {
+                console.error("Erreur lors du chargement des planogrammes:", error);
+                toast({
+                    title: "Erreur",
+                    description: "Impossible de charger la liste des planogrammes pour ce magasin",
+                    variant: "destructive",
+                });
+            } finally {
+                setIsLoadingPlanograms(false);
+            }
+        };
+
+        fetchPlanograms();
+    } else {
+        setPlanograms([]);
+        setSelectedPlanogramId(null);
+    }
+}, [selectedMagasinId, toast]);
+
     // générer et télécharger les fichiers
     const generateAndUploadFiles = async () => {
         setIsGeneratingFiles(true);
@@ -824,8 +860,31 @@
                 pdfUrl: files.pdfUrl,
             };
     
-            // Construire la requête complète
-            const requestBody = {
+            // Envoi de la requête au serveur
+            const apiUrl = selectedPlanogramId 
+                ? "http://localhost:8081/api/planogram/createFullPlanogramm" 
+                : "http://localhost:8081/api/planogram/createFullPlanogram";
+    
+            const requestBody = selectedPlanogramId ? {
+                planogram_id: selectedPlanogramId, // ✅ Inclure l'ID du planogramme existant
+                magasin_id: selectedMagasinId,
+                zone_id: selectedZoneId,
+                nom: name,
+                description: description || `Meuble créé le ${new Date().toLocaleDateString()}`,
+                created_by: currentUser.id || currentUser.idUtilisateur,
+                statut: selectedPlanogramStatus,
+                furnitures: [furnitureData],
+                tache: selectedUserId
+                    ? {
+                        idUser: selectedUserId,
+                        statut: "à faire",
+                        date_debut: new Date().toISOString(),
+                        date_fin_prevue: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                        type: selectedTaskType,
+                        commentaire: `Tâche liée au meuble ${name}`,
+                    }
+                    : null,
+            } : {
                 magasin_id: selectedMagasinId,
                 zone_id: selectedZoneId,
                 nom: name,
@@ -845,8 +904,7 @@
                     : null,
             };
     
-            // Envoi de la requête au serveur
-            const response = await fetch("http://localhost:8081/api/planogram/createFullPlanogram", {
+            const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(requestBody),
@@ -921,29 +979,6 @@
 
             <div className="overflow-y-auto max-h-[calc(90vh-150px)] pr-2">
             <div className="space-y-4 mt-4">
-                {/* Nom du meuble */}
-                <div>
-                <label className="text-sm font-medium">name of the furniture</label>
-                <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-1"
-                    placeholder="Enter furniture name"
-                    dir={textDirection}
-                />
-                </div>
-
-                {/* Description */}
-                <div>
-                <label className="text-sm font-medium">Description</label>
-                <Input
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="mt-1"
-                    placeholder="Enter description"
-                    dir={textDirection}
-                />
-                </div>
 
                 {/* Magasin */}
                 <div>
@@ -975,6 +1010,79 @@
                     </SelectContent>
                 </Select>
                 </div>
+                {/* Planogramme existant */}
+                <div>
+                    <label className="text-sm font-medium">Planogramme existant (optionnel)</label>
+                    <Select
+                        value={selectedPlanogramId?.toString() || ""}
+                        onValueChange={(value) => {
+                            setSelectedPlanogramId(value ? Number.parseInt(value) : null);
+                            
+                            // Si un planogramme est sélectionné, remplir automatiquement certains champs
+                            if (value) {
+                                const selectedPlanogram = planograms.find(p => p.planogram_id === Number.parseInt(value));
+                                if (selectedPlanogram) {
+                                    setName(selectedPlanogram.nom);
+                                    setDescription(selectedPlanogram.description || "");
+                                    setSelectedPlanogramStatus(selectedPlanogram.statut || "actif");
+                                    setSelectedZoneId(selectedPlanogram.zone_id);
+                                }
+                            }
+                        }}
+                        disabled={isLoadingPlanograms || !selectedMagasinId || planograms.length === 0}
+                    >
+                        <SelectTrigger className="mt-1" dir={textDirection}>
+                            <SelectValue placeholder={selectedMagasinId ? "Sélectionner un planogramme existant" : "Sélectionnez d'abord un magasin"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {planograms.map((planogram) => (
+                                <SelectItem key={planogram.planogram_id} value={planogram.planogram_id.toString()}>
+                                    {planogram.nom} - {planogram.description || "Pas de description"}
+                                </SelectItem>
+                            ))}
+                            {planograms.length === 0 && !isLoadingPlanograms && selectedMagasinId && (
+                                <SelectItem value="no-planograms" disabled>
+                                    Aucun planogramme disponible pour ce magasin
+                                </SelectItem>
+                            )}
+                            {isLoadingPlanograms && (
+                                <SelectItem value="loading-planograms" disabled>
+                                    Chargement des planogrammes...
+                                </SelectItem>
+                            )}
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Sélectionnez un planogramme existant pour y ajouter ce meuble
+                    </p>
+                </div>
+                {/* Nom du meuble */}
+                    <div>
+                        <label className="text-sm font-medium">name of the furniture</label>
+                        <Input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="mt-1"
+                            placeholder="Enter furniture name"
+                            dir={textDirection}
+                            readOnly={!!selectedPlanogramId}
+                        />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <Input
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="mt-1"
+                            placeholder="Enter description"
+                            dir={textDirection}
+                            readOnly={!!selectedPlanogramId}
+                        />
+                    </div>
+
+                
 
                 {/* Zone */}
                 <div>
@@ -1075,19 +1183,23 @@
 
                 {/* Sélection du statut du planogramme */}
                 <div>
-                <label className="text-sm font-medium">Statut du planogramme</label>
-                <Select value={selectedPlanogramStatus} onValueChange={setSelectedPlanogramStatus}>
-                    <SelectTrigger className="mt-1" dir={textDirection}>
-                    <SelectValue placeholder="Sélectionner un statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {planogramStatusOptions.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
+                    <label className="text-sm font-medium">Statut du planogramme</label>
+                    <Select 
+                        value={selectedPlanogramStatus} 
+                        onValueChange={setSelectedPlanogramStatus}
+                        disabled={!!selectedPlanogramId}
+                    >
+                        <SelectTrigger className="mt-1" dir={textDirection}>
+                            <SelectValue placeholder="Sélectionner un statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {planogramStatusOptions.map((status) => (
+                                <SelectItem key={status.value} value={status.value}>
+                                    {status.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {/* Sélection du type de tâche */}

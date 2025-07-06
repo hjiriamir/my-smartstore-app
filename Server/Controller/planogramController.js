@@ -70,6 +70,126 @@ export const getUserEmail = async (idUser) => {
   return user.email;
 };
 
+export const createFullPlanogramm = async (req, res) => {
+  const t = await sequelize.transaction(); 
+  try {
+    const {
+      planogram_id,  // ✅ nouveau champ
+      magasin_id,
+      zone_id,
+      nom,
+      description,
+      created_by,
+      statut,
+      furnitures,
+      tache
+    } = req.body;
+
+    let targetPlanogram;
+
+    // ✅ 1. Soit utiliser un planogramme existant, soit en créer un nouveau
+    if (planogram_id) {
+      // Vérifier si le planogramme existe
+      targetPlanogram = await Planogram.findByPk(planogram_id);
+      if (!targetPlanogram) {
+        throw new Error(`Planogramme avec ID ${planogram_id} introuvable`);
+      }
+    } else {
+      targetPlanogram = await Planogram.create({
+        magasin_id,
+        zone_id,
+        nom,
+        description,
+        created_by,
+        statut,
+        date_creation: new Date()
+      }, { transaction: t });
+
+      await targetPlanogram.reload({ transaction: t });
+    }
+
+    // ✅ 2. Créer les meubles + leurs positions produits
+    for (const furnitureData of furnitures) {
+      const { productPositions, ...furnitureProps } = furnitureData;
+
+      const newFurniture = await Furniture.create({
+        ...furnitureProps,
+        planogram_id: targetPlanogram.planogram_id
+      }, { transaction: t });
+
+      if (productPositions?.length) {
+        for (const pos of productPositions) {
+          await ProductPosition.create({
+            ...pos,
+            furniture_id: newFurniture.furniture_id,
+            date_ajout: new Date()
+          }, { transaction: t });
+        }
+      }
+    }
+
+    // ✅ 3. Créer la tâche si elle est fournie
+    if (tache) {
+      const {
+        idUser,
+        statut: tacheStatut,
+        date_debut,
+        date_fin_prevue,
+        type,
+        commentaire
+      } = tache;
+
+      await Tache.create({
+        planogram_id: targetPlanogram.planogram_id,
+        magasin_id: targetPlanogram.magasin_id,
+        idUser: idUser || null,
+        statut: tacheStatut || 'à faire',
+        date_debut: date_debut ? new Date(date_debut) : null,
+        date_fin_prevue: date_fin_prevue ? new Date(date_fin_prevue) : null,
+        date_fin_reelle: null,
+        type: type || 'implémentation',
+        commentaire: commentaire || `Tâche liée au planogramme ${targetPlanogram.nom}`
+      }, { transaction: t });
+
+      // 📧 Email et notification
+      const actualUser = await Users.findByPk(idUser);
+      if (idUser && actualUser?.NotificationPreference === true) {
+        try {
+          const senderEmail = await getUserEmail(created_by);
+          const receiverEmail = await getUserEmail(idUser);
+          await sendBasicEmail(senderEmail, receiverEmail);
+          console.log(`Email envoyé de ${senderEmail} à ${receiverEmail}`);
+        } catch (emailError) {
+          console.error("Erreur email:", emailError);
+        }
+      }
+
+      await Notification.create({
+        Utilisateur_id: idUser,
+        type: 'nouveau planogramme',
+        contenu: `Un nouveau planogramme intitulé ${targetPlanogram.nom} vient d’être publié pour votre magasin.`,
+        date_envoi: new Date(),
+        lu: 0
+      }, { transaction: t });
+    }
+
+    await t.commit();
+
+    res.status(201).json({
+      message: planogram_id
+        ? 'Meubles et tâche ajoutés au planogramme existant avec succès.'
+        : 'Nouveau planogramme, meubles, tâche et notification créés avec succès.',
+      planogram_id: targetPlanogram.planogram_id
+    });
+
+  } catch (error) {
+    await t.rollback();
+    console.error("Erreur lors de createFullPlanogram:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 // Création complète de planogramme + meubles + produits + tâche
 export const createFullPlanogram = async (req, res) => {
   const t = await sequelize.transaction(); 
@@ -479,3 +599,21 @@ export const getPlanogramDetails = async (req, res) => {
   }
 };
 
+export const fetchPlanogramByStore = async(req,res) =>{
+  try {
+    const { idMagasin } = req.params;
+
+    if (!idMagasin) {
+      return res.status(400).json({ error: "idMagasin manquant." });
+    }
+    
+    const planograms = await Planogram.findAndCountAll({
+      where:{magasin_id : idMagasin}
+    })
+    return res.status(200).json(planograms);
+
+  } catch (error) {
+    console.error('Erreur dans fetchPlanogramByStore:', error);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}

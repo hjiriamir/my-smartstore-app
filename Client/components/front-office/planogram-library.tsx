@@ -15,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface Planogram {
   planogram_id: number
@@ -44,6 +46,11 @@ interface Planogram {
 const API_BASE_URL = "http://localhost:8081/api"
 
 export default function PlanogramLibrary() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -427,7 +434,7 @@ const handleDownloadImage = async (planogram: Planogram) => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Rechercher un planogramme..."
+              placeholder={t("front.library.recherchePlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -440,7 +447,7 @@ const handleDownloadImage = async (planogram: Planogram) => {
     <SelectValue placeholder="Zone" />
   </SelectTrigger>
   <SelectContent>
-    <SelectItem value="all">Toutes les zones</SelectItem>
+    <SelectItem value="all">{t("front.library.toutesZones")}</SelectItem>
     {zones.map((zone) => (
       <SelectItem key={zone.zone_id} value={zone.nom_zone}>
         {zone.nom_zone}
@@ -454,10 +461,10 @@ const handleDownloadImage = async (planogram: Planogram) => {
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="actif">Actif</SelectItem>
-            <SelectItem value="en cours">En cours</SelectItem>
-            <SelectItem value="inactif">Inactif</SelectItem>
+            <SelectItem value="all">{t("front.library.toutesZones")}</SelectItem>
+            <SelectItem value="actif">{t("front.library.actif")}</SelectItem>
+            <SelectItem value="en cours">{t("front.library.enCours")}</SelectItem>
+            <SelectItem value="inactif">{t("front.library.inactif")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -487,7 +494,7 @@ const handleDownloadImage = async (planogram: Planogram) => {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
-                    <span>Aucune image disponible</span>
+                    <span>{t("front.library.pasImage")}</span>
                   </div>
                 )}
               </div>
@@ -512,19 +519,19 @@ const handleDownloadImage = async (planogram: Planogram) => {
                   
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Mis à jour le {formatDate(getLastUpdateDate(planogram))}</span>
+                    <span>{t("front.library.misAjour")} {formatDate(getLastUpdateDate(planogram))}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                     <div>
                       <span className="font-medium">
                         {planogram.furnitures?.length || 0}
-                      </span> meubles
+                      </span> {t("front.library.meubles")}
                     </div>
                     <div>
                       <span className="font-medium">
                         {planogram.taches?.length || 0}
-                      </span> tâches
+                      </span> {t("front.library.taches")}
                     </div>
                   </div>
                 </div>
@@ -537,7 +544,7 @@ const handleDownloadImage = async (planogram: Planogram) => {
                     onClick={() => handleViewImage(planogram)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Voir
+                    {t("front.library.voir")}
                   </Button>
                   <Button 
                     size="sm" 
@@ -547,11 +554,11 @@ const handleDownloadImage = async (planogram: Planogram) => {
                     disabled={!planogram.imageUrl}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Télécharger
+                    {t("front.library.telecharger")}
                   </Button>
                   <Button size="sm" variant="outline">
                     <Share2 className="h-4 w-4 mr-2" />
-                    Partager
+                    {t("front.library.partager")}
                   </Button>
                 </div>
               </CardContent>
@@ -564,8 +571,8 @@ const handleDownloadImage = async (planogram: Planogram) => {
         <Card>
           <CardContent className="text-center py-12">
             <Filter className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun planogramme trouvé</h3>
-            <p className="text-gray-500">Essayez de modifier vos critères de recherche ou filtres.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t("front.library.pasPlanogram")}</h3>
+            <p className="text-gray-500">{t("front.library.modifierFiltre")}</p>
           </CardContent>
         </Card>
       )}

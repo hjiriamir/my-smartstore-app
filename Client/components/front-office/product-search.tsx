@@ -9,8 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Package, MapPin, Barcode, Eye, AlertTriangle, CheckCircle, Download } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 export default function ProductSearch() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [searchTerm, setSearchTerm] = useState("")
   const [searchType, setSearchType] = useState("name")
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
@@ -432,8 +439,8 @@ export default function ProductSearch() {
       {/* Barre de recherche */}
       <Card>
         <CardHeader>
-          <CardTitle>Recherche de produits</CardTitle>
-          <CardDescription>Trouvez rapidement un produit et sa localisation</CardDescription>
+          <CardTitle>{t("front.recherche.rechercheProd")}</CardTitle>
+          <CardDescription>{t("front.recherche.rechercheProdDescr")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -441,7 +448,7 @@ export default function ProductSearch() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Rechercher un produit..."
+                  placeholder={t("front.recherche.rechercherProduit")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -454,9 +461,9 @@ export default function ProductSearch() {
                 <SelectValue placeholder="Type de recherche" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Nom du produit</SelectItem>
-                <SelectItem value="barcode">Code produit</SelectItem>
-                <SelectItem value="category">Catégorie</SelectItem>
+                <SelectItem value="name">{t("front.recherche.nomProduit")}</SelectItem>
+                <SelectItem value="barcode">{t("front.recherche.codeProduit")}</SelectItem>
+                <SelectItem value="category">{t("front.recherche.categorie")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -501,26 +508,26 @@ export default function ProductSearch() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-sm">
                         <div>
-                          <span className="font-medium">Prix:</span>
-                          <div className="text-lg font-bold text-blue-600">{product.prix}€</div>
+                          <span className="font-medium">{t("front.recherche.prix")}</span>
+                          <div className="text-lg font-bold text-blue-600">{product.prix}RS</div>
                         </div>
                         <div>
-                          <span className="font-medium">Stock:</span>
+                          <span className="font-medium">{t("front.recherche.stock")}</span>
                           <div className={product.stock === 0 ? "text-red-600 font-bold" : "font-medium"}>
-                            {product.stock} unités
+                            {product.stock} {t("front.recherche.unite")}
                           </div>
                         </div>
                         <div>
-                          <span className="font-medium">Ventes:</span>
+                          <span className="font-medium">{t("front.recherche.ventes")}</span>
                           <div className={`font-bold ${getPerformanceColor(product.ventes)}`}>
-                            {getTotalSales(product.ventes)} unités
+                            {getTotalSales(product.ventes)} {t("front.recherche.unite")}
                           </div>
                         </div>
                         <div>
-                          <span className="font-medium">Emplacements:</span>
+                          <span className="font-medium">{t("front.recherche.emplacement")}</span>
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-3 w-3" />
-                            <span>{product.positions?.length || 0} positions</span>
+                            <span>{product.positions?.length || 0} {t("front.recherche.position")}</span>
                           </div>
                         </div>
                       </div>
@@ -532,7 +539,7 @@ export default function ProductSearch() {
                         </div>
                         <Button size="sm" variant="outline">
                           <Eye className="h-4 w-4 mr-2" />
-                          Localiser
+                          {t("front.recherche.localiser")}
                         </Button>
                       </div>
                     </div>
@@ -544,8 +551,8 @@ export default function ProductSearch() {
             <Card>
               <CardContent className="text-center py-12">
                 <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun produit trouvé</h3>
-                <p className="text-gray-500">Essayez de modifier votre recherche ou le type de recherche.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t("front.recherche.noProduit")}</h3>
+                <p className="text-gray-500">{t("front.recherche.ameliorerFiltre")}</p>
               </CardContent>
             </Card>
           )}
@@ -559,7 +566,7 @@ export default function ProductSearch() {
               <div className="flex justify-end mb-4">
                 <Button onClick={generatePDF} size="sm" variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  Télécharger la fiche
+                  {t("front.recherche.telechargerFiche")}
                 </Button>
               </div>
 
@@ -829,7 +836,7 @@ export default function ProductSearch() {
               <Card className="sticky top-4">
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">Fiche produit détaillée</CardTitle>
+                    <CardTitle className="text-lg">{t("front.recherche.ficheProduit")}</CardTitle>
                     <Button onClick={generatePDF} size="sm" variant="outline">
                       <Download className="h-4 w-4 mr-2" />
                       PDF
@@ -849,74 +856,74 @@ export default function ProductSearch() {
 
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium">ID Produit:</span>
+                      <span className="text-sm font-medium">{t("front.recherche.idProduit")}</span>
                       <span className="text-sm">{selectedProduct.produit_id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium">Code produit:</span>
+                      <span className="text-sm font-medium">{t("front.recherche.codeProduit")}</span>
                       <span className="text-sm font-mono">{selectedProduct.produit_id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium">Fournisseur:</span>
+                      <span className="text-sm font-medium">{t("front.recherche.fournisseur")}</span>
                       <span className="text-sm">{selectedProduct.fournisseur?.nom || "Inconnu"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium">Catégorie:</span>
+                      <span className="text-sm font-medium">{t("front.recherche.categorie")}</span>
                       <span className="text-sm">{selectedProduct.categorie?.nom || "Inconnu"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium">Saisonnalité:</span>
+                      <span className="text-sm font-medium">{t("front.recherche.saisonnalite")}</span>
                       <span className="text-sm">{selectedProduct.saisonnalite || "Toute saison"}</span>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t">
-                    <h4 className="font-medium mb-2">Localisations</h4>
+                    <h4 className="font-medium mb-2">{t("front.recherche.localisations")}</h4>
                     {selectedProduct.positions?.length > 0 ? (
                       <div className="space-y-3">
                         {selectedProduct.positions.map((position: any) => (
                           <div key={position.position_id} className="text-sm border p-2 rounded">
                             <div className="flex justify-between">
-                              <span>Zone:</span>
+                              <span>{t("front.recherche.zone")}</span>
                               <span className="font-medium">
                                 {position.furniture?.planogram?.zone?.nom_zone || "Inconnue"}
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Planogramme:</span>
+                              <span>{t("front.recherche.planogramme")}</span>
                               <span className="font-medium">
                                 {position.furniture?.planogram?.nom || "Non spécifié"}
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Type:</span>
+                              <span>{t("front.recherche.type")}</span>
                               <span className="font-medium">
                                 {position.furniture?.furnitureType?.nomType || "Inconnu"}
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Position:</span>
+                              <span>{t("front.recherche.position")}:</span>
                               <span className="font-medium">
-                                Face {position.face}, Étagère {position.etagere}, Colonne {position.colonne}
+                                Face {position.face}, {t("front.recherche.etagere")} {position.etagere}, {t("front.recherche.colonne")} {position.colonne}
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Quantité:</span>
+                              <span>{t("front.recherche.quantite")}</span>
                               <span className="font-medium">{position.quantite}</span>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Aucune position enregistrée</p>
+                      <p className="text-sm text-muted-foreground">{t("front.recherche.noPosition")}</p>
                     )}
                   </div>
 
                   <div className="pt-3 border-t">
-                    <h4 className="font-medium mb-2">Performance</h4>
+                    <h4 className="font-medium mb-2">{t("front.recherche.performance")}</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm">Ventes totales:</span>
+                        <span className="text-sm">{t("front.recherche.venteTotals")}</span>
                         <div className="flex items-center space-x-2">
                           <div className="w-16 bg-gray-200 rounded-full h-2">
                             <div
@@ -927,31 +934,31 @@ export default function ProductSearch() {
                             ></div>
                           </div>
                           <span className="text-sm font-medium">
-                            {getTotalSales(selectedProduct.ventes)} unités
+                            {getTotalSales(selectedProduct.ventes)} {t("front.recherche.unite")}
                           </span>
                         </div>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm">Dernier prix:</span>
+                        <span className="text-sm">{t("front.recherche.dernierPrix")}</span>
                         <span className="text-sm font-medium">
-                          {selectedProduct.ventes[0]?.prix_unitaire || selectedProduct.prix}€
+                          {selectedProduct.ventes[0]?.prix_unitaire || selectedProduct.prix}RS
                         </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t">
-                    <h4 className="font-medium mb-2">Stock</h4>
+                    <h4 className="font-medium mb-2">{t("front.recherche.stock")}</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm">Quantité actuelle:</span>
-                        <span className="text-sm font-medium">{selectedProduct.stock} unités</span>
+                        <span className="text-sm">{t("front.recherche.quantiteActuel")}</span>
+                        <span className="text-sm font-medium">{selectedProduct.stock} {t("front.recherche.unite")}</span>
                       </div>
                       {selectedProduct.stockmovements?.length > 0 && (
                         <div className="flex justify-between">
-                          <span className="text-sm">Dernier mouvement:</span>
+                          <span className="text-sm">{t("front.recherche.dernierMouvement")}</span>
                           <span className="text-sm font-medium">
-                            {selectedProduct.stockmovements[0].type_mouvement} de {selectedProduct.stockmovements[0].quantite} unités
+                            {selectedProduct.stockmovements[0].type_mouvement} de {selectedProduct.stockmovements[0].quantite} {t("front.recherche.unite")}
                           </span>
                         </div>
                       )}
@@ -961,7 +968,7 @@ export default function ProductSearch() {
                   <div className="pt-3 border-t">
                     <Button className="w-full" size="sm">
                       <MapPin className="h-4 w-4 mr-2" />
-                      Localiser dans le magasin
+                      {t("front.recherche.localiserDansMagasin")}
                     </Button>
                   </div>
                 </CardContent>
@@ -971,7 +978,7 @@ export default function ProductSearch() {
             <Card>
               <CardContent className="text-center py-12">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Sélectionnez un produit pour voir ses détails</p>
+                <p className="text-gray-500"> {t("front.recherche.selectProdDetails")}</p>
               </CardContent>
             </Card>
           )}

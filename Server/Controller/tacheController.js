@@ -82,7 +82,7 @@
     if (!idMagasin) {
       return res.status(404).json({ error: "idMagasin non trouvée." });
     }
-
+    
     try {
       const taches = await Tache.findAndCountAll({
         where: {

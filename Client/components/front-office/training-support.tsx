@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -51,6 +53,12 @@ import {
 } from "lucide-react"
 
 export default function TrainingSupport() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const [completedModules, setCompletedModules] = useState<number[]>([1, 3])
@@ -99,7 +107,7 @@ export default function TrainingSupport() {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-auto">
           <div className="flex justify-between items-center border-b p-4">
-            <h3 className="text-lg font-semibold">Appareils connectés</h3>
+            <h3 className="text-lg font-semibold">{t("front.support.appareil")}</h3>
             <button 
               onClick={() => setShowDevicesModal(false)}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -110,12 +118,12 @@ export default function TrainingSupport() {
           
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-6 gap-4 font-medium text-sm text-gray-500 dark:text-gray-400 px-4">
-              <div>Appareil</div>
-              <div>Adresse IP</div>
-              <div>Dernière activité</div>
-              <div>Système</div>
-              <div>Statut</div>
-              <div>Actions</div>
+              <div>{t("front.support.app")}</div>
+              <div>{t("front.support.ipAdresse")}</div>
+              <div>{t("front.support.derniereActivite")}</div>
+              <div>{t("front.support.systeme")}</div>
+              <div>{t("front.support.statut")}</div>
+              <div>{t("front.support.actions")}</div>
             </div>
             
             {connectedDevices.map((device) => (
@@ -167,7 +175,7 @@ export default function TrainingSupport() {
                     className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
                   >
                     <LogOut className="h-4 w-4 mr-1" />
-                    Déconnecter
+                    {t("front.support.deconnecter")}
                   </Button>
                   ) : (
                     <Button 
@@ -176,7 +184,7 @@ export default function TrainingSupport() {
                       disabled
                       className="opacity-50"
                     >
-                      Déjà déconnecté
+                     {t("front.support.dejaConnecter")}
                     </Button>
                   )}
                 </div>
@@ -194,13 +202,13 @@ export default function TrainingSupport() {
   className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
 >
   <LogOut className="h-4 w-4 mr-1" />
-  Tout déconnecter
+  {t("front.support.toutDeconnecter")}
 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setShowDevicesModal(false)}
                 >
-                  Fermer
+                  {t("front.support.fermer")}
                 </Button>
               </div>
             </div>
@@ -600,9 +608,9 @@ const NotificationsModal = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label>Par email</Label>
+                    <Label>{t("front.support.parEmail")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Recevoir les notifications par email
+                    {t("front.support.parEmailDescr")}
                     </p>
                   </div>
                   <Switch 
@@ -616,9 +624,9 @@ const NotificationsModal = () => {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label>Dans la plateforme</Label>
+                    <Label>{t("front.support.dansPlateforme")}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Alertes internes uniquement
+                    {t("front.support.alerteInterne")}
                     </p>
                   </div>
                   <Switch 
@@ -635,7 +643,7 @@ const NotificationsModal = () => {
                   onClick={() => setShowNotificationsModal(false)}
                   disabled={isSaving}
                 >
-                  Annuler
+                  {t("front.support.annuler")}
                 </Button>
                 <Button 
                   onClick={handleSavePreferences}
@@ -644,10 +652,10 @@ const NotificationsModal = () => {
                   {isSaving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Enregistrement...
+                      {t("front.support.enregistrement")}
                     </>
                   ) : (
-                    "Enregistrer"
+                    t("front.support.enregistrer")
                   )}
                 </Button>
               </div>
@@ -875,16 +883,16 @@ useEffect(() => {
   
       <Tabs defaultValue="training" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="training">Formation</TabsTrigger>
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
-          <TabsTrigger value="support"> Gestion Compte</TabsTrigger>
+          <TabsTrigger value="training">{t("front.support.formation")}</TabsTrigger>
+          <TabsTrigger value="faq">{t("front.support.faq")}</TabsTrigger>
+          <TabsTrigger value="support">{t("front.support.gestionCompte")}</TabsTrigger>
         </TabsList>
   
         {/* Modules de formation */}
         <TabsContent value="training" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Modules de formation</CardTitle>
+              <CardTitle>{t("front.support.moduleFormation")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -930,7 +938,7 @@ useEffect(() => {
       <>
         <Badge variant="outline" className="flex items-center">
           <Video className="h-3 w-3 mr-1" />
-          Vidéo
+          {t("front.support.video")}
         </Badge>
         <Badge variant="outline" className="flex items-center">
           <Clock className="h-3 w-3 mr-1" />
@@ -959,7 +967,7 @@ useEffect(() => {
           }}
         >
           <Video className="h-4 w-4 mr-2" />
-          Vidéo
+          {t("front.support.video")}
         </Button>
       )}
       {module.url_pdf && (
@@ -985,7 +993,7 @@ useEffect(() => {
                 ) : (
                   <div className="col-span-full flex justify-center py-8">
                     <p className="text-muted-foreground">
-                      Chargement des modules de formation...
+                    {t("front.support.chargementModule")}
                     </p>
                   </div>
                 )}
@@ -998,15 +1006,15 @@ useEffect(() => {
         <TabsContent value="faq" className="space-y-6">
   <Card>
     <CardHeader>
-      <CardTitle>Questions fréquentes</CardTitle>
-      <CardDescription>Trouvez rapidement des réponses à vos questions</CardDescription>
+      <CardTitle>{t("front.support.questionsFrequent")}</CardTitle>
+      <CardDescription>{t("front.support.questionsFrequentDescr")}</CardDescription>
     </CardHeader>
     <CardContent>
       <div className="mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Rechercher dans la FAQ..."
+            placeholder={t("front.support.rechercheFaq")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -1026,12 +1034,12 @@ useEffect(() => {
                 <p className="text-muted-foreground mb-3">{item.answer}</p>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center space-x-4">
-                    <span>{item.views} vues</span>
-                    <span>{item.helpful} personnes aidées</span>
+                    <span>{item.views} {t("front.support.vues")}</span>
+                    <span>{item.helpful} {t("front.support.personnesAider")}</span>
                   </div>
                   <div className="flex space-x-2">
                     <Button size="sm" variant="ghost">
-                      👍 Utile
+                      👍 {t("front.support.utile")}
                     </Button>
                     <Button size="sm" variant="ghost">
                       👎
@@ -1060,8 +1068,8 @@ useEffect(() => {
 <TabsContent value="support" className="space-y-6">
   <Card>
     <CardHeader>
-      <CardTitle>Gestion du compte</CardTitle>
-      <CardDescription>Configurez vos préférences et informations personnelles</CardDescription>
+      <CardTitle> {t("front.support.gestionCompte")}</CardTitle>
+      <CardDescription> {t("front.support.gestionCompteDescr")}</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
      {/* Section Informations personnelles */}
@@ -1073,7 +1081,7 @@ useEffect(() => {
         <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-        Informations personnelles
+      {t("front.support.infoPersonnel")}
       </h3>
     </div>
     <Button 
@@ -1084,12 +1092,12 @@ useEffect(() => {
       {isEditing ? (
         <>
           <X className="h-4 w-4" />
-          Annuler
+          {t("front.support.annuler")}
         </>
       ) : (
         <>
           <Edit className="h-4 w-4" />
-          Modifier
+          {t("front.support.modifier")}
         </>
       )}
     </Button>
@@ -1099,10 +1107,10 @@ useEffect(() => {
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
     {/* Carte pour chaque information */}
     {[
-  { label: "Nom & Prénom", value: userData.firstName, key: "firstName", editable: true },
-  { label: "Magasin", value: userData.magasin_id, key: "magasin_id", editable: false },
-  { label: "Email", value: userData.email, key: "email", editable: false },
-  { label: "Rôle", value: userData.role, key: "role", editable: false }
+  { label: t("front.support.nomPrenom"), value: userData.firstName, key: "firstName", editable: true },
+  { label: t("front.support.email"), value: userData.magasin_id, key: "magasin_id", editable: false },
+  { label: t("front.support.magasin"), value: userData.email, key: "email", editable: false },
+  { label: t("front.support.role"), value: userData.role, key: "role", editable: false }
 ].map((item) => (
   <div 
     key={item.key}
@@ -1123,7 +1131,7 @@ useEffect(() => {
       <div className="flex items-center">
         <span className="text-lg font-medium text-gray-900 dark:text-white">
           {item.value || (
-            <span className="text-gray-400 dark:text-gray-500 italic">Non renseigné</span>
+            <span className="text-gray-400 dark:text-gray-500 italic">{t("front.support.nonRenseigner")}</span>
           )}
         </span>
         {!item.editable && (
@@ -1147,7 +1155,7 @@ useEffect(() => {
         className="gap-1"
       >
         <X className="h-4 w-4" />
-        Annuler
+        {t("front.support.annuler")}
       </Button>
       <Button 
         onClick={handleSave}
@@ -1157,12 +1165,12 @@ useEffect(() => {
         {isSaving ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Enregistrement...
+            {t("front.support.enregistrement")}
           </>
         ) : (
           <>
             <Save className="h-4 w-4" />
-            Enregistrer
+            {t("front.support.enregistrer")}
           </>
         )}
       </Button>
@@ -1179,7 +1187,7 @@ useEffect(() => {
             <Lock className="h-5 w-5 text-red-600 dark:text-red-400" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Sécurité du compte
+          {t("front.support.securiteCompte")}
           </h3>
         </div>
       </div>
@@ -1190,7 +1198,7 @@ useEffect(() => {
             <form onSubmit={handlePasswordChange} className="space-y-4">
   <div>
     <Label htmlFor="currentPassword" className="block text-sm font-medium mb-1">
-      Ancien mot de passe
+    {t("front.support.ancienMotDePasse")}
     </Label>
     <Input
       id="currentPassword"
@@ -1203,7 +1211,7 @@ useEffect(() => {
   
   <div>
     <Label htmlFor="newPassword" className="block text-sm font-medium mb-1">
-      Nouveau mot de passe
+    {t("front.support.nouvMotDePasse")}
     </Label>
     <Input
       id="newPassword"
@@ -1232,7 +1240,7 @@ useEffect(() => {
   
   <div>
     <Label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
-      Confirmer le nouveau mot de passe
+    {t("front.support.confirmNouv")}
     </Label>
     <Input
       id="confirmPassword"
@@ -1242,10 +1250,10 @@ useEffect(() => {
       required
     />
     {confirmPassword && !doPasswordsMatch && (
-      <p className="mt-1 text-sm text-red-500">Les mots de passe ne correspondent pas</p>
+      <p className="mt-1 text-sm text-red-500"> {t("front.support.motDePasseNeCorrespondant")}</p>
     )}
     {confirmPassword && doPasswordsMatch && (
-      <p className="mt-1 text-sm text-green-500">Les mots de passe correspondent</p>
+      <p className="mt-1 text-sm text-green-500"> {t("front.support.motDePasseCorrespondant")}</p>
     )}
   </div>
   
@@ -1255,13 +1263,13 @@ useEffect(() => {
       type="button"
       onClick={() => setShowPasswordForm(false)}
     >
-      Annuler
+      {t("front.support.annuler")}
     </Button>
     <Button 
       type="submit"
       disabled={!isPasswordValid || !doPasswordsMatch || !currentPassword}
     >
-      Enregistrer
+      {t("front.support.enregistrer")}
     </Button>
   </div>
 </form>
@@ -1273,11 +1281,11 @@ useEffect(() => {
                 <Key className="h-5 w-5 text-gray-500" />
               </div>
               <div>
-                <Label className="block text-sm font-medium">Mot de passe</Label>
+                <Label className="block text-sm font-medium">{t("front.support.motDePasse")}</Label>
               </div>
             </div>
             <Button variant="outline" onClick={() => setShowPasswordForm(true)}>
-              Changer
+            {t("front.support.changer")}
             </Button>
           </div>
         )}
@@ -1285,9 +1293,9 @@ useEffect(() => {
         {[
           
           {
-            label: "Appareils connectés",
+            label: t("front.support.appareil"),
             description: `${connectedDevices.length} appareil(s) actif(s)`,
-            action: <Button variant="outline" onClick={() => setShowDevicesModal(true)}>Gérer</Button>,
+            action: <Button variant="outline" onClick={() => setShowDevicesModal(true)}>{t("front.support.gerer")}</Button>,
             icon: <Smartphone className="h-5 w-5 text-gray-500" />
           }
         ].map((item, index) => (
@@ -1315,7 +1323,7 @@ useEffect(() => {
         <Settings className="h-5 w-5 text-purple-600 dark:text-purple-400" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-        Préférences
+      {t("front.support.preference")}
       </h3>
     </div>
   </div>
@@ -1324,16 +1332,16 @@ useEffect(() => {
     {[
       
       {
-        label: "Notifications",
+        label: t("front.support.label"),
         description: userData.NotificationPreference === "true" 
-          ? "Notifications par email activées" 
-          : "Notifications par email désactivées",
+          ? t("front.support.enabled")
+          : t("front.support.disabled"),
         component: (
           <Button 
             variant="outline"
             onClick={() => setShowNotificationsModal(true)}
           >
-            Configurer
+            {t("front.support.configurer")}
           </Button>
         ),
         icon: <Bell className="h-5 w-5 text-gray-500" />

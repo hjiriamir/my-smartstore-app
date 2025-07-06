@@ -9,16 +9,22 @@ import {
   getPlanogramsByMagasin,
   tauxImplementation,
   planogramsRecent,
-  getPlanogramDetails
+  getPlanogramDetails,
+  fetchPlanogramByStore,
+  createFullPlanogramm
 } from '../Controller/planogramController.js';
 
 const router = express.Router();
 
 router.post('/createPlanogram', createPlanogram);
 router.post('/createFullPlanogram', createFullPlanogram);
+router.post('/createFullPlanogramm', createFullPlanogramm);
+
 router.get('/getAllPlanograms', getAllPlanograms);
 router.get('/getPlanogramById/:id', getPlanogramById);
 router.get('/getPlanogramDetails/:idMagasin', getPlanogramDetails);
+router.get('/fetchPlanogramByStore/:idMagasin', fetchPlanogramByStore);
+
 
 router.get('/tauxImplementation/:idMagasin/:idUser', tauxImplementation);
 router.get('/planogramsRecent/:idMagasin/:idUser', planogramsRecent);

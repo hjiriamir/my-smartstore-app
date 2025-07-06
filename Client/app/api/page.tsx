@@ -17,11 +17,19 @@ import axios from "axios"
 import { useToast } from "@/hooks/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
+import dynamic from 'next/dynamic';
 
 import './page.css'
 
 export default function Dashboard() {
+  
+  
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [activeTab, setActiveTab] = useState("dashboard")
   const [magasin, setMagasin] = useState("Chargement...") // État pour stocker le nom du magasin
   const [userId, setUserId] = useState(null) // État pour stocker l'ID de l'utilisateur
@@ -236,9 +244,9 @@ const handleLogout = async () => {
         planogram_id: item.planogram.planogram_id,
         name: item.planogram.nom,
         description: item.planogram.description,
-        status: item.statut === "à faire" ? "À implémenter" : 
+        status: item.statut === "à faire" ? t("front.dashboard.aImplementer") : 
                 item.statut === "en cours" ? "En cours" : "Terminé",
-        priority: item.priorite || "Non définie",
+        priority: item.priorite || t("front.dashboard.nonDefinie") ,
         dueDate: item.date_fin_prevue,
       }));
   
@@ -421,7 +429,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
         if (magasinId && userId) {
           await fetchDashboardStats(magasinId.toString(), userId);
           await fetchRecentPlanograms(magasinId.toString(), userId);
-          await fetchNotifications(userId); // Ajout de cette ligne
+          await fetchNotifications(userId);
         }
       } else {
         console.log("userId non disponible - pas d'appel à fetchMagasinData");
@@ -431,7 +439,7 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
     loadData().catch(error => {
       console.error("Erreur dans loadData:", error);
     });
-  }, [userId]);
+  }, [userId, i18n.language]); // Ajoutez i18n.language comme dépendance
 
   return (
     <div className="min-h-screen bg-gray-50 mt-14">
@@ -506,13 +514,13 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-7 mb-6">
-            <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
-            <TabsTrigger value="library">Bibliothèque</TabsTrigger>
-            <TabsTrigger value="visualization">Visualisation</TabsTrigger>
-            <TabsTrigger value="tracking">Suivi</TabsTrigger>
-            <TabsTrigger value="communication">Communication</TabsTrigger>
-            <TabsTrigger value="search">Recherche</TabsTrigger>
-            <TabsTrigger value="support">Support / Gestion Compte</TabsTrigger>
+            <TabsTrigger value="dashboard">{t("front.navBar.tabledDeBoard")}</TabsTrigger>
+            <TabsTrigger value="library">{t("front.navBar.bibliotheque")}</TabsTrigger>
+            <TabsTrigger value="visualization">{t("front.navBar.visualisation")}</TabsTrigger>
+            <TabsTrigger value="tracking">{t("front.navBar.suivi")}</TabsTrigger>
+            <TabsTrigger value="communication">{t("front.navBar.communication")}</TabsTrigger>
+            <TabsTrigger value="search">{t("front.navBar.recherche")}</TabsTrigger>
+            <TabsTrigger value="support">{t("front.navBar.support")}</TabsTrigger>
           </TabsList>
 
           {/* Tableau de bord d'accueil */}
@@ -521,18 +529,18 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tâches en attente</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t("front.dashboard.tacheEnAttent")}</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{dashboardStats.pendingTasks}</div>
-                  <p className="text-xs text-muted-foreground">À traiter</p>
+                  <p className="text-xs text-muted-foreground">{t("front.dashboard.aTraiter")}</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Terminées aujourd'hui</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t("front.dashboard.termineAujourd")}</CardTitle>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
@@ -542,18 +550,18 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total planogrammes</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t("front.dashboard.totalPlanogram")}</CardTitle>
                   <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{dashboardStats.totalPlanograms}</div>
-                  <p className="text-xs text-muted-foreground">Actifs ce mois</p>
+                  <p className="text-xs text-muted-foreground">{t("front.dashboard.actifMois")}</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Taux d'implémentation</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t("front.dashboard.tauxImpl")}</CardTitle>
                   <TrendingUp className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
@@ -569,8 +577,8 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               {/* Planogrammes récents */}
               <Card>
   <CardHeader>
-    <CardTitle>Planogrammes récents</CardTitle>
-    <CardDescription>Dernières publications pour votre magasin</CardDescription>
+    <CardTitle>{t("front.dashboard.recentPlanogram")}</CardTitle>
+    <CardDescription>{t("front.dashboard.recentPlanogramDesr")}</CardDescription>
   </CardHeader>
   <CardContent>
     <div className="h-[400px] overflow-y-auto"> {/* Conteneur avec hauteur fixe et scroll */}
@@ -608,8 +616,8 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               {/* Notifications */}
               <Card>
   <CardHeader>
-    <CardTitle>Notifications</CardTitle>
-    <CardDescription>Alertes et mises à jour importantes</CardDescription>
+    <CardTitle>{t("front.dashboard.notif")}</CardTitle>
+    <CardDescription>{t("front.dashboard.notifDescr")}</CardDescription>
   </CardHeader>
   <CardContent>
   <div className="h-[400px] overflow-y-auto">
@@ -634,8 +642,8 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
             />
             <div className="flex-1">
               <p className="text-sm font-medium">
-                {notification.type === "nouveau planogramme" && "Nouveau planogramme"}
-                {notification.type === "confirmation requise" && "Confirmation requise"}
+              {notification.type === "nouveau planogramme" && t("front.dashboard.nouvPlanogram")}
+              {notification.type === "confirmation requise" && "Confirmation requise"}
                 {notification.type === "retard" && "Retard détecté"}
               </p>
               <p className="text-sm">{notification.contenu}</p>
@@ -644,13 +652,13 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
               </p>
             </div>
             {!notification.lu && (
-              <span className="text-xs text-blue-500">Nouveau</span>
+              <span className="text-xs text-blue-500">{t("front.dashboard.nouveau")}</span>
             )}
           </div>
         ))
       ) : (
         <p className="text-sm text-muted-foreground text-center py-4">
-          Aucune notification pour le moment
+          {t("front.dashboard.nonNotif")}
         </p>
       )}
     </div>

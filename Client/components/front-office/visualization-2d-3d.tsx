@@ -22,6 +22,8 @@ import {
   List,
   Grid,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 const API_BASE_URL = "http://localhost:8081/api"
 
@@ -95,6 +97,11 @@ interface Product {
 }
 
 export default function FurnitureVisualization() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [furnitures, setFurnitures] = useState<Furniture[]>([])
   const [selectedFurniture, setSelectedFurniture] = useState<Furniture | null>(null)
   const [products, setProducts] = useState<Product[]>([])
@@ -492,7 +499,7 @@ export default function FurnitureVisualization() {
           </TransformWrapper>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            Aucune image disponible
+            {t("front.library.pasImage")}
           </div>
         )}
       </div>
@@ -540,8 +547,8 @@ export default function FurnitureVisualization() {
       {/* Contrôles de visualisation */}
       <Card>
         <CardHeader>
-          <CardTitle>Visualisation des meubles et produits</CardTitle>
-          <CardDescription>Sélectionnez un meuble et naviguez entre la vue meuble et la liste des produits</CardDescription>
+          <CardTitle>{t("front.visualisation.visMeubles")}</CardTitle>
+          <CardDescription>{t("front.visualisation.visMeublesDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -551,7 +558,7 @@ export default function FurnitureVisualization() {
               disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un meuble"} />
+                <SelectValue placeholder={loading ? t("front.visualisation.chargement") : t("front.visualisation.selectMeuble")} />
               </SelectTrigger>
               <SelectContent>
               {furnitures.map((furniture) => (
@@ -566,18 +573,18 @@ export default function FurnitureVisualization() {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="furniture">
                   <Grid className="h-4 w-4 mr-2" />
-                  Meuble
+                  {t("front.visualisation.meuble")}
                 </TabsTrigger>
                 <TabsTrigger value="products">
                   <List className="h-4 w-4 mr-2" />
-                  Produits
+                  {t("front.visualisation.produits")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
 
             {activeTab === "furniture" && (
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">Zoom:</span>
+                <span className="text-sm font-medium">{t("front.visualisation.zoom")}</span>
                 <div className="flex-1">
                   <Slider
                     value={zoomLevel}
@@ -601,7 +608,7 @@ export default function FurnitureVisualization() {
         onClick={() => setShowHeatmap(!showHeatmap)}
       >
         <Thermometer className="h-4 w-4 mr-2" />
-        Performance
+        {t("front.visualisation.performance")}
       </Button>
       <Button
         size="sm"
@@ -610,7 +617,7 @@ export default function FurnitureVisualization() {
         disabled={!selectedFurniture || !selectedFurniture.imageUrl}
       >
         <FileImage className="h-4 w-4 mr-2" />
-        Image
+        {t("front.visualisation.image")}
       </Button>
       <Button
         size="sm"
@@ -619,7 +626,7 @@ export default function FurnitureVisualization() {
         disabled={!selectedFurniture} 
       >
         <Download className="h-4 w-4 mr-2" />
-        Planogramme
+        {t("front.visualisation.ficheTech")}
       </Button>
       <Button
         size="sm"
@@ -628,7 +635,7 @@ export default function FurnitureVisualization() {
         disabled={!selectedFurniture}
       >
         <Download className="h-4 w-4 mr-2" />
-        Fiche Technique
+        {t("front.visualisation.ficheTech")}
       </Button>
     </>
   )}
@@ -645,21 +652,21 @@ export default function FurnitureVisualization() {
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle>
-                    {selectedFurniture ? `Meuble ${selectedFurniture.furniture_id}` : "Aucun meuble sélectionné"}
+                    {selectedFurniture ? `Meuble ${selectedFurniture.furniture_id}` : t("front.visualisation.noSelectedMeuble")}
                   </CardTitle>
                   <CardDescription>
                     {selectedFurniture && (
                       <>
                         {activeTab === "furniture" 
-                          ? `Vue meuble - Zoom ${zoomLevel[0]}%`
-                          : `Liste des produits (${products.length})`}
+                          ? t("front.visualisation.viewFurnitureZoom", { zoom: zoomLevel[0] })
+                          : t("front.visualisation.productsListes", { count: products.length })}
                         {activeTab === "furniture" && (
                           <span className="ml-4">
-                            Dimensions: {selectedFurniture.largeur}cm × {selectedFurniture.hauteur}cm × {selectedFurniture.profondeur}cm
+                            {t("front.visualisation.dimensions")} {selectedFurniture.largeur} {t("front.visualisation.cm")} × {selectedFurniture.hauteur} {t("front.visualisation.cm")} × {selectedFurniture.profondeur} {t("front.visualisation.cm")}
                           </span>
                         )}
                         <span className="ml-4">
-                        Type: {selectedFurniture.furnitureType.nomType}
+                        {t("front.visualisation.type")}  {selectedFurniture.furnitureType.nomType}
                         </span>
                       </>
                     )}
@@ -668,7 +675,7 @@ export default function FurnitureVisualization() {
                 {activeTab === "furniture" && (
                   <Button size="sm" variant="outline" onClick={() => setZoomLevel([100])}>
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Réinitialiser zoom
+                    {t("front.visualisation.reinitialiserZoom")}
                   </Button>
                 )}
               </div>
@@ -684,29 +691,29 @@ export default function FurnitureVisualization() {
           {selectedProduct ? (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Détails du produit</CardTitle>
+                <CardTitle className="text-lg">{t("front.visualisation.produitDetails")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="font-medium">{selectedProduct.nom}</h4>
-                  <p className="text-sm text-muted-foreground">ID: {selectedProduct.produit_id}</p>
+                  <p className="text-sm text-muted-foreground">{t("front.visualisation.id")} {selectedProduct.produit_id}</p>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm">Prix:</span>
+                    <span className="text-sm">{t("front.visualisation.prix")}</span>
                     <span className="text-sm font-medium">{selectedProduct.prix} RS</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Quantité:</span>
+                    <span className="text-sm">{t("front.visualisation.quantite")}</span>
                     <span className="text-sm font-medium">{selectedProduct.position.quantite}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">Stock:</span>
+                    <span className="text-sm">{t("front.visualisation.stock")}</span>
                     <Badge variant={
-                      getStockStatus(selectedProduct.stock) === "En stock" 
+                      getStockStatus(selectedProduct.stock) === t("front.visualisation.enStock")
                         ? "default" 
-                        : getStockStatus(selectedProduct.stock) === "Stock faible" 
+                        : getStockStatus(selectedProduct.stock) === t("front.visualisation.stockFaible")
                           ? "destructive" 
                           : "outline"
                     }>
@@ -718,7 +725,7 @@ export default function FurnitureVisualization() {
                 {selectedProduct.sales_performance && (
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm">Performance:</span>
+                      <span className="text-sm">{t("front.visualisation.performance")}:</span>
                       <span className="text-sm font-medium">{selectedProduct.sales_performance}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -734,7 +741,7 @@ export default function FurnitureVisualization() {
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     <span>
-                      Face {selectedProduct.position.face}, Étagère {selectedProduct.position.etagere}, Colonne {selectedProduct.position.colonne}
+                    {t("front.visualisation.face")} {selectedProduct.position.face}, {t("front.visualisation.etagere")} {selectedProduct.position.etagere}, {t("front.visualisation.colonne")} {selectedProduct.position.colonne}
                     </span>
                   </div>
                 </div>
@@ -746,8 +753,8 @@ export default function FurnitureVisualization() {
                 <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">
                   {activeTab === "products" 
-                    ? "Sélectionnez un produit dans la liste" 
-                    : "Affichez la liste des produits pour sélectionner"}
+                    ? t("front.visualisation.selectProduit") 
+                    : t("front.visualisation.listeProduits")}
                 </p>
               </CardContent>
             </Card>
@@ -757,20 +764,20 @@ export default function FurnitureVisualization() {
           {showHeatmap && activeTab === "furniture" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Légende Performance</CardTitle>
+                <CardTitle className="text-lg">{t("front.visualisation.legendePerformance")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-green-600 rounded"></div>
-                  <span className="text-sm">Excellente (90%+)</span>
+                  <span className="text-sm">{t("front.visualisation.excellente")} (90%+)</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded"></div>
-                  <span className="text-sm">Bonne (80-90%)</span>
+                  <span className="text-sm">{t("front.visualisation.bonne")} (80-90%)</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
-                  <span className="text-sm">À améliorer (&lt;80%)</span>
+                  <span className="text-sm">{t("front.visualisation.aAmeliorer")}(&lt;80%)</span>
                 </div>
               </CardContent>
             </Card>

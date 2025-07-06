@@ -1,0 +1,13 @@
+{
+    "glyphs": {
+      " ": { "x": 0, "y": 0, "width": 0, "height": 0, "xoffset": 0, "yoffset": 0, "xadvance": 4 },
+      "A": { "x": 0, "y": 0, "width": 10, "height": 10, "xoffset": 0, "yoffset": 0, "xadvance": 10, "paths": [{"x": [0,5,10], "y": [10,0,10]}] }
+    },
+    "familyName": "Roboto",
+    "ascender": 10,
+    "descender": -2,
+    "underlinePosition": -1,
+    "underlineThickness": 0.5,
+    "boundingBox": { "xMin": 0, "xMax": 10, "yMin": -2, "yMax": 10 },
+    "resolution": 100
+  }

@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { MessageSquare, Send, Phone, Video, Paperclip, Users, Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
+
 
 interface User {
   id: number
@@ -50,6 +53,11 @@ interface Magasin {
 }
 
 export default function Communication() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+  
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null)
   const [newMessage, setNewMessage] = useState("")
@@ -459,7 +467,7 @@ export default function Communication() {
         <CardHeader className="p-4 pb-2">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-semibold">Conversations</h2>
+              <h2 className="text-lg font-semibold">{t("front.communication.conversations")}</h2>
             </div>
             <Button 
               size="sm" 
@@ -467,7 +475,7 @@ export default function Communication() {
               className="gap-1"
             >
               <Plus className="h-4 w-4" />
-              <span>Nouvelle</span>
+              <span>{t("front.communication.nouvelle")}</span>
             </Button>
           </div>
         </CardHeader>
@@ -475,7 +483,7 @@ export default function Communication() {
           <div className="h-[calc(100vh-220px)] overflow-y-auto">
             <div className="space-y-2 pr-2">
               <div className="px-3 py-1 text-sm text-muted-foreground">
-                Messages et support
+              {t("front.communication.messageSupport")}
               </div>
               
               {conversations.map((conversation) => (
@@ -599,7 +607,7 @@ export default function Communication() {
               ))
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                Aucun message dans cette conversation
+                {t("front.communication.noMessage")}
               </div>
             )}
           </div>
@@ -622,7 +630,7 @@ export default function Communication() {
               </Button>
             </div>
             <Input
-              placeholder="Tapez votre message..."
+              placeholder= {t("front.communication.tapezMessage")}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
@@ -644,12 +652,12 @@ export default function Communication() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Nouvelle conversation</CardTitle>
-              <CardDescription>Créez une nouvelle conversation avec des participants</CardDescription>
+              <CardTitle> {t("front.communication.nouvConversation")}</CardTitle>
+              <CardDescription>{t("front.communication.nouvConversationDescr")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Titre de la conversation</label>
+                <label className="block text-sm font-medium mb-1">{t("front.communication.titreConversation")}</label>
                 <Input
                   placeholder="Titre"
                   value={newConversationTitle}
@@ -658,7 +666,7 @@ export default function Communication() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Participants</label>
+                <label className="block text-sm font-medium mb-1">{t("front.communication.participants")}</label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {selectedParticipants.map((participantId) => {
                     const participant = allUsers.find(u => u.id === participantId)
@@ -685,7 +693,7 @@ export default function Communication() {
                     }
                   }}
                 >
-                  <option value="">Sélectionnez un participant</option>
+                  <option value="">{t("front.communication.selectParticipant")}</option>
                   {allUsers
                     .filter(u => !selectedParticipants.includes(u.id))
                     .map((user) => (
@@ -701,13 +709,13 @@ export default function Communication() {
                 variant="outline" 
                 onClick={() => setShowNewConversationDialog(false)}
               >
-                Annuler
+                {t("front.communication.annuler")}
               </Button>
               <Button 
                 onClick={handleCreateConversation}
                 disabled={!newConversationTitle.trim() || selectedParticipants.length === 0}
               >
-                Créer
+                {t("front.communication.creer")}
               </Button>
             </div>
           </Card>

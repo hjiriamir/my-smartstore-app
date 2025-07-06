@@ -14,6 +14,12 @@ import { Trash2, Package, ChevronLeft, ChevronRight, Download, CuboidIcon as Cub
 import html2canvas from "html2canvas"
 import { jsPDF } from "jspdf"
 import * as THREE from "three"
+import { Text } from '@react-three/drei';
+
+import { useLoader } from '@react-three/fiber';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -29,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { SavePlanogramDialog } from "@/components/save-planogram-dialog"
 import { SaveFurnitureDialog } from "@/components/editor2D/FurnitureEditor/save-furniture-dialog"
+
 
 // Types
 interface PlanogramCell {
@@ -538,15 +545,11 @@ const Gondola = ({ position, dimensions, rows, columns }) => {
 // Composant ShelvesDisplay amélioré
 const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }) => {
   const { width, height, depth, baseHeight, shelfThickness } = dimensions;
-
-  // Récupérer les configurations spécifiques
+  
   const shelvesRows = planogramConfig?.shelvesConfig?.rows || rows;
-  const frontBackColumns = planogramConfig?.shelvesConfig?.frontBackColumns || 3;
-  const leftRightColumns = planogramConfig?.shelvesConfig?.leftRightColumns || 1;
-
   const shelfSpacing = height / shelvesRows;
 
-  // Colors for the shelves display - matching the image
+  // Colors for the shelves display
   const baseColor = "#f5f5f5";
   const shelfColor = "#ffffff";
   const metalColor = "#e0e0e0";
@@ -563,7 +566,7 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
         <meshStandardMaterial color={baseColor} roughness={0.7} metalness={0.2} />
       </mesh>
 
-      {/* Main structure - a single long piece of furniture with shelves on both sides */}
+      {/* Main structure */}
       <group>
         {/* Central back panel */}
         <mesh position={[0, height / 2, 0]} receiveShadow castShadow>
@@ -582,48 +585,47 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
           <meshStandardMaterial color={rightSideColor} roughness={0.6} metalness={0.1} />
         </mesh>
 
-        {/* Shelves - for all four sides with unified row configuration */}
+        {/* Shelves */}
         {Array.from({ length: shelvesRows }).map((_, rowIndex) => {
           const shelfY = (rowIndex + 1) * shelfSpacing;
 
           return (
             <group key={`shelf-group-${rowIndex}`}>
-              {/* Front side */}
+              {/* Front side shelf */}
               <mesh position={[0, shelfY, depth / 2 - 0.05]} receiveShadow castShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness, 0.6]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Back side */}
+              {/* Back side shelf */}
               <mesh position={[0, shelfY, -depth / 2 + 0.05]} receiveShadow castShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness, 0.6]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Côté gauche - Étagère plus visible orientée vers l'extérieur */}
-              <mesh position={[-width / 2 - 0.1, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
-                <boxGeometry args={[depth - 0.1, shelfThickness, 0.8]} /> {/* Réduire la profondeur */}
+              {/* Left side shelf */}
+              <mesh 
+                position={[-width / 2 - 0.1, shelfY, 0]} 
+                rotation={[0, Math.PI / 2, 0]} 
+                receiveShadow 
+                castShadow
+              >
+                <boxGeometry args={[depth - 0.1, shelfThickness, 0.8]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Côté droit - Étagère plus visible orientée vers l'extérieur */}
-              <mesh position={[width / 2, shelfY, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
+              {/* Right side shelf */}
+              <mesh 
+                position={[width / 2, shelfY, 0]} 
+                rotation={[0, Math.PI / 2, 0]} 
+                receiveShadow 
+                castShadow
+              >
                 <boxGeometry args={[depth - 0.1, shelfThickness, 1.2]} />
                 <meshStandardMaterial color={shelfColor} roughness={0.5} metalness={0.1} />
               </mesh>
 
-              {/* Metal edge pour le côté gauche */}
-              <mesh
-                position={[-width / 2 - 0.1, shelfY + 0.02, 0]}
-                rotation={[0, Math.PI / 2, 0]}
-                receiveShadow
-                castShadow
-              >
-                <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
-                <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
-              </mesh>
-
-              {/* Metal edges for shelves */}
+              {/* Metal edges */}
               <mesh position={[0, shelfY + 0.02, depth / 2]} receiveShadow castShadow>
                 <boxGeometry args={[width - 0.1, shelfThickness + 0.04, 0.05]} />
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
@@ -633,52 +635,55 @@ const ShelvesDisplay = ({ position, dimensions, rows, columns, planogramConfig }
                 <boxGeometry args={[width - 0.1, shelfThickness + 0.04, 0.05]} />
                 <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
               </mesh>
-
-              {/* Metal edges for sides */}
-              <mesh position={[-width / 2, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
-                <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
-                <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
-              </mesh>
-
-              <mesh position={[width / 2, shelfY + 0.02, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow castShadow>
-                <boxGeometry args={[depth - 0.1, shelfThickness + 0.04, 0.05]} />
-                <meshStandardMaterial color={metalColor} metalness={0.3} roughness={0.3} />
-              </mesh>
             </group>
           );
         })}
       </group>
 
-      {/* Ajoutez des indicateurs de face */}
+      {/* Text indicators - using drei's default font */}
       <group position={[0, height * 0.8, 0]}>
-        {/* Indicateur face gauche */}
-        <mesh position={[-width/2 - 0.2, 0, 0]} rotation={[0, Math.PI/2, 0]}>
-          <textGeometry args={["GAUCHE", { font, size: 0.2, height: 0.01 }]} />
-          <meshBasicMaterial color="black" />
-        </mesh>
+        {/* Left side indicator */}
+        <Text
+          position={[-width/2 - 0.2, 0, 0]}
+          rotation={[0, Math.PI/2, 0]}
+          fontSize={0.2}
+          color="black"
+        >
+          GAUCHE
+        </Text>
 
-        {/* Indicateur face avant */}
-        <mesh position={[0, 0, depth/2 + 0.2]}>
-          <textGeometry args={["AVANT", { font, size: 0.2, height: 0.01 }]} />
-          <meshBasicMaterial color="black" />
-        </mesh>
+        {/* Front side indicator */}
+        <Text
+          position={[0, 0, depth/2 + 0.2]}
+          fontSize={0.2}
+          color="black"
+        >
+          AVANT
+        </Text>
 
-        {/* Indicateur face arrière */}
-        <mesh position={[0, 0, -depth/2 - 0.2]} rotation={[0, Math.PI, 0]}>
-          <textGeometry args={["ARRIÈRE", { font, size: 0.2, height: 0.01 }]} />
-          <meshBasicMaterial color="black" />
-        </mesh>
+        {/* Back side indicator */}
+        <Text
+          position={[0, 0, -depth/2 - 0.2]}
+          rotation={[0, Math.PI, 0]}
+          fontSize={0.2}
+          color="black"
+        >
+          ARRIÈRE
+        </Text>
 
-        {/* Indicateur face droite */}
-        <mesh position={[width/2 + 0.2, 0, 0]} rotation={[0, -Math.PI/2, 0]}>
-          <textGeometry args={["DROITE", { font, size: 0.2, height: 0.01 }]} />
-          <meshBasicMaterial color="black" />
-        </mesh>
+        {/* Right side indicator */}
+        <Text
+          position={[width/2 + 0.2, 0, 0]}
+          rotation={[0, -Math.PI/2, 0]}
+          fontSize={0.2}
+          color="black"
+        >
+          DROITE
+        </Text>
       </group>
 
-      {/* Ceiling lighting */}
+      {/* Lighting */}
       <group position={[0, height + 0.5, 0]}>
-        {/* Light fixtures */}
         {Array.from({ length: 3 }).map((_, i) => (
           <group key={`light-${i}`} position={[((i - 1) * width) / 3, 0, 0]}>
             <pointLight position={[0, -0.5, 0]} intensity={0.3} distance={5} decay={2} />
@@ -1289,40 +1294,34 @@ const PlanogramScene = ({
         })}
 
       {/* View controls for SHELVES_DISPLAY */}
-      {planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY && (
-        <group position={[0, height + 1, 0]}>
-          <Button 
-            onClick={() => handleViewChange('left')} 
-            style={{ backgroundColor: activeView === 'left' ? '#1890ff' : undefined }}
+     
+{planogramConfig.furnitureType === FurnitureTypes.SHELVES_DISPLAY && (
+  <group position={[0, height + 1, 0]}>
+    {/* Create view control buttons using Three.js primitives */}
+    {['default', 'left', 'front', 'back', 'right'].map((view, i) => {
+      const isActive = activeView === view;
+      return (
+        <mesh
+          key={view}
+          position={[i * 2 - 4, 0, 0]}
+          onClick={() => handleViewChange(view)}
+        >
+          <boxGeometry args={[1.8, 0.5, 0.1]} />
+          <meshStandardMaterial color={isActive ? '#1890ff' : '#cccccc'} />
+          <Text
+            position={[0, 0, 0.06]}
+            fontSize={0.2}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
           >
-            Vue gauche
-          </Button>
-          <Button 
-            onClick={() => handleViewChange('front')}
-            style={{ backgroundColor: activeView === 'front' ? '#1890ff' : undefined }}
-          >
-            Vue avant
-          </Button>
-          <Button 
-            onClick={() => handleViewChange('back')}
-            style={{ backgroundColor: activeView === 'back' ? '#1890ff' : undefined }}
-          >
-            Vue arrière
-          </Button>
-          <Button 
-            onClick={() => handleViewChange('right')}
-            style={{ backgroundColor: activeView === 'right' ? '#1890ff' : undefined }}
-          >
-            Vue droite
-          </Button>
-          <Button 
-            onClick={() => handleViewChange('default')}
-            style={{ backgroundColor: activeView === 'default' ? '#1890ff' : undefined }}
-          >
-            Vue par défaut
-          </Button>
-        </group>
-      )}
+            {`Vue ${view}`}
+          </Text>
+        </mesh>
+      );
+    })}
+  </group>
+)}
 
       <OrbitControls
         enablePan={true}
@@ -1428,6 +1427,7 @@ export function PlanogramEditor() {
   const categoryIds = [...new Set(products.flatMap((product) => product.category_id))].filter(Boolean)
   //const categories = allCategories.filter(cat => categoryIds.includes(cat.id)).sort((a, b) => a.name.localeCompare(b.name))
   const categories = [...new Set(products.map((product) => product.category_id))].filter(Boolean).sort()
+  
   
   
   // Initialize planogram cells
