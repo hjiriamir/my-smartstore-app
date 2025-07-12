@@ -560,7 +560,7 @@ const Product3D = ({
           textureLoader.load(
             product.image,
             (loadedTexture) => {
-              loadedTexture.encoding = THREE.sRGBEncoding
+              loadedTexture.encoding = THREE.SRGBColorSpace
               loadedTexture.needsUpdate = true
               resolve(loadedTexture)
             },

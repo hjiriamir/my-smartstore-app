@@ -5,7 +5,8 @@ import {
   getVenteById,
   updateVente,
   deleteVente,
-  getStats
+  getStats,
+  fetchStat
 } from '../Controller/venteController.js';
 
 const router = express.Router();
@@ -14,6 +15,8 @@ const router = express.Router();
 router.post('/createVente', createVente);
 router.get('/getAllVentes', getAllVentes);
 router.get('/getVenteById/:id', getVenteById);
+router.get('/fetchStat/:idEntreprise', fetchStat);
+
 router.put('/updateVente/:id', updateVente);
 router.delete('/deleteVente/:id', deleteVente);
 

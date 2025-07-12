@@ -5,18 +5,10 @@ import { usePathname } from 'next/navigation';
 import Header from '../components/header-footer/Header';
 import Footer from '../components/header-footer/footer';
 import TopBanner from '../components/back-office/TopBanner';
-
-//import { metadata } from '../metadata';
-import type { Metadata } from "next"
 import { AuthProvider } from '../src/context/AuthContext';
-import { ReactNode } from 'react'; // Import ReactNode for children type
+import { ReactNode } from 'react';
+import ProtectedRoute from './ProtectedRoute';
 
-/*export const metadata: Metadata = {
-  title: "Planogramme App",
-  description: "Application de gestion de planogrammes",
-        
-}*/
-// Liste des routes où le Header et le Footer ne doivent pas être affichés
 const noHeaderFooterRoutes = [
   '/Dashboard',
   '/DashboardEntreprise',
@@ -47,7 +39,14 @@ const noHeaderFooterRoutes = [
   '/combined-management',
   '/display-data',
   '/api',
-  '/user-management'
+  '/user-management',
+  '/orders',
+  '/suppliers',
+  '/products',
+  '/marketing',
+  '/marketing-strategy',
+  '/shelf-labels',
+  '/shop-pillars'
 ];
 
 const topBannerRoutes = [
@@ -68,13 +67,18 @@ const topBannerRoutes = [
   '/combined-management',
   '/display-data',
   '/api',
-  '/user-management'
-
+  '/user-management',
+  '/orders',
+  '/suppliers',
+  '/products',
+  '/marketing',
+  '/marketing-strategy',
+  '/shelf-labels',
+  '/shop-pillars'
 ];
 
-// Define props type for RootLayout
 interface RootLayoutProps {
-  children: ReactNode; // Explicitly type children as ReactNode
+  children: ReactNode; 
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
@@ -87,13 +91,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body>
-      <AuthProvider>
-        {shouldShowHeaderFooter && <Header />}
-        {topBannerRoutes.some((route) => pathname.startsWith(route)) && <TopBanner />}
-        {children}
-        {shouldShowHeaderFooter && <Footer />}
-      </AuthProvider>
-
+        <AuthProvider>
+          <ProtectedRoute>
+            {shouldShowHeaderFooter && <Header />}
+            {topBannerRoutes.some((route) => pathname.startsWith(route)) && <TopBanner />}
+            {children}
+            {shouldShowHeaderFooter && <Footer />}
+          </ProtectedRoute>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -8,15 +8,18 @@ import {
   createProduitsList,
   getProduitDetails,
   getProductIdsByCodes,
-  getProductIdsFromCodes
+  getProductIdsFromCodes,
+  getProductsByMagasin
 } from '../Controller/produitController.js';
 
 const router = express.Router();
 
 router.post('/createProduit', createProduit);              
 router.get('/getAllProduits', getAllProduits);
-router.get('/getProduitDetails/:idMagasin', getProduitDetails);              
-router.get('/getProductIdsByCodes/:productCode', getProductIdsByCodes);   
+router.get('/getProduitDetails/:idMagasin', getProduitDetails);             
+router.get('/getProductIdsByCodes/:productCode', getProductIdsByCodes);  
+router.get('/getProductsByMagasin/:idMagasin', getProductsByMagasin);   
+
 router.get('/getProductIdsFromCodes', getProductIdsFromCodes);              
 
 

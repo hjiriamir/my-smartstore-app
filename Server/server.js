@@ -64,9 +64,11 @@ import commentaireRoutes from './Routes/commentaireRoutes.js'
 import chatMessageRoutes from './Routes/chatMessageRoutes.js'
 import ConversationParticipantRoutes from './Routes/conversationParticipantRoutes.js';
 import sessionRoutes from './Routes/sessionRoutes.js'
-import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation} from './Model/associations.js';
+import CommandeAchatRoute from './Routes/commandeAchatRoutes.js'
+import LigneCommandeAchatRoutes from './Routes/ligneCommandeAchatRoutes.js';
+import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation, CommandeAchat, LigneCommandeAchat} from './Model/associations.js';
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8081;
 const router = express.Router(); 
 app.use(express.json());
 app.use(cors({
@@ -115,6 +117,10 @@ app.use("/api/commentaireRoutes", commentaireRoutes);
 app.use("/api/chatMessageRoutes", chatMessageRoutes);
 app.use("/api/participants", ConversationParticipantRoutes);
 app.use("/api/session", sessionRoutes);
+app.use("/api/commande-achat", CommandeAchatRoute);
+app.use("/api/ligne-commande", LigneCommandeAchatRoutes);
+
+
 
 
 
@@ -147,7 +153,7 @@ app.get('/api/auth/logout',(req,res)=>{
     res.clearCookie('token');
     return res.json({Status:"Success"})
 });
-app.listen(8081, () => {
+/*app.listen(8081, () => {
     console.log("Serveur démarré sur le port 8081");
-});
+});*/
 

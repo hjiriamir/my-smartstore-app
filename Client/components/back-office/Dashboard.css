@@ -126,6 +126,7 @@
   position: fixed;
   height: calc(100vh - 50px);
   top: 50px;
+  
 }
 
 .right-sidebar {
@@ -836,3 +837,17 @@ margin-top: 0;
 .current-user-info p {
 margin: 5px 0;
 }
+
+.store-selector {
+  margin: 20px 0;
+  text-align: right;
+}
+
+.store-selector select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: white;
+  font-size: 14px;
+}
+

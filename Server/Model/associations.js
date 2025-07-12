@@ -17,7 +17,9 @@ import StockMovement from './StockMovement.js';
 import magasin1 from './magasin1.js';
 import Entreprises from './Entreprises.js';
 import Formation from './Formation.js';
-
+import CommandeAchat from './CommandeAchat.js';
+import LigneCommandeAchat from './LigneCommandeAchat.js';
+import EntrepriseFournisseur from './EntrepriseFournisseur.js'
 //import Conversation from './Conversation.js';
 // === Associations Conversation/Users===
 Conversation.belongsToMany(Users, {
@@ -122,6 +124,61 @@ Entreprises.hasMany(Users, {
   as: 'utilisateurs'
 });
 
+
+CommandeAchat.hasMany(LigneCommandeAchat, {
+  foreignKey: 'id_commande_achat',
+  as: 'lignes',
+  onDelete: 'CASCADE'
+});
+
+LigneCommandeAchat.belongsTo(CommandeAchat, {
+  foreignKey: 'id_commande_achat',
+  targetKey: 'id_commande_achat', 
+  as: 'commande'
+});
+
+CommandeAchat.belongsTo(magasin1, {
+  foreignKey: 'id_magasin',
+  targetKey: 'id', 
+  as: 'magasin'
+});
+
+CommandeAchat.belongsTo(Entreprises, {
+  foreignKey: 'id_entreprise',  // FK dans CommandeAchat
+  targetKey: 'id',              // PK dans Entreprises
+  as: 'entreprise'
+});
+
+CommandeAchat.belongsTo(Fournisseur, {
+  foreignKey: 'id_fournisseur',
+  targetKey: 'fournisseur_id', 
+  as: 'fournisseur'
+});
+
+Produit.hasMany(LigneCommandeAchat, {
+  foreignKey: 'id_produit',  // correspond au champ dans LigneCommandeAchat
+  sourceKey: 'id',           // correspond à la PK dans Produit
+  as: 'lignesCommandeAchat'
+});
+LigneCommandeAchat.belongsTo(Produit, {
+  foreignKey: 'id_produit',  // champ dans LigneCommandeAchat
+  targetKey: 'id',           // champ référencé dans Produit
+  as: 'produit'
+});
+
+// Définir les relations many-to-many
+Entreprises.belongsToMany(Fournisseur, {
+  through: EntrepriseFournisseur,
+  foreignKey: 'entrepriseId',
+  otherKey: 'fournisseurId',
+});
+
+Fournisseur.belongsToMany(Entreprises, {
+  through: EntrepriseFournisseur,
+  foreignKey: 'fournisseurId',
+  otherKey: 'entrepriseId',
+});
+
 export {
   Conversation,
   ConversationParticipant,
@@ -140,5 +197,7 @@ export {
   Categorie1,
   Produit,
   Formation,
-  Entreprises
+  Entreprises,
+  CommandeAchat,
+  LigneCommandeAchat
 };

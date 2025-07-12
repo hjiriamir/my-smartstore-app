@@ -289,13 +289,13 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
           dir={textDirection} 
         >
         <DialogHeader>
-  <div dir={i18n.language === "ar" ? "rtl" : "ltr"} className="space-y-1">
-    <DialogTitle>{t("back.furnitureEditorIA.generationMeubleIA")}</DialogTitle>
-    <DialogDescription>
-      {t("back.furnitureEditorIA.generationParIADescr")}
-    </DialogDescription>
-  </div>
-</DialogHeader>
+        <div dir={i18n.language === "ar" ? "rtl" : "ltr"} className="space-y-1">
+          <DialogTitle>{t("back.furnitureEditorIA.generationMeubleIA")}</DialogTitle>
+          <DialogDescription>
+            {t("back.furnitureEditorIA.generationParIADescr")}
+          </DialogDescription>
+        </div>
+        </DialogHeader>
 
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "ai" | "import")} className="w-full">

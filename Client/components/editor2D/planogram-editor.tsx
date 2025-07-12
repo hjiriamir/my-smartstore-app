@@ -786,7 +786,7 @@ const Product3D = ({
             product.image,
             (loadedTexture) => {
               // Configurer la texture pour une meilleure apparence
-              loadedTexture.encoding = THREE.sRGBEncoding
+              loadedTexture.encoding = THREE.SRGBColorSpace
               loadedTexture.needsUpdate = true
               resolve(loadedTexture)
             },

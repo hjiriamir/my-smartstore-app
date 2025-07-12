@@ -1,4 +1,5 @@
 // Controller/magasinController.js
+import magasin1 from '../Model/magasin1.js';
 import Magasin from '../Model/magasin1.js';
 import Users from '../Model/Users.js'
 // Créer un nouveau magasin
@@ -128,3 +129,19 @@ export const createMagasinsList = async (req, res) => {
     }
   };
   
+  export const getMagasinIdByCode = async(req,res)=>{
+    try {
+      const { magasin_id } = req.body;
+      const magasinId = await magasin1.findOne({
+        where : {magasin_id :magasin_id  }
+      })
+      if (!magasinId) {
+        return res.status(404).json({ message: "Magasin non trouvé" });
+      }
+      
+      res.status(200).json(magasinId.id);
+    } catch (error) {
+      console.error('Erreur lors de la récuperation getCodeMagasin :', error);
+      res.status(400).json({ error: error.message });
+    }
+  }

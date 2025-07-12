@@ -1,7 +1,11 @@
 import { createContext, useState, useEffect } from "react";
 import { getMe } from "../services/authService";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext({
+  user: null,
+  setUser: () => {},
+  loading: true
+});
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -11,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         const fetchUser = async () => {
             try {
                 const data = await getMe();
-                setUser(data.user); // Stocker les infos de l'utilisateur
+                setUser(data.user);
             } catch (error) {
                 setUser(null);
             } finally {
@@ -19,11 +23,10 @@ export const AuthProvider = ({ children }) => {
             }
         };
 
-        // Vérification du token avant d'appeler l'API
         if (localStorage.getItem("token")) {
             fetchUser();
         } else {
-            setLoading(false); // Si pas de token, on passe directement à l'état non chargé
+            setLoading(false);
         }
     }, []);
 

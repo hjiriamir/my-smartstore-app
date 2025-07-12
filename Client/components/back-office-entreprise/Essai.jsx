@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import "./essai.css"
-import { usePathname, useRouter  } from 'next/navigation'; // Remplace useLocation
+import { usePathname, useRouter  } from 'next/navigation'; 
 
 import {
   BarChart3,

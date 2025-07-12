@@ -7,7 +7,8 @@ import {
   deleteMagasin,
   createMagasinsList,
   getMagasinsByEntrepriseId,
-  getMagasinByUser
+  getMagasinByUser,
+  getMagasinIdByCode
 } from '../Controller/magasinUpdateController.js';
 
 const router = express.Router();
@@ -17,6 +18,8 @@ router.post('/createMagasinsList', createMagasinsList);
 router.get('/getAllMagasins', getAllMagasins);
 router.get('/getMagasinById/:id', getMagasinById);
 router.get('/getMagasinByUser/:id', getMagasinByUser);
+router.get('/getMagasinIdByCode', getMagasinIdByCode);
+
 router.get('/getMagasinsByEntrepriseId/:id', getMagasinsByEntrepriseId);
 router.put('/updateMagasin/:id', updateMagasin);
 router.delete('/deleteMagasin/:id', deleteMagasin);

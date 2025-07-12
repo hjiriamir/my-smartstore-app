@@ -1,3 +1,4 @@
+import Categorie1 from '../Model/Categorie1.js';
 import Categorie from '../Model/Categorie1.js';
 
 export const createCategorie = async (req, res) => {
@@ -69,3 +70,19 @@ export const createCategorieList = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const getCategoriesByMagasin = async(req, res) =>{
+    try {
+        const { idMagasin } = req.params;
+        if(!idMagasin){
+                console.error("vous devez avoir id magasin");
+        }
+        const categories = await Categorie1.findAll({
+            where: {magasin_id : idMagasin}
+        })
+        res.status(201).json(categories);
+    } catch (error) {
+        console.error('Erreur lors de get Categories By Magasin :', error);
+        res.status(400).json({ error: error.message });
+    }
+}

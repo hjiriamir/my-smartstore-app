@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { plans } from "./data/plans";
-import ForfaitService from "../../src/services/forfaitService"; // Import du service
+import ForfaitService from "../../src/services/forfaitService"; 
 import Swal from "sweetalert2";
 import "./forfaits.css";
-import { usePathname, useRouter  } from 'next/navigation'; // Remplace useLocation
+import { usePathname, useRouter  } from 'next/navigation'; 
 
 function DescriptionForfait({ params }) {
   const router = useRouter();

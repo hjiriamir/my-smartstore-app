@@ -80,49 +80,29 @@ const RightSidebarDashboard = () => {
             onClick={() => handleClick('Library-Furniture')}
           >
              <img src="/building.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'Library-Furniture' ? 'white' : '' }}>{t("Library-Furniture")}</span>
+            <span style={{ color: activeItem === 'Library-Furniture' ? 'white' : '' }}>{t("Library_Furniture")}</span>
            
           </Link>
           <a
-            href="#"
+            href="/marketing"
             className={`menu-item ${activeItem === 'marketing-strategy' ? 'active' : ''}`}
             style={{ backgroundColor: activeItem === 'marketing-strategy' ? '#0f766e' : '' }}
             onClick={() => handleClick('marketing-strategy')}
           >
              <img src="/cart.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'marketing-strategy' ? 'white' : '' }}>{t("marketing_strategy")}</span>
+            <span style={{ color: activeItem === 'marketing-strategy' ? 'white' : '' }}>{t("marketingStrategy")}</span>
            
-          </a>
-          <a
-            href="#"
-            className={`menu-item ${activeItem === 'shop-pillars' ? 'active' : ''}`}
-            style={{ backgroundColor: activeItem === 'shop-pillars' ? '#0f766e' : '' }}
-            onClick={() => handleClick('shop-pillars')}
-          >
-            <img src="/letter-s.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'shop-pillars' ? 'white' : '' }}>{t("shop_pillars")}</span>
-            
-          </a>
-          <a
-            href="#"
-            className={`menu-item ${activeItem === 'shelf-labels' ? 'active' : ''}`}
-            style={{ backgroundColor: activeItem === 'shelf-labels' ? '#0f766e' : '' }}
-            onClick={() => handleClick('shelf-labels')}
-          >
-            <img src="/cart.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'shelf-labels' ? 'white' : '' }}>{t("shelf_labels")}</span>
-            
           </a>
           <Link
             href="/user-management"
             className={`menu-item ${activeItem === 'user-management' ? 'active' : ''}`}
             style={{ backgroundColor: activeItem === 'user-management' ? '#0f766e' : '' }}
-            onClick={() => handleClick('Library-Furniture')}
+            onClick={() => handleClick('user-management')} // ✅ Correction ici
           >
-             <img src="/building.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'user-management' ? 'white' : '' }}>{t("user-management")}</span>
-           
+            <img src="/management.png" className="menu-icon" alt="Category Icon" />
+            <span style={{ color: activeItem === 'user-management' ? 'white' : '' }}>{t("user_management")}</span>
           </Link>
+
           <a
             href="#"
             className={`menu-item ${activeItem === 'sales-strategy' ? 'active' : ''}`}
@@ -133,16 +113,7 @@ const RightSidebarDashboard = () => {
             <span style={{ color: activeItem === 'sales-strategy' ? 'white' : '' }}>{t("push_sales")}</span>
             
           </a>
-          <Link
-            href="/UserManagement"
-            className={`menu-item ${activeItem === 'user-management' ? 'active' : ''}`}
-            style={{ backgroundColor: activeItem === 'user-management' ? '#0f766e' : '' }}
-            onClick={() => handleClick('user-management')}
-          >
-            <img src="/management.png" className="menu-icon" alt="Category Icon" />
-            <span style={{ color: activeItem === 'user-management' ? 'white' : '' }}>{t("user_management")}</span>
-            
-          </Link>
+      
           <p className="menu-label" style={{ marginTop: "7px" }}>{t("support")}</p>
           <div className="support">
             <a

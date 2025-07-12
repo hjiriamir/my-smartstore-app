@@ -7,6 +7,8 @@ routerCategorie.post('/createCategorie', categorieUpdateController.createCategor
 routerCategorie.post('/createCategorieList', categorieUpdateController.createCategorieList);
 routerCategorie.get('/getAllCategories', categorieUpdateController.getAllCategories);
 routerCategorie.get('/getCategorieById/:id', categorieUpdateController.getCategorieById);
+routerCategorie.get('/getCategoriesByMagasin/:idMagasin', categorieUpdateController.getCategoriesByMagasin);
+
 routerCategorie.put('/updateCategorie/:id', categorieUpdateController.updateCategorie);
 routerCategorie.delete('/deleteCategorie/:id', categorieUpdateController.deleteCategorie);
 

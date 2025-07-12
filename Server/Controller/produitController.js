@@ -10,6 +10,7 @@ import {
   Vente, 
   StockMovement 
 } from '../Model/associations.js';
+import { Op } from 'sequelize';
 // Créer un produit
 export const createProduit = async (req, res) => {
   try {
@@ -219,3 +220,32 @@ export const getProductIdsFromCodes = async (req, res) => {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+export const getProductsByMagasin = async(req,res)=>{
+try {
+  const { idMagasin } = req.params;
+
+  // Récuperation des Catégories
+  const categories = await Categorie1.findAll({
+    where: {magasin_id: idMagasin}
+  })
+
+  if (!categories) {
+    return res.status(400).json({ error: "Problème au niveau de la récuperation des catégories" });
+  }
+  const categorieIds = categories.map(cat => cat.categorie_id);
+  // Récupération des Produits
+  const products = await Produit.findAll({
+    where: {
+      categorie_id: {
+        [Op.in]: categorieIds
+      }
+    }
+  });
+  return res.json(products);
+  
+} catch (error) {
+  console.error("Erreur dans get Products By Magasin:", error);
+    return res.status(500).json({ error: "Erreur serveur" });
+}
+}
