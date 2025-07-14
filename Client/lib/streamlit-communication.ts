@@ -43,6 +43,7 @@ export interface StreamlitPlanogramData {
     quantite: number
   }>
 }
+const IA_SERVICE_URL = process.env.NEXT_PUBLIC_IA_SERVICE_URL || "http://localhost:8501";
 
 export class StreamlitCommunicator {
   private iframe: HTMLIFrameElement | null = null
@@ -54,7 +55,7 @@ export class StreamlitCommunicator {
   private maxRetries = 10
   private retryCount = 0
 
-  constructor(origins = ["http://localhost:8501", "http://127.0.0.1:8501"]) {
+  constructor(origins = [IA_SERVICE_URL, IA_SERVICE_URL?.replace("localhost", "127.0.0.1")]) {
     this.allowedOrigins = origins
     this.setupMessageListener()
     this.setupStorageListener()

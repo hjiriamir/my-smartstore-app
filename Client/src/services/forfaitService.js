@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8081/api/demande";
-
+//const API_URL = "http://localhost:8081/api/demande";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const ForfaitService = {
   async createDemande(data) {
     try {

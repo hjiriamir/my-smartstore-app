@@ -71,6 +71,7 @@ export default function Communication() {
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [conversationParticipants, setConversationParticipants] = useState<User[]>([])
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   useEffect(() => {
     const fetchConversationParticipants = async () => {
@@ -79,7 +80,7 @@ export default function Communication() {
       try {
         const token = localStorage.getItem("token")
         const response = await fetch(
-          `http://localhost:8081/api/conversation/getAllConversations/${selectedConversation}`,
+          `${API_BASE_URL}/conversation/getAllConversations/${selectedConversation}`,
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -111,7 +112,7 @@ export default function Communication() {
           throw new Error("Token d'authentification manquant")
         }
 
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -142,7 +143,7 @@ export default function Communication() {
 
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch(`http://localhost:8081/api/magasins/getMagasinByUser/${currentUserId}`, {
+        const response = await fetch( `${API_BASE_URL}/magasins/getMagasinByUser/${currentUserId}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -173,7 +174,7 @@ export default function Communication() {
         }
     
         const response = await fetch(
-          `http://localhost:8081/api/auth1/users/store/${currentMagasin.magasin_id}`,
+          `${API_BASE_URL}/auth1/users/store/${currentMagasin.magasin_id}`,
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -205,7 +206,7 @@ export default function Communication() {
 
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch(`http://localhost:8081/api/conversation/getConversationsByParticipant/${currentUserId}`, {
+        const response = await fetch(`${API_BASE_URL}/conversation/getConversationsByParticipant/${currentUserId}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -251,7 +252,7 @@ export default function Communication() {
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(
-        `http://localhost:8081/api/chatMessageRoutes/getMessagesByConversation/${selectedConversation}`,
+       `${API_BASE_URL}/chatMessageRoutes/getMessagesByConversation/${selectedConversation}`,
         {
           headers: {
             "Authorization": `Bearer ${token}`
@@ -299,7 +300,7 @@ export default function Communication() {
 
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch("http://localhost:8081/api/conversation/createConversation", {
+      const response = await fetch(`${API_BASE_URL}/conversation/createConversation`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -341,7 +342,7 @@ export default function Communication() {
   
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch("http://localhost:8081/api/chatMessageRoutes/createMessage", {
+      const response = await fetch(`${API_BASE_URL}/chatMessageRoutes/createMessage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -390,7 +391,7 @@ export default function Communication() {
   
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch("http://localhost:8081/api/chatMessageRoutes/upload-message", {
+      const response = await fetch(`${API_BASE_URL}/chatMessageRoutes/upload-message`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`

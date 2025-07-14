@@ -8,6 +8,7 @@ const ResetPasswordForm = ({ token }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
     const router = useRouter();
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -18,7 +19,7 @@ const ResetPasswordForm = ({ token }) => {
         }
 
         try {
-            const res = await axios.post(`http://localhost:8081/api/auth/reset-password/${token}`, {
+            const res = await axios.post(`${API_BASE_URL}/auth/reset-password/${token}`, {
                 password: newPassword,
             });
 

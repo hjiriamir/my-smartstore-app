@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   useEffect(() => {
     if (user) {
@@ -58,7 +59,7 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoadingData(true);
-      let url = `http://localhost:8081/api/vente/fetchStat/${user.entreprises_id}`;
+      let url = `${API_BASE_URL}/vente/fetchStat/${user.entreprises_id}`;
       if (selectedStore) {
         url += `?magasinId=${selectedStore}`;
       }

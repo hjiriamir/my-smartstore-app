@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect  } from "react"
+import { useState, useRef, useEffect, useCallback   } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import Papa from "papaparse"
@@ -172,18 +172,26 @@ export function CategoryImport({
   };
 
   useEffect(() => {
-    setImportedCategories(existingData);
+    // Vérifier si les données existantes sont différentes avant de mettre à jour
+    if (JSON.stringify(importedCategories) !== JSON.stringify(existingData)) {
+      setImportedCategories(existingData);
+    }
+    
+    // Passer à l'étape 5 seulement si les conditions sont remplies ET qu'on n'y est pas déjà
     if (isComplete && existingData.length > 0 && step !== 5) {
       setStep(5); 
     }
-  }, [existingData, isComplete]);
+  }, [existingData, isComplete, step]);
 
-  const handleImport = (data: CategoryData[]) => {
-    setImportedCategories(data);
-    if (onCategoriesImported) {
-      onCategoriesImported(data);
+  const handleImport = useCallback((data: CategoryData[]) => {
+    // Éviter les mises à jour inutiles
+    if (JSON.stringify(importedCategories) !== JSON.stringify(data)) {
+      setImportedCategories(data);
+      if (onCategoriesImported) {
+        onCategoriesImported(data);
+      }
     }
-  };
+  }, [importedCategories, onCategoriesImported]);
 
   const getNiveauLabel = (value: number | undefined) => {
     if (!value) return "-";

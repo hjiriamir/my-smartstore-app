@@ -43,7 +43,7 @@ interface Planogram {
   }[]
 }
 
-const API_BASE_URL = "http://localhost:8081/api"
+//const API_BASE_URL = "http://localhost:8081/api"
 
 export default function PlanogramLibrary() {
 
@@ -61,6 +61,7 @@ export default function PlanogramLibrary() {
   const [selectedPlanogram, setSelectedPlanogram] = useState<Planogram | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [zones, setZones] = useState<{zone_id: string, nom_zone: string}[]>([])
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 
   // get zones by store
@@ -73,7 +74,7 @@ export default function PlanogramLibrary() {
         }
   
         // 1. Récupérer l'ID de l'utilisateur connecté
-        const userResponse = await fetch("http://localhost:8081/api/auth/me", {
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -159,7 +160,7 @@ export default function PlanogramLibrary() {
         }
 
         // 1. Récupérer l'ID de l'utilisateur connecté
-        const userResponse = await fetch("http://localhost:8081/api/auth/me", {
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

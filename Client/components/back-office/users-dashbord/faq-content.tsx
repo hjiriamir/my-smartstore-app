@@ -36,6 +36,7 @@ export function FAQContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   
   // État pour la nouvelle FAQ
   const [newFaq, setNewFaq] = useState({
@@ -72,7 +73,7 @@ export function FAQContent() {
           throw new Error("Token d'authentification manquant")
         }
 
-        const data = await fetchWithErrorHandling("http://localhost:8081/api/auth/me", {
+        const data = await fetchWithErrorHandling(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -99,7 +100,7 @@ export function FAQContent() {
     const fetchEntreprise = async () => {
       try {
         const data = await fetchWithErrorHandling(
-          `http://localhost:8081/api/auth1/getEntrepriseByUser/${currentUserId}`
+          `${API_BASE_URL}/auth1/getEntrepriseByUser/${currentUserId}`
         )
         setEntreprise(data.entreprise)
         setNewFaq(prev => ({ ...prev, entreprise_id: data.entreprise.id }))
@@ -120,7 +121,7 @@ export function FAQContent() {
       try {
         setLoading(true)
         const data = await fetchWithErrorHandling(
-          `http://localhost:8081/api/faq/getFaqByEntreprise/${entreprise.id}`
+          `${API_BASE_URL}/faq/getFaqByEntreprise/${entreprise.id}`
         )
         setFaqs(data.faqs?.rows || [])
         setLoading(false)
@@ -143,7 +144,7 @@ export function FAQContent() {
   
     try {
       const token = localStorage.getItem("token");
-      const response = await fetchWithErrorHandling("http://localhost:8081/api/faq/createFaq", {
+      const response = await fetchWithErrorHandling(`${API_BASE_URL}/faq/createFaq`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

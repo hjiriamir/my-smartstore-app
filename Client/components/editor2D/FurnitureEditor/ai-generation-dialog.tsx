@@ -34,6 +34,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
+  const API_IA_URL = process.env.NEXT_PUBLIC_IA_SERVICE_URL;
 
   //const { t } = useTranslation()
   const { toast } = useToast()
@@ -105,7 +106,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
   // Fonction pour ouvrir l'interface IA dans une nouvelle fenêtre
   const openAIInterface = () => {
     const aiWindow = window.open(
-      "http://localhost:8501",
+      API_IA_URL,
       "ai-furniture-generator",
       "width=1400,height=900,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no",
     )
@@ -121,7 +122,7 @@ export function AIGenerationDialog({ onImport }: AIGenerationDialogProps) {
 
     // Optionnel: Écouter les messages de la fenêtre IA
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== "http://localhost:8501") return
+      if (event.origin !== API_IA_URL) return
 
       // Si l'IA envoie des données de planogramme
       if (event.data.type === "planogram_generated") {

@@ -80,6 +80,7 @@ export function ProductImport() {
   const [rawData, setRawData] = useState<any[]>([])
   const [categoriesWithIds, setCategoriesWithIds] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   const [categoryMatchingStats, setCategoryMatchingStats] = useState({
     matched: 0,
     unmatched: 0,
@@ -93,7 +94,7 @@ export function ProductImport() {
   const fetchCategories = async () => {
     setLoadingCategories(true)
     try {
-      const response = await fetch("http://localhost:8081/api/categories/getAllCategories")
+      const response = await fetch(`${API_BASE_URL}/categories/getAllCategories`)
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des catégories")
       }

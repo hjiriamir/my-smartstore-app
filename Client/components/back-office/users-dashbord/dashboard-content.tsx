@@ -23,6 +23,7 @@ export function DashboardContent() {
   const [monthlyFormations, setMonthlyFormations] = useState<any[]>([]);
   const [monthlyUsers, setMonthlyUsers] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Fonction générique pour fetch avec gestion d'erreur
   const fetchWithErrorHandling = async (url: string, options?: RequestInit) => {
@@ -58,7 +59,7 @@ export function DashboardContent() {
           throw new Error("Token d'authentification manquant");
         }
 
-        const data = await fetchWithErrorHandling("http://localhost:8081/api/auth/me", {
+        const data = await fetchWithErrorHandling(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -85,7 +86,7 @@ export function DashboardContent() {
     const fetchEntreprise = async () => {
       try {
         const data = await fetchWithErrorHandling(
-          `http://localhost:8081/api/auth1/getEntrepriseByUser/${currentUserId}`
+          `${API_BASE_URL}/auth1/getEntrepriseByUser/${currentUserId}`
         );
         setEntreprise(data.entreprise);
       } catch (error) {
@@ -116,13 +117,13 @@ export function DashboardContent() {
           monthlyUsersData,
           faqsData
         ] = await Promise.all([
-          fetchWithErrorHandling(`http://localhost:8081/api/auth1/getActifUsersByEntreprise/${entreprise.id}`),
-          fetchWithErrorHandling(`http://localhost:8081/api/chatMessageRoutes/getMessageByEntreprise/${entreprise.id}`),
-          fetchWithErrorHandling(`http://localhost:8081/api/formations/getFormationsByEntreprise/${entreprise.id}`),
-          fetchWithErrorHandling(`http://localhost:8081/api/commentaireRoutes/getCommentsByEntreprise/${entreprise.id}`),
-          fetchWithErrorHandling(`http://localhost:8081/api/formations/getFormationsCeMoisParEntreprise/${entreprise.id}`),
-          fetchWithErrorHandling(`http://localhost:8081/api/auth1/getUtilisateursCeMoisParEntreprise/${entreprise.id}`),
-          fetchWithErrorHandling(`http://localhost:8081/api/faq/getFaqByEntreprise/${entreprise.id}`)
+          fetchWithErrorHandling(`${API_BASE_URL}/auth1/getActifUsersByEntreprise/${entreprise.id}`),
+          fetchWithErrorHandling(`${API_BASE_URL}/chatMessageRoutes/getMessageByEntreprise/${entreprise.id}`),
+          fetchWithErrorHandling(`${API_BASE_URL}/formations/getFormationsByEntreprise/${entreprise.id}`),
+          fetchWithErrorHandling(`${API_BASE_URL}/commentaireRoutes/getCommentsByEntreprise/${entreprise.id}`),
+          fetchWithErrorHandling(`${API_BASE_URL}/formations/getFormationsCeMoisParEntreprise/${entreprise.id}`),
+          fetchWithErrorHandling(`${API_BASE_URL}/auth1/getUtilisateursCeMoisParEntreprise/${entreprise.id}`),
+          fetchWithErrorHandling(`${API_BASE_URL}/faq/getFaqByEntreprise/${entreprise.id}`)
         ]);
 
         setActiveUsers(usersData.rows || usersData || []);

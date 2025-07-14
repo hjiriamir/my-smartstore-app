@@ -61,6 +61,8 @@ export function SavePlanogramDialog({
   const [image2DUrl, setImage2DUrl] = useState("")
   const [image3DUrl, setImage3DUrl] = useState("")
   const [pdfUrl, setPdfUrl] = useState("")
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
   const generate2DImage = async (): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -175,7 +177,7 @@ export function SavePlanogramDialog({
     formData.append("file", file, fileName)
     
     try {
-      const response = await fetch("http://localhost:8081/api/planogram/upload", {
+      const response = await fetch(`${API_BASE_URL}/planogram/upload`, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -325,7 +327,7 @@ export function SavePlanogramDialog({
               <div className="flex flex-wrap gap-2">
                 {image2DUrl && (
                   <a 
-                    href={`http://localhost:8081/${image2DUrl}`} 
+                    href={`${BASE_URL}/${image2DUrl}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline flex items-center"
@@ -336,7 +338,7 @@ export function SavePlanogramDialog({
                 )}
                 {image3DUrl && (
                   <a 
-                    href={`http://localhost:8081/${image3DUrl}`} 
+                    href={`${BASE_URL}/${image3DUrl}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline flex items-center"
@@ -347,7 +349,7 @@ export function SavePlanogramDialog({
                 )}
                 {pdfUrl && (
                   <a 
-                    href={`http://localhost:8081/${pdfUrl}`} 
+                    href={`${BASE_URL}/${pdfUrl}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline flex items-center"

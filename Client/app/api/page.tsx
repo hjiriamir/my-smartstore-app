@@ -25,7 +25,8 @@ import './page.css'
 
 export default function Dashboard() {
   
-  
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_FRONT_URL = process.env.NEXT_PUBLIC_FRONTEND_URL;
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
@@ -119,7 +120,7 @@ const handleLogout = async () => {
       return;
     }
 
-    const response = await axios.get("http://localhost:8081/api/auth/logout", {
+    const response = await axios.get(`${API_BASE_URL}/auth/logout`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -137,7 +138,7 @@ const handleLogout = async () => {
 
       // Rediriger vers la page d'accueil (http://localhost:3000/)
       setTimeout(() => {
-        window.location.href = "http://localhost:3000/";
+        window.location.href = `${API_FRONT_URL}/`;
       }, 1500);
     }
   } catch (error) {
@@ -158,7 +159,7 @@ const handleLogout = async () => {
       if (!token) throw new Error("Token non trouvé");
   
       const response = await axios.get(
-        `http://localhost:8081/api/notification/getNotificationsByUser/${userId}`,
+        `${API_BASE_URL}/notification/getNotificationsByUser/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -180,7 +181,7 @@ const handleLogout = async () => {
       if (!token) throw new Error("Token non trouvé");
   
       await axios.patch(
-        `http://localhost:8081/api/notification/markAsRead/${notificationId}`,
+        `${API_BASE_URL}/notification/markAsRead/${notificationId}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -232,7 +233,7 @@ const handleLogout = async () => {
       if (!token) throw new Error("Token non trouvé");
   
       const response = await axios.get(
-        `http://localhost:8081/api/planogram/planogramsRecent/${magasinId}/${userId}`,
+        `${API_BASE_URL}/planogram/planogramsRecent/${magasinId}/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -270,7 +271,7 @@ const handleLogout = async () => {
         throw new Error("Aucun token d'authentification trouvé");
       }
   
-      const response = await fetch("http://localhost:8081/api/auth/me", {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -326,7 +327,7 @@ const fetchMagasinData = async (userId: number): Promise<string | null> => {
     console.log("Tentative de récupération du magasin pour userId:", userId);
     
     const response = await axios.get<MagasinResponse>(
-      `http://localhost:8081/api/magasins/getMagasinByUser/${userId}`,
+      `${API_BASE_URL}/magasins/getMagasinByUser/${userId}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -366,10 +367,10 @@ const fetchDashboardStats = async (magasinId: string, userId: number) => {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [pendingRes, completedRes, planogramsRes, implementationRes] = await Promise.all([
-      axios.get(`http://localhost:8081/api/taches/tachesEnAttente/${magasinId}/${userId}`, { headers }),
-      axios.get(`http://localhost:8081/api/taches/tachesTermine/${magasinId}/${userId}`, { headers }),
-      axios.get(`http://localhost:8081/api/planogram/getPlanogramsByMagasin/${magasinId}/${userId}`, { headers }),
-      axios.get(`http://localhost:8081/api/planogram/tauxImplementation/${magasinId}/${userId}`, { headers })
+      axios.get(`${API_BASE_URL}/taches/tachesEnAttente/${magasinId}/${userId}`, { headers }),
+      axios.get(`${API_BASE_URL}/taches/tachesTermine/${magasinId}/${userId}`, { headers }),
+      axios.get(`${API_BASE_URL}/planogram/getPlanogramsByMagasin/${magasinId}/${userId}`, { headers }),
+      axios.get(`${API_BASE_URL}/planogram/tauxImplementation/${magasinId}/${userId}`, { headers })
     ]);
 
     console.log("Réponses API:", {

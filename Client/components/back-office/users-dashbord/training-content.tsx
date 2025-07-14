@@ -34,6 +34,7 @@ export function TrainingContent() {
   });
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   const [newTraining, setNewTraining] = useState({
     titre: "",
     description: "",
@@ -59,7 +60,7 @@ export function TrainingContent() {
           throw new Error("Token d'authentification manquant");
         }
 
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -95,7 +96,7 @@ export function TrainingContent() {
         const token = localStorage.getItem("token");
         
         const response = await fetch(
-          `http://localhost:8081/api/formations/getFormationsByEntreprise/${currentUserEntrepriseId}`, 
+          `${API_BASE_URL}/formations/getFormationsByEntreprise/${currentUserEntrepriseId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -131,7 +132,7 @@ export function TrainingContent() {
         const token = localStorage.getItem("token");
         
         const response = await fetch(
-          `http://localhost:8081/api/auth1/getActifUsersByEntreprise/${currentUserEntrepriseId}`, 
+          `${API_BASE_URL}/auth1/getActifUsersByEntreprise/${currentUserEntrepriseId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -175,7 +176,7 @@ export function TrainingContent() {
       const token = localStorage.getItem("token");
       
       const response = await fetch(
-        "http://localhost:8081/api/formations/createFormation",
+        `${API_BASE_URL}/formations/createFormation`,
         {
           method: "POST",
           headers: {
@@ -198,7 +199,7 @@ export function TrainingContent() {
       // Rafraîchir la liste des formations
       if (currentUserEntrepriseId) {
         const refreshResponse = await fetch(
-          `http://localhost:8081/api/formations/getFormationsByEntreprise/${currentUserEntrepriseId}`, 
+          `${API_BASE_URL}/formations/getFormationsByEntreprise/${currentUserEntrepriseId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`

@@ -19,6 +19,7 @@ const CreateSupplier = () => {
   const [currentEntrepriseID, setcurrentEntrepriseID] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
    // Pour la sélection de pays améliorée
    const [isCountryOpen, setIsCountryOpen] = useState(false);
@@ -78,7 +79,7 @@ const CreateSupplier = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           credentials: "include",
         });
         if (!response.ok) {
@@ -115,7 +116,7 @@ const CreateSupplier = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8081/api/fournisseur/getAllFournisseursByEntreprise/${currentEntrepriseID}`,
+        `${API_BASE_URL}/fournisseur/getAllFournisseursByEntreprise/${currentEntrepriseID}`,
         {
           credentials: "include",
         }
@@ -158,8 +159,8 @@ const CreateSupplier = () => {
     
     try {
       const url = editingId 
-        ? `http://localhost:8081/api/fournisseur/updateFournisseur/${editingId}`
-        : `http://localhost:8081/api/fournisseur/createFournisseur/${currentEntrepriseID}`;
+        ? `${API_BASE_URL}/fournisseur/updateFournisseur/${editingId}`
+        : `${API_BASE_URL}/fournisseur/createFournisseur/${currentEntrepriseID}`;
       
       const method = editingId ? 'PUT' : 'POST';
       
@@ -218,7 +219,7 @@ const CreateSupplier = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8081/api/fournisseur/deleteFournisseur/${id}`,
+        `${API_BASE_URL}/fournisseur/deleteFournisseur/${id}`,
         {
           method: 'DELETE',
           credentials: 'include',

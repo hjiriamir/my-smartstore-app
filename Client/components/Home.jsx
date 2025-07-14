@@ -10,11 +10,12 @@ function Home() {
     const [message, setMessage] = useState('');
     const [name, setName] = useState('');
     const [role, setRole] = useState('');
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     axios.defaults.withCredentials = true;
 
     useEffect(() => {
-        axios.get('http://localhost:8081/api/auth')
+        axios.get(`${API_BASE_URL}/auth`)
             .then(res => {
                 console.log("Response from API:", res.data); // <-- Vérifie ce qui est retourné
                 if (res.data.Status === "Success") {
@@ -35,7 +36,7 @@ function Home() {
     }, []);
 
     const handleDelete = () => {
-        axios.get('http://localhost:8081/api/auth/logout')
+        axios.get(`${API_BASE_URL}/auth/logout`)
             .then(res => {
                 setAuth(false); // Réinitialise l'état auth
                 setMessage('You are not authenticated'); // Affiche le message d'erreur

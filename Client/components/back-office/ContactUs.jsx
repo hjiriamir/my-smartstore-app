@@ -10,6 +10,7 @@ const ContactUs = () => {
     const isRTL = i18n.language === "ar"
     const textDirection = isRTL ? "rtl" : "ltr"
     const textAlign = isRTL ? "right" : "left"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     // State to capture form data
     const [formData, setFormData] = useState({
@@ -47,7 +48,7 @@ const ContactUs = () => {
 
         try {
             // Send POST request to the API
-            const response = await fetch('http://localhost:8081/api/message/createMessage', {
+            const response = await fetch(`${API_BASE_URL}/message/createMessage`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

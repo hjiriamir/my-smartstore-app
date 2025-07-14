@@ -1475,6 +1475,7 @@ export function StoreDisplayEditor() {
   const [lightIntensity, setLightIntensity] = useState(0.7)
   const [environmentPreset, setEnvironmentPreset] = useState("warehouse")
   const [showShadows, setShowShadows] = useState(true)
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Référence pour suivre si les textures sont préchargées
   const texturesPreloaded = useRef(false)
@@ -1485,7 +1486,7 @@ export function StoreDisplayEditor() {
   // fonction de recupération des agasins
   const fetchMagasins = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:8081/api/magasins/getAllMagasins");
+      const response = await fetch(`${API_BASE_URL}/magasins/getAllMagasins`);
       if (!response.ok) throw new Error("Erreur lors de la récupération des magasins");
       const data: Magasin[] = await response.json(); // Typage ici
       setMagasins(data);

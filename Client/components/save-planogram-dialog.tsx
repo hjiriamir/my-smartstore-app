@@ -119,6 +119,8 @@ export function SavePlanogramDialog({
   // stocker les planogrammes existants
   const [existingPlanograms, setExistingPlanograms] = useState<any[]>([]);
   const [selectedPlanogramId, setSelectedPlanogramId] = useState<string | null>(null);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 
   // Charger les planogrammes existants quand un magasin est sélectionné
@@ -126,7 +128,7 @@ export function SavePlanogramDialog({
     if (selectedMagasinId) {
       const fetchPlanograms = async () => {
         try {
-          const response = await fetch(`http://localhost:8081/api/planogram/fetchPlanogramByStore/${selectedMagasinId}`);
+          const response = await fetch(`${API_BASE_URL}/planogram/fetchPlanogramByStore/${selectedMagasinId}`);
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -671,7 +673,7 @@ const generateAndUploadFiles = async () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           credentials: "include", // nécessaire pour envoyer les cookies d'authentification
         })
         if (!response.ok) {
@@ -704,7 +706,7 @@ const generateAndUploadFiles = async () => {
     const fetchMagasins = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch("http://localhost:8081/api/magasins/getAllMagasins")
+        const response = await fetch(`${API_BASE_URL}/magasins/getAllMagasins`)
         if (!response.ok) {
           throw new Error(`Erreur HTTP: ${response.status}`)
         }
@@ -736,7 +738,7 @@ const generateAndUploadFiles = async () => {
       const fetchZones = async () => {
         setIsLoadingZones(true)
         try {
-          const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinId}`)
+          const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedMagasinId}`)
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`)
           }
@@ -768,7 +770,7 @@ const generateAndUploadFiles = async () => {
   const fetchProductIdsMap = async (productCodes: string[]): Promise<Record<string, number>> => {
     try {
       const response = await fetch(
-        `http://localhost:8081/api/produits/getProductIdsFromCodes?productCodes=${encodeURIComponent(productCodes.join(','))}`,
+        `${API_BASE_URL}/produits/getProductIdsFromCodes?productCodes=${encodeURIComponent(productCodes.join(','))}`,
         {
           method: "GET",
           headers: { 
@@ -798,7 +800,7 @@ const generateAndUploadFiles = async () => {
     const fetchFurnitureTypes = async () => {
       setIsLoadingFurnitureTypes(true)
       try {
-        const response = await fetch("http://localhost:8081/api/furnitureType/getAllFurnitureTypes")
+        const response = await fetch(`${API_BASE_URL}/furnitureType/getAllFurnitureTypes`)
         if (!response.ok) {
           throw new Error(`Erreur HTTP: ${response.status}`)
         }
@@ -830,7 +832,7 @@ const generateAndUploadFiles = async () => {
       const fetchUsers = async () => {
         setIsLoadingUsers(true)
         try {
-          const response = await fetch(`http://localhost:8081/api/auth1/users/store/${selectedMagasinId}`)
+          const response = await fetch(`${API_BASE_URL}/auth1/users/store/${selectedMagasinId}`)
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`)
           }
@@ -876,7 +878,7 @@ const generateAndUploadFiles = async () => {
   // Fonction pour récupérer l'ID d'un produit à partir de son code
   const fetchProductIdByCode = async (productCode: string): Promise<number> => {
     try {
-      const response = await fetch(`http://localhost:8081/api/produits/getProductIdsByCodes/${productCode}`);
+      const response = await fetch(`${API_BASE_URL}/produits/getProductIdsByCodes/${productCode}`);
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
@@ -895,7 +897,7 @@ const generateAndUploadFiles = async () => {
         return;
       }
   
-      const response = await fetch("http://localhost:8081/api/emails/sendBasicEmail", {
+      const response = await fetch(`${API_BASE_URL}/emails/sendBasicEmail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1080,7 +1082,7 @@ const generateAndUploadFiles = async () => {
       let response;
       try {
         response = await fetch(
-          "http://localhost:8081/api/planogram/createFullPlanogramm",
+          `${API_BASE_URL}/planogram/createFullPlanogramm`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1576,7 +1578,7 @@ useEffect(() => {
     <div className="flex flex-wrap gap-2">
       {image2DUrl && (
         <a 
-          href={image2DUrl.startsWith('http') ? image2DUrl : `http://localhost:8081/${image2DUrl}`}
+          href={image2DUrl.startsWith('http') ? image2DUrl : `${BASE_URL}/${image2DUrl}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-blue-600 hover:underline flex items-center"
@@ -1587,7 +1589,7 @@ useEffect(() => {
       )}
       {image3DUrl && (
         <a 
-          href={`http://localhost:8081/${image3DUrl}`} 
+          href={`${BASE_URL}/${image3DUrl}`;} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="text-xs text-blue-600 hover:underline flex items-center"
@@ -1598,7 +1600,7 @@ useEffect(() => {
       )}
       {pdfUrl && (
         <a 
-          href={`http://localhost:8081/${pdfUrl}`} 
+          href={`${BASE_URL}/${pdfUrl}`} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="text-xs text-blue-600 hover:underline flex items-center"

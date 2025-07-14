@@ -115,6 +115,7 @@ export default function ImplementationTracking() {
   const [implementations, setImplementations] = useState<Implementation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 
   const fetchComments = async (planogramId: number) => {
@@ -125,7 +126,7 @@ export default function ImplementationTracking() {
       }
   
       const response = await axios.get(
-        `http://localhost:8081/api/commentaireRoutes/getCommentairesByPlanogram/${planogramId}`,
+       `${API_BASE_URL}/commentaireRoutes/getCommentairesByPlanogram/${planogramId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -179,7 +180,7 @@ export default function ImplementationTracking() {
       throw new Error("Token d'authentification manquant");
     }
   
-    const response = await fetch("http://localhost:8081/api/auth/me", {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -212,7 +213,7 @@ export default function ImplementationTracking() {
         // 2. Récupération des infos utilisateur (version compatible avec votre API)
         let userId: number;
         try {
-          const response = await fetch("http://localhost:8081/api/auth/me", {
+          const response = await fetch(`${API_BASE_URL}/auth/me`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -246,7 +247,7 @@ export default function ImplementationTracking() {
         let magasinId: string;
         try {
           const magasinResponse = await axios.get(
-            `http://localhost:8081/api/magasins/getMagasinByUser/${userId}`,
+           `${API_BASE_URL}/magasins/getMagasinByUser/${userId}`,
             {
               headers: {
                 "Authorization": `Bearer ${token}`
@@ -276,7 +277,7 @@ export default function ImplementationTracking() {
     
         // 4. Récupération des planogrammes
         const planogramsResponse = await axios.get(
-          `http://localhost:8081/api/planogram/getPlanogramsByMagasin/${magasinId}/${userId}`,
+          `${API_BASE_URL}/planogram/getPlanogramsByMagasin/${magasinId}/${userId}`,
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -449,7 +450,7 @@ export default function ImplementationTracking() {
       };
   
       const response = await axios.post(
-        "http://localhost:8081/api/commentaireRoutes/createCommentaire",
+       `${API_BASE_URL}/commentaireRoutes/createCommentaire`,
         commentData,
         {
           headers: {
@@ -506,7 +507,7 @@ export default function ImplementationTracking() {
           formData.append("file", file);
   
           const response = await axios.post(
-            "http://localhost:8081/api/upload", // Remplacez par votre endpoint d'upload
+           `${API_BASE_URL}/upload`, // Remplacez par votre endpoint d'upload
             formData,
             {
               headers: {

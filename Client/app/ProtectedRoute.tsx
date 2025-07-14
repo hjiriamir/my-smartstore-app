@@ -6,8 +6,7 @@ import { AuthContext } from '../src/context/AuthContext';
 
 const publicRoutes = [
   '/',
-  '/Forfaits',
-  '/about',
+  '/Forfaits', 
   '/services',
   '/blog',
   '/LoginSignup',
@@ -23,15 +22,15 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading) {
-      // Si la route n'est pas publique et l'utilisateur n'est pas connecté
-      if (!publicRoutes.includes(pathname) && !user) {
+      // Si la route n'est pas publique, ne commence pas par /Forfaits/ et l'utilisateur n'est pas connecté
+      if (!publicRoutes.includes(pathname) && !pathname.startsWith('/Forfaits/') && !user) {
         router.push('/LoginSignup');
       }
     }
   }, [user, loading, pathname, router]);
 
-  // Si la route est publique ou si l'utilisateur est connecté, afficher les enfants
-  if (publicRoutes.includes(pathname) || user) {
+  // Si la route est publique, commence par /Forfaits/ ou si l'utilisateur est connecté, afficher les enfants
+  if (publicRoutes.includes(pathname) || pathname.startsWith('/Forfaits/') || user) {
     return <>{children}</>;
   }
 

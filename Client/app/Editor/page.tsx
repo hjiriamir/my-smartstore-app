@@ -106,23 +106,6 @@ export default function Home() {
       href: "/furniture-editor"
     },
     {
-      id: 'ai',
-      icon: BarChart4,
-      type: "ai",
-      title: t("feature.ai.title"),
-      description: t("feature.ai.description"),
-      buttonText: t("feature.ai.button"),
-      stats: { value: t("feature.ai.stats.value"), title: t("feature.ai.stats.title") },
-      features: [
-        t("feature.ai.features.0"),
-        t("feature.ai.features.1"),
-        t("feature.ai.features.2"),
-      ],
-      href: "/planogram-ia",
-      isFeatured: true
-    }
-    ,
-    {
       id: 'furniture_library',
       icon: Package,
       type: "furniture_library",
@@ -169,24 +152,46 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 mt-12" dir={textDirection}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl font-bold text-gray-900 mb-4"
-          >
-            SmartStore <span className="text-blue-600">{t("retail")}</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-lg text-gray-600 max-w-3xl mx-auto"
-          >
-              {t("retailDescription")}
-          </motion.p>
-        </div>
+       {/* Header */}
+<div className="mb-12 text-center">
+  <motion.h1 
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}
+    className="text-4xl font-bold text-gray-900 mb-4"
+  >
+    SmartStore <span className="text-blue-600">{t("retail")}</span>
+  </motion.h1>
+  
+  {/* Bouton Retour au Dashboard */}
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.3 }}
+    className="mb-6"
+  >
+    <Link href="/Dashboard">
+      <Button className="group h-12 px-6 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg transition-all duration-300 transform hover:scale-105">
+        <span className="flex items-center gap-2">
+          <ChevronRight className={`h-5 w-5 transition-transform duration-300 ${isRTL ? 'rotate-180' : 'rotate-180'}`} />
+          {t("backToDashboard")}
+          <span className="group-hover:translate-x-1 transition-transform duration-300">
+            <ChevronRight className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+          </span>
+        </span>
+      </Button>
+    </Link>
+  </motion.div>
+
+  <motion.p 
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.2, duration: 0.5 }}
+    className="text-lg text-gray-600 max-w-3xl mx-auto"
+  >
+    {t("retailDescription")}
+  </motion.p>
+</div>
 
         {/* Main content - Inversé pour l'arabe */}
         <div className="flex flex-col lg:flex-row gap-8 h-[70vh]">

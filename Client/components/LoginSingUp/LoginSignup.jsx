@@ -24,11 +24,12 @@ function LoginSignup() {
 
     const { setUser } = useContext(AuthContext);
     const router = useRouter();
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     axios.defaults.withCredentials = true;
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const url = action === "Login" ? 'http://localhost:8081/api/auth/login' : 'http://localhost:8081/api/auth/register';
+        const url = action === "Login" ? `${API_BASE_URL}/auth/login` : `${API_BASE_URL}/auth/register`;
 
         try {
             const res = await axios.post(url, values);
@@ -65,7 +66,7 @@ function LoginSignup() {
     const handleForgotPassword = async (event) => {
         event.preventDefault();
         try {
-            const res = await axios.post('http://localhost:8081/api/auth/forgotPassword', {
+            const res = await axios.post(`${API_BASE_URL}/auth/forgotPassword`, {
                 email: values.email,
             });
             setPopupMessage(res.data.message || "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني");

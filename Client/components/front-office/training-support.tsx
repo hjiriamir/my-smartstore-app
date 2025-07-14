@@ -75,6 +75,8 @@ export default function TrainingSupport() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showDevicesModal, setShowDevicesModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false); 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_FRONT_URL = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
   const [connectedDevices, setConnectedDevices] = useState([
     {
@@ -227,7 +229,7 @@ export default function TrainingSupport() {
   
       // Appel à l'API pour déconnecter la session spécifique
       const logoutSessionResponse = await fetch(
-        `http://localhost:8081/api/session/logoutSession/${sessionId}`,
+        `${API_BASE_URL}/session/logoutSession/${sessionId}`,
         {
           method: "DELETE",
           headers: {
@@ -243,7 +245,7 @@ export default function TrainingSupport() {
       }
   
       // Si la première API réussit, appeler l'API de logout générale
-      const logoutResponse = await fetch("http://localhost:8081/api/auth/logout", {
+      const logoutResponse = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -268,7 +270,7 @@ export default function TrainingSupport() {
       toast.success("Session déconnectée avec succès");
   
       // Redirection vers la page d'accueil
-      window.location.href = "http://localhost:3000";
+      window.location.href = API_FRONT_URL;
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
       toast.error("Erreur lors de la déconnexion de la session");
@@ -307,7 +309,7 @@ export default function TrainingSupport() {
         throw new Error("Aucun token d'authentification trouvé");
       }
   
-      const response = await fetch("http://localhost:8081/api/auth1/updatePassword", {
+      const response = await fetch(`${API_BASE_URL}/auth1/updatePassword`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -358,7 +360,7 @@ export default function TrainingSupport() {
         throw new Error("Aucun token d'authentification trouvé");
       }
   
-      const response = await fetch("http://localhost:8081/api/auth/me", {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -407,7 +409,7 @@ export default function TrainingSupport() {
   
       // Appeler l'API pour mettre à jour le nom
       const updateNameResponse = await fetch(
-        `http://localhost:8081/api/auth1/updateUserName/${userData.id}`,
+        `${API_BASE_URL}/auth1/updateUserName/${userData.id}`,
         {
           method: "PUT",
           headers: {
@@ -449,7 +451,7 @@ const fetchActiveSessions = async () => {
       throw new Error("Aucun token d'authentification trouvé");
     }
 
-    const response = await fetch("http://localhost:8081/api/session/getActiveSessions", {
+    const response = await fetch(`${API_BASE_URL}/session/getActiveSessions`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -502,7 +504,7 @@ const NotificationsModal = () => {
       if (!userData.id) throw new Error("ID utilisateur non trouvé");
 
       const response = await fetch(
-        `http://localhost:8081/api/auth1/getNotificationPreferenceByUser/${userData.id}`,
+        `${API_BASE_URL}/auth1/getNotificationPreferenceByUser/${userData.id}`,
         {
           method: "GET",
           headers: {
@@ -550,7 +552,7 @@ const NotificationsModal = () => {
       if (!userData.id) throw new Error("ID utilisateur non trouvé");
 
       const response = await fetch(
-        `http://localhost:8081/api/auth1/updateNotificationPreference/${userData.id}`,
+        `${API_BASE_URL}/auth1/updateNotificationPreference/${userData.id}`,
         {
           method: "PUT",
           headers: {
@@ -672,7 +674,7 @@ const NotificationsModal = () => {
 useEffect(() => {
   const fetchFaqs = async () => {
     try {
-      const response = await fetch("http://localhost:8081/api/faq/getAllFaqs")
+      const response = await fetch(`${API_BASE_URL}/faq/getAllFaqs`)
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des FAQs")
       }
@@ -701,7 +703,7 @@ useEffect(() => {
 useEffect(() => {
   const fetchFormations = async () => {
     try {
-      const response = await fetch("http://localhost:8081/api/formations/getAllFormations")
+      const response = await fetch(`${API_BASE_URL}/formations/getAllFormations`)
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des formations")
       }

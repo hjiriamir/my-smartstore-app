@@ -23,6 +23,7 @@ export function UserManagementContent() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState({
@@ -59,7 +60,7 @@ const [selectedRole, setSelectedRole] = useState("all")
           throw new Error("Token d'authentification manquant")
         }
 
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -80,7 +81,7 @@ const [selectedRole, setSelectedRole] = useState("all")
         // Récupérer le nom de l'entreprise
         if (entrepriseId) {
           const entrepriseResponse = await fetch(
-            `http://localhost:8081/api/demande/getEntrepriseById/${entrepriseId}`,
+            `${API_BASE_URL}/demande/getEntrepriseById/${entrepriseId}`,
             {
               headers: {
                 "Authorization": `Bearer ${token}`
@@ -114,7 +115,7 @@ const [selectedRole, setSelectedRole] = useState("all")
         const token = localStorage.getItem("token")
         
         const response = await fetch(
-          `http://localhost:8081/api/auth1/users/excluding-admin/${currentUserEntrepriseId}`, 
+          `${API_BASE_URL}/auth1/users/excluding-admin/${currentUserEntrepriseId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -154,7 +155,7 @@ const [selectedRole, setSelectedRole] = useState("all")
         const token = localStorage.getItem("token")
         
         const response = await fetch(
-          `http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${currentUserEntrepriseId}`, 
+          `${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${currentUserEntrepriseId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -208,7 +209,7 @@ const [selectedRole, setSelectedRole] = useState("all")
       const token = localStorage.getItem("token")
       
       const response = await fetch(
-        "http://localhost:8081/api/auth1/newUser", 
+        `${API_BASE_URL}/auth1/newUser`, 
         {
           method: "POST",
           headers: {
@@ -260,7 +261,7 @@ const [selectedRole, setSelectedRole] = useState("all")
       const token = localStorage.getItem("token");
       
       const response = await fetch(
-        `http://localhost:8081/api/auth1/users/excluding-admin/${currentUserEntrepriseId}`, 
+       `${API_BASE_URL}/auth1/users/excluding-admin/${currentUserEntrepriseId}`, 
         {
           headers: {
             "Authorization": `Bearer ${token}`

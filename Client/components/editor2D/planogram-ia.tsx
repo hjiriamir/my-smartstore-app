@@ -80,7 +80,9 @@ export function PlanogramIA() {
   const [generatedDisplayItems, setGeneratedDisplayItems] = useState<any[]>([])
   const [productInstances, setProductInstances] = useState<any[]>([])
   const [planogramId, setPlanogramId] = useState<string>("")
-  const [iaGeneratorUrl] = useState<string>("http://localhost:8501/")
+  //const [iaGeneratorUrl] = useState<string>("http://localhost:8501/")
+  const [iaGeneratorUrl] = useState<string>(process.env.NEXT_PUBLIC_IA_SERVICE_URL || "http://localhost:8501/");
+
   const [communicationLogs, setCommunicationLogs] = useState<string[]>([])
   const [isRequestingData, setIsRequestingData] = useState<boolean>(false)
   const [connectionStatus, setConnectionStatus] = useState<"disconnected" | "connecting" | "connected">("disconnected")

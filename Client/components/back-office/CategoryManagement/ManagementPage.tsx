@@ -6,7 +6,8 @@ import {
   Store, 
   MapPin,
   ChevronRight,
-  Database
+  Database,
+  ArrowLeft // Nouvelle icône importée
 } from 'lucide-react';
 import "@/components/multilingue/i18n.js"
 import { useTranslation } from "react-i18next"
@@ -17,15 +18,31 @@ const ManagementPage: React.FC = () => {
   const textDirection = isRTL ? "rtl" : "ltr"
   
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-10 mt-16"> {/* Fond plus neutre */}
+    <div className="min-h-screen bg-gray-50 p-6 md:p-10 mt-16 relative"> {/* Ajout de relative pour positionnement */}
+      {/* Bouton de retour au Dashboard */}
+      <Link href="/Dashboard" passHref>
+        <button className={`absolute top-6 ${isRTL ? 'right-6' : 'left-6'} flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-full transition-all duration-300 shadow-md hover:shadow-lg`}>
+          {isRTL ? (
+            <>
+              <span>{t("dashboard")}</span>
+              <ArrowLeft className="h-5 w-5" />
+            </>
+          ) : (
+            <>
+              <ArrowLeft className="h-5 w-5" />
+              <span>{t("dashboard")}</span>
+            </>
+          )}
+        </button>
+      </Link>
+
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-gray-800 mb-3">{t("dashboardManagement.title")}</h1>
-         
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"> {/* Container blanc pour les cartes */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <Link href="/category-management" passHref>         
               <ManagementCard 
                 title={t("categoryManagement")}
@@ -59,7 +76,6 @@ const ManagementPage: React.FC = () => {
             </Link>
           </div>
         </div>
-
       </div>
     </div>
   );

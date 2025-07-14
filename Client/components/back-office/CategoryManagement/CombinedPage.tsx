@@ -37,6 +37,7 @@ const CombinedPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [saveError, setSaveError] = useState('');
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // fonction pour sauvegarder les données via l'API
  // fonction pour sauvegarder les données via l'API
@@ -47,7 +48,7 @@ const handleSaveData = async () => {
   
     try {
       // Sauvegarde des catégories
-      const categoriesResponse = await fetch('http://localhost:8081/api/categories/createCategorieList', {
+      const categoriesResponse = await fetch(`${API_BASE_URL}/categories/createCategorieList`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +61,7 @@ const handleSaveData = async () => {
       }
   
       // Sauvegarde des magasins
-      const magasinsResponse = await fetch('http://localhost:8081/api/magasins/createMagasinsList', {
+      const magasinsResponse = await fetch(`${API_BASE_URL}/magasins/createMagasinsList`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +74,7 @@ const handleSaveData = async () => {
       }
   
       // Sauvegarde des zones
-      const zonesResponse = await fetch('http://localhost:8081/api/zones/createZonesList', {
+      const zonesResponse = await fetch(`${API_BASE_URL}/zones/createZonesList`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

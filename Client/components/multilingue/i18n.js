@@ -11,6 +11,59 @@ i18n
     resources: {
       en: {
         translation: {
+          backToDashboard: "Retour au tableau de bord",
+          category3Managment: {
+            displayData: {
+              gestionDonnees: "Data Management",
+              edition: "Edit Mode",
+              quitEdition: "Exit Edit Mode",
+              magasins: "Stores",
+              ajouterMagasin: "Add Store",
+              categories: "Categories",
+              ajoutrCategorie: "Add Category",
+              zones: "Zones",
+              ajouterZone: "Add Zone",
+              aucune: "None",
+              supprimer: "Delete",
+              idMagasin: "Store ID",
+              nomMagasin: "Store Name",
+              surface: "Area (m²)",
+              adresse: "Address",
+              dateModif: "Last Modified Date",
+              ajouterNouv: "Add New",
+              modifier: "Edit",
+              actions: "Actions",
+              nomCategorie: "Category Name",
+              niveau: "Level",
+              saisonnalite: "Seasonality",
+              priorite: "Priority",
+              zonePreferer: "Preferred Display Zone",
+              nomZone: "Zone Name",
+              description: "Description",
+              magasin: "Store",
+              emplacement: "Location",
+              idZone: "Zone ID",
+nomDelZone: "Zone Name",
+annuler: "Cancel",
+ajouter: "Add",
+idCategorie: "Category ID",
+nomDelCategorie: "Category Name",
+categorieParent: "Parent Category",
+temperature: "Display Temperature",
+conditionnement: "Packaging",
+clientelle: "Target Customers",
+idMagasin: "Store ID",
+nomDelMagasin: "Store Name",
+longueur: "Length",
+largeur: "Width",
+
+
+
+
+
+            },
+          },
+          
           marketingStrategy:"Store Strategy Management",
           front: {
             navBar: {
@@ -678,7 +731,7 @@ i18n
           servicesOverview: "Check out our best services",
           invoiceManagement: "Invoice Management",
           inventoryManagement: "Inventory Management",
-          categoryManagement: "Management of Stores, Categories, and Zones",
+          categoryManagement: "Quick Category Import",
           salesSummary:"Sales Summary",
           todaySales:"Today's Sale",
           yearlySales:"Yearly Total Sales",
@@ -717,7 +770,7 @@ i18n
           databaseManagement: "Management of available entities",
           databaseManagementDesc: "View and manage all available stores, categories, and zones. Quickly access essential information for optimal and centralized organization.",
 
-          zoneManagement:"Zone Management",
+          zoneManagement:"Quick Zone Import",
           productManagement: "Product Management",
           salesManagement: "Sales Management",
           customerManagement: "Customer Management",
@@ -920,9 +973,9 @@ i18n
           },
           dashboardManagement:{
             title:"Dashboard Management",
-            categoryManagementDescription:"Organize and manage stores, categories, and zones for centralized control and optimized store experience. Create, configure, and associate entities for greater consistency and effective planning.",
+            categoryManagementDescription:"This feature allows you to quickly import multiple categories into the system, making product data management and organization easier.",
             magasinManagementDescription:"Manage all your stores, configure their spaces and zones, and link each store to its categories and planograms for consistent and centralized management.",
-            zoneManagementDescription:"Set up and organize display areas within each store (e.g., entrance, shelves, walls) to optimize layout, traffic flow, and product presentation.",
+            zoneManagementDescription:"This feature allows you to quickly import multiple zones into the system, making product data management and organization easier.",
             acceder:"Access",
           },
           categoryImport: {
@@ -1540,6 +1593,66 @@ i18n
       },
       fr: {
         translation: {
+          backToDashboard: "Back to Dashboard",
+          category3Managment : {
+            displayData : {
+              gestionDonnees:"Gestion des Données",
+              edition:"Mode édition",
+              quitEdition:"Quitter le mode édition",
+              magasins:"Magasins",
+              ajouterMagasin:"Ajouter Magasin",
+              categories:"Catégories",
+              ajoutrCategorie:"Ajouter Catégorie",
+              zones:"Zones",
+              ajouterZone:"Ajouter Zone",
+              aucune:"Aucune",
+              supprimer:"Supprimer",
+              idMagasin:"ID Magasin",
+              nomMagasin:"Nom Magasin",
+              surface:"Surface (m²)",
+              adresse:"Adresse",
+              dateModif:"Date de modification",
+              ajouterNouv:"Ajouter un nouveau",
+              modifier:"Modifier",
+              actions:"Actions",
+              nomCategorie:"Nom Catégorie",
+              niveau:"Niveau",
+              saisonnalite:"Saisonnalité",
+              priorite:"Priorité",
+              zonePreferer:"Zone Exposition Préférée",
+              nomZone:"Nom Zone",
+              description :"Description",
+              magasin:"Magasin",
+              emplacement:"Emplacement",
+              idZone:"ID Zone",
+              nomDelZone:"Nom de la zone",
+              annuler:"Annuler",
+              ajouter:"Ajouter",
+              idCategorie:"ID Catégorie",
+              nomDelCategorie:"Nom de la catégorie",
+              categorieParent:"Catégorie parente",
+              temperature:"témperature d'exposition",
+              conditionnement:"Conditionnement",
+              clientelle:"Clientèle ciblée",
+              zonePreferer: "Zone Exposition Préférée",
+              ajouterCategorie: "Ajouter Catégorie",
+              zonePreferer: "Preferred Display Zone",
+              ajouterCategorie: "Add Category",
+              idMagasin:"ID Magasin",
+              nomDelMagasin:"Nom du magasin",
+              longueur:"Longueur",
+              largeur:"Largeur",
+              
+
+              
+
+
+
+
+
+
+            },
+          },
           marketingStrategy:"Gestion de la stratégie de magasin",
           front : {
               navBar : {
@@ -2219,7 +2332,7 @@ i18n
           servicesOverview: "Découvrez nos meilleurs services",
           invoiceManagement: "Gestion des Factures",
           inventoryManagement: "Gestion des Stocks",
-          categoryManagement: "Gestion des Magasins, Catégories et Zones",
+          categoryManagement: "Import rapide des catégories",
           salesSummary: "Résumé des ventes",
           todaySales: "Ventes du jour",
           yearlySales: "Ventes annuelles totales",
@@ -2258,7 +2371,7 @@ i18n
           magasinManagement:"Gestion des magasins",
           databaseManagement:"Gestion des entités disponibles",
           databaseManagementDesc:"Visualisez et administrez l’ensemble des magasins, des catégories et des zones disponibles. Accédez rapidement aux informations essentielles pour une organisation optimale et centralisée.",
-          zoneManagement:"Gestion des zones",
+          zoneManagement:"Import rapide des zones",
           productManagement: "Gestion des Produits",
           salesManagement: "Gestion des ventes",
           customerManagement: "Gestion des clients",
@@ -2465,9 +2578,9 @@ i18n
           },
           dashboardManagement:{
             title:"Gestion du tableau de bord",
-            categoryManagementDescription:"Organisez et administrez l’ensemble des magasins, des catégories et des zones pour une gestion centralisée et une expérience magasin optimisée. Créez, configurez et associez les entités pour une meilleure cohérence et une planification efficace.",
+            categoryManagementDescription:"Cette fonctionnalité permet d’importer rapidement plusieurs catégories dans le système, facilitant ainsi la gestion et l’organisation des données produits.",
             magasinManagementDescription:"Administrez l’ensemble de vos magasins, configurez leurs espaces et zones, et associez chaque magasin à ses catégories et planogrammes pour une gestion cohérente et centralisée.",
-            zoneManagementDescription:"Configurez et organisez les zones d’exposition dans chaque magasin (par exemple : entrée, étagères, murs), afin d’optimiser l’aménagement, la circulation et la présentation des produits.",
+            zoneManagementDescription:"Cette fonctionnalité permet d’importer rapidement plusieurs zones dans le système, facilitant ainsi la gestion et l’organisation des données produits.",
             acceder:"Accéder",
           },
           categoryImport: {
@@ -3076,6 +3189,61 @@ i18n
       },
       ar: {
         translation: {
+          backToDashboard: "العودة إلى لوحة التحكم",
+          category3Managment: {
+            displayData: {
+              gestionDonnees: "إدارة البيانات",
+              edition: "وضع التحرير",
+              quitEdition: "الخروج من وضع التحرير",
+              magasins: "المتاجر",
+              ajouterMagasin: "إضافة متجر",
+              categories: "الفئات",
+              ajoutrCategorie: "إضافة فئة",
+              zones: "المناطق",
+              ajouterZone: "إضافة منطقة",
+              aucune: "لا شيء",
+              supprimer: "حذف",
+              idMagasin: "معرّف المتجر",
+              nomMagasin: "اسم المتجر",
+              surface: "المساحة (م²)",
+              adresse: "العنوان",
+              dateModif: "تاريخ التعديل",
+              ajouterNouv: "إضافة جديد",
+              modifier: "تعديل",
+              actions: "إجراءات",
+              nomCategorie: "اسم الفئة",
+              niveau: "المستوى",
+              saisonnalite: "الموسمية",
+              priorite: "الأولوية",
+              zonePreferer: "منطقة العرض المفضلة",
+              nomZone: "اسم المنطقة",
+              description: "الوصف",
+              magasin: "المتجر",
+              emplacement: "الموقع",
+              idZone: "معرّف المنطقة",
+              nomDelZone: "اسم المنطقة",
+              annuler: "إلغاء",
+              ajouter: "إضافة",
+              idCategorie: "معرّف الفئة",
+              nomDelCategorie: "اسم الفئة",
+              categorieParent: "الفئة الأصلية",
+              temperature: "درجة حرارة العرض",
+              conditionnement: "التغليف",
+              clientelle: "العملاء المستهدفون",
+              zonePreferer: "منطقة العرض المفضلة",
+              ajouterCategorie: "إضافة فئة",
+              idMagasin: "معرّف المتجر",
+nomDelMagasin: "اسم المتجر",
+longueur: "الطول",
+largeur: "العرض",
+
+
+
+
+
+            },
+          },
+
           marketingStrategy:"إدارة إستراتيجية المتجر",
           front: {
             navBar: {
@@ -3741,7 +3909,7 @@ i18n
           servicesOverview: "تطلع على أفضل الخدمات لدينا",
           invoiceManagement: "إدارة الفواتير",
           inventoryManagement: "إدارة المخزون",
-          categoryManagement: " إدارة المتاجر والفئات والمناطق",
+          categoryManagement: "استيراد سريع للفئات",
           salesSummary: "ملخص المبيعات",
           todaySales: "مبيعات اليوم",
           yearlySales: "إجمالي المبيعات السنوية",
@@ -3781,7 +3949,7 @@ i18n
           databaseManagement: "إدارة الكيانات المتاحة",
           databaseManagementDesc: "اعرض وأدِر جميع المتاجر والفئات والمناطق المتاحة. يمكنك الوصول بسرعة إلى المعلومات الأساسية لتحقيق تنظيم مثالي ومركزي.",
 
-          zoneManagement:"إدارة المناطق",
+          zoneManagement:"استيراد سريع للمناطق",
           productManagement: "إدارة المنتجات",
           salesManagement: "إدارة المبيعات",
           customerManagement: "إدارة العملاء",
@@ -3982,9 +4150,9 @@ i18n
         },
         dashboardManagement:{
           title:"إدارة لوحة المعلومات",
-          categoryManagementDescription:"نظّم وأدِر جميع المتاجر والفئات والمناطق لتحقيق إدارة مركزية وتجربة تسوّق محسنة. أنشئ، وخصص، واربط الكيانات لتحقيق انسجام أكبر وتخطيط فعّال.",
+          categoryManagementDescription:"تتيح هذه الميزة استيراد العديد من الفئات بسرعة إلى النظام، مما يسهل إدارة وتنظيم بيانات المنتجات.",
           magasinManagementDescription:"قم بإدارة جميع متاجرك، وتكوين مساحاتها ومناطقها، وربط كل متجر بفئاته ومخططات العرض لضمان إدارة متماسكة ومركزية",
-          zoneManagementDescription:"قم بإعداد وتنظيم مناطق العرض داخل كل متجر (مثل: المدخل، الأرفف، الجدران) لتحسين التخطيط، حركة المرور، وعرض المنتجات",
+          zoneManagementDescription:"تتيح هذه الميزة استيراد عدة مناطق بسرعة إلى النظام، مما يسهل إدارة وتنظيم بيانات المنتجات.",
           acceder:"الدخول ",
         },
         categoryImport: {

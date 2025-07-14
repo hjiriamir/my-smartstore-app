@@ -11,6 +11,7 @@ interface StreamlitFileWatcherProps {
 export function StreamlitFileWatcher({ onDataReceived, isActive }: StreamlitFileWatcherProps) {
   const { toast } = useToast()
   const [isWatching, setIsWatching] = useState(false)
+  const IA_SERVICE_URL = process.env.NEXT_PUBLIC_IA_SERVICE_URL;
 
   useEffect(() => {
     if (!isActive) return
@@ -47,7 +48,7 @@ export function StreamlitFileWatcher({ onDataReceived, isActive }: StreamlitFile
 
     // Surveiller les messages window
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== "http://localhost:8501") return
+      if (event.origin !== IA_SERVICE_URL) return;
 
       if (event.data.type === "PLANOGRAM_DATA_DIRECT" || event.data.type === "planogram_generated") {
         console.log("📨 Message Streamlit reçu")

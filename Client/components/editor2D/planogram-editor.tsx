@@ -108,7 +108,7 @@ const generateFileName = (baseName: string, suffix: string, extension: string) =
   const cleanBase = (baseName || 'planogram').replace(/[^a-z0-9]/gi, '_').toLowerCase();
   return `${cleanBase}_${suffix}.${extension}`;
 }
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 
 const uploadFile = async (file: File, fileName: string, filesBaseName: string): Promise<string> => {
@@ -116,7 +116,7 @@ const uploadFile = async (file: File, fileName: string, filesBaseName: string): 
   formData.append("file", file, generateFileName(filesBaseName, fileName.split('-')[0], fileName.split('.')[1]));
   
   try {
-    const response = await fetch("http://localhost:8081/api/furniture/upload", {
+    const response = await fetch(`${API_BASE_URL}/furniture/upload`, {
       method: "POST",
       body: formData,
       credentials: "include",

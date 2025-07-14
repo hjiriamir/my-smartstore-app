@@ -25,8 +25,8 @@ import {
 import { useTranslation } from "react-i18next"
 import "@/components/multilingue/i18n.js"
 
-const API_BASE_URL = "http://localhost:8081/api"
-
+//const API_BASE_URL = "http://localhost:8081/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // Définir les types pour les données
 interface Furniture {
   furniture_id: number

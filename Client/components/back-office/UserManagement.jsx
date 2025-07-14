@@ -17,7 +17,7 @@ const UserManagement = () => {
     const router = useRouter();
 
     
-
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     const [showForm, setShowForm] = useState(false);
     const [newUser, setNewUser] = useState({
         name: '',
@@ -58,7 +58,7 @@ const UserManagement = () => {
     const loadMagasins = async (entrepriseId) => {
         setLoadingMagasins(true);
         try {
-            const response = await fetch(`http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${entrepriseId}`);
+            const response = await fetch(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`);
             if (!response.ok) {
                 throw new Error('Erreur lors de la récupération des magasins');
             }

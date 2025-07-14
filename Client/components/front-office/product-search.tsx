@@ -26,6 +26,7 @@ export default function ProductSearch() {
   const [currentMagasin, setCurrentMagasin] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   
 
   const pdfRef = useRef<HTMLDivElement>(null)
@@ -287,7 +288,7 @@ export default function ProductSearch() {
           throw new Error("Token d'authentification manquant")
         }
 
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -319,7 +320,7 @@ export default function ProductSearch() {
 
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch(`http://localhost:8081/api/magasins/getMagasinByUser/${currentUserId}`, {
+        const response = await fetch(`${API_BASE_URL}/magasins/getMagasinByUser/${currentUserId}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -348,7 +349,7 @@ export default function ProductSearch() {
       try {
         setLoading(true)
         const token = localStorage.getItem("token")
-        const response = await fetch(`http://localhost:8081/api/produits/getProduitDetails/${currentMagasin.magasin_id}`, {
+        const response = await fetch(`${API_BASE_URL}/produits/getProduitDetails/${currentMagasin.magasin_id}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }

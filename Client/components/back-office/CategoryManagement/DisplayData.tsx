@@ -8,6 +8,8 @@ import {
 import axios from 'axios';
 import './DisplayData.css';
 import { motion } from 'framer-motion';
+import '../../multilingue/i18n.js';
+import { useTranslation } from 'react-i18next';
 
 interface Magasin {
   id: number;
@@ -51,6 +53,9 @@ const DisplayData: React.FC = () => {
   const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
+  const { t, i18n } = useTranslation(); 
+  const isRTL = i18n.language === 'ar'; // RTL pour l'arabe, sinon LTR
+  const textDirection = isRTL ? 'rtl' : 'ltr';
   
 
 // Ajoutez ces styles constants en haut du composant
@@ -85,6 +90,7 @@ const tableContainerStyle: React.CSSProperties = {
   const [currentRecord, setCurrentRecord] = useState<any>(null);
   const [form] = Form.useForm();
   const [addForm] = Form.useForm();
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Chargement des données
   useEffect(() => {
@@ -94,12 +100,9 @@ const tableContainerStyle: React.CSSProperties = {
   const fetchData = async () => {
     try {
       const [categoriesRes, magasinsRes, zonesRes] = await Promise.all([
-        /*axios.get('http://localhost:8081/api/management/getAllCategories'),
-        axios.get('http://localhost:8081/api/management/getAllMagasins'),
-        axios.get('http://localhost:8081/api/management/getAllZones')*/
-        axios.get('http://localhost:8081/api/categories/getAllCategories'),
-        axios.get('http://localhost:8081/api/magasins/getAllMagasins'),
-        axios.get('http://localhost:8081/api/zones/getAllZones')
+        axios.get(`${API_BASE_URL}/categories/getAllCategories`),
+        axios.get(`${API_BASE_URL}/magasins/getAllMagasins`),
+        axios.get(`${API_BASE_URL}/zones/getAllZones`)
       ]);
       
       setCategories(categoriesRes.data);
@@ -135,47 +138,97 @@ const tableContainerStyle: React.CSSProperties = {
 
   // Sauvegarde d'un nouvel élément via le modal
   const saveNewItem = async () => {
+    // Vérification que le formulaire est bien initialisé
+    if (!addForm) {
+      console.error('Form instance not available');
+      return;
+    }
+  
     try {
+      // Validation des champs du formulaire
       const values = await addForm.validateFields();
+      
+      // Ajout de la date de modification
       values.date_modification = new Date().toISOString();
   
+      // Configuration en fonction du type d'élément
       let endpoint = '';
-      let updateFunction = null;
-
+      let successMessage = '';
+      let errorMessage = '';
+  
       switch (editingType) {
         case 'magasin':
-          //endpoint = 'http://localhost:8081/api/management/addMagasin';
-          endpoint = 'http://localhost:8081/api/magasins/createMagasin';
-          updateFunction = setMagasins;
+          endpoint = `${API_BASE_URL}/magasins/createMagasin`;
+          successMessage = 'Nouveau magasin ajouté avec succès';
+          errorMessage = "Échec de l'ajout du magasin";
           break;
         case 'categorie':
-          //endpoint = 'http://localhost:8081/api/management/addCategorie';
-          endpoint = 'http://localhost:8081/api/categories/createCategorie';
-          updateFunction = setCategories;
+          endpoint = `${API_BASE_URL}/categories/createCategorie`;
+          successMessage = 'Nouvelle catégorie ajoutée avec succès';
+          errorMessage = "Échec de l'ajout de la catégorie";
           break;
         case 'zone':
-          //endpoint = 'http://localhost:8081/api/management/addZone';
-          endpoint = 'http://localhost:8081/api/zones/createZone';
-          updateFunction = setZones;
+          endpoint = `${API_BASE_URL}/zones/createZone`;
+          successMessage = 'Nouvelle zone ajoutée avec succès';
+          errorMessage = "Échec de l'ajout de la zone";
           break;
+        default:
+          throw new Error('Type inconnu');
       }
-
-      const response = await axios.post(endpoint, values);
-
-      if (response.data) {
+  
+      // Envoi de la requête avec timeout
+      const response = await axios.post(endpoint, values, {
+        timeout: 10000 // 10 secondes timeout
+      });
+  
+      // Vérification de la réponse
+      if (response.data && response.status === 201) {
         notification.success({
           message: 'Succès',
-          description: 'Nouvel élément ajouté avec succès'
+          description: successMessage,
+          duration: 2.5
         });
+  
+        // Réinitialisation du formulaire et fermeture du modal
+        addForm.resetFields();
         setIsAddingModalVisible(false);
-        fetchData(); // Recharger les données pour afficher le nouvel élément
+        
+        // Rechargement des données
+        await fetchData();
+        
+        // Retourner le résultat pour un éventuel traitement supplémentaire
+        return response.data;
+      } else {
+        throw new Error('Réponse inattendue du serveur');
       }
     } catch (error) {
+      console.error('Erreur lors de l\'ajout:', error);
+      
+      let description = "Une erreur est survenue lors de l'ajout";
+      
+      // Gestion des erreurs spécifiques
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Erreur serveur (4xx, 5xx)
+          description = error.response.data.message || `Erreur ${error.response.status}: ${error.response.statusText}`;
+        } else if (error.request) {
+          // Pas de réponse du serveur
+          description = "Pas de réponse du serveur - vérifiez votre connexion";
+        }
+      } else if (error instanceof Error) {
+        description = error.message;
+      }
+  
       notification.error({
         message: 'Erreur',
-        description: "Échec de l'ajout du nouvel élément"
+        description,
+        duration: 4
       });
-      console.error('Error adding new item:', error);
+      
+      // Relancer l'erreur pour un éventuel traitement supplémentaire
+      throw error;
+    } finally {
+      // Nettoyage éventuel
     }
   };
 
@@ -191,17 +244,17 @@ const tableContainerStyle: React.CSSProperties = {
 
       switch (editingType) {
         case 'magasin':
-          endpoint = `http://localhost:8081/api/magasins/updateMagasin/${currentRecord.id}`;
+          endpoint = `${API_BASE_URL}/magasins/updateMagasin/${currentRecord.id}`;
           updateFunction = setMagasins;
           dataKey = 'id';
           break;
         case 'categorie':
-          endpoint = `http://localhost:8081/api/categories/updateCategorie/${currentRecord.id}`;
+          endpoint = `${API_BASE_URL}/categories/updateCategorie/${currentRecord.id}`;
           updateFunction = setCategories;
           dataKey = 'id';
           break;
         case 'zone':
-          endpoint = `http://localhost:8081/api/zones/updateZone/${currentRecord.id}`;
+          endpoint = `${API_BASE_URL}/zones/updateZone/${currentRecord.id}`;
           updateFunction = setZones;
           dataKey = 'id';
           break;
@@ -335,15 +388,15 @@ const tableContainerStyle: React.CSSProperties = {
   
       switch (editingType) {
         case 'magasin':
-          endpoint = `http://localhost:8081/api/magasins/updateMagasin/${editingId}`;
+          endpoint =`${API_BASE_URL}/magasins/updateMagasin/${editingId}`;
           updateFunction = setMagasins;
           break;
         case 'categorie':
-          endpoint = `http://localhost:8081/api/categories/updateCategorie/${editingId}`;
+          endpoint = `${API_BASE_URL}/categories/updateCategorie/${editingId}`;
           updateFunction = setCategories;
           break;
         case 'zone':
-          endpoint = `http://localhost:8081/api/zones/updateZone/${editingId}`;
+          endpoint = `${API_BASE_URL}/zones/updateZone/${editingId}`;
           updateFunction = setZones;
           break;
       }
@@ -383,7 +436,7 @@ const tableContainerStyle: React.CSSProperties = {
     if (!isConfirmed) return;
   
     try {
-      const endpoint = `http://localhost:8081/api/${type}s/delete${type.charAt(0).toUpperCase() + type.slice(1)}/${id}`;
+      const endpoint = `${API_BASE_URL}/${type}s/delete${type.charAt(0).toUpperCase() + type.slice(1)}/${id}`;
       await axios.delete(endpoint);
   
       // Mise à jour de l'état
@@ -417,36 +470,36 @@ const tableContainerStyle: React.CSSProperties = {
   // Colonnes pour les tables
   const magasinsColumns = [
     {
-      title: 'ID Magasin',
+      title: t('category3Managment.displayData.idMagasin'),
       dataIndex: 'magasin_id',
       key: 'magasin_id',
     },
     {
-      title: 'Nom Magasin',
+      title: t('category3Managment.displayData.nomMagasin'),
       dataIndex: 'nom_magasin',
       key: 'nom_magasin',
       render: (_: any, record: Magasin) => renderEditableCell('magasin', record, 'nom_magasin')
     },
     {
-      title: 'Surface (m²)',
+      title: t('category3Managment.displayData.surface'),
       dataIndex: 'surface',
       key: 'surface',
       render: (_: any, record: Magasin) => renderEditableCell('magasin', record, 'surface', 'number')
     },
     {
-      title: 'Adresse',
+      title: t('category3Managment.displayData.adresse'),
       dataIndex: 'adresse',
       key: 'adresse',
       render: (_: any, record: Magasin) => renderEditableCell('magasin', record, 'adresse')
     },
     {
-      title: 'Date de modification',
+      title: t('category3Managment.displayData.dateModif'),
       dataIndex: 'date_modification',
       key: 'date_modification',
       render: (date: string) => new Date(date).toLocaleString()
     },
     {
-      title: 'Actions',
+      title: t('category3Managment.displayData.actions'),
       key: 'actions',
       fixed: 'right',
       width: 150,
@@ -462,7 +515,7 @@ const tableContainerStyle: React.CSSProperties = {
   onClick={() => handleDelete('magasin', record.id)}
   icon={<DeleteOutlined />} 
 >
-  Supprimer
+{t('category3Managment.displayData.supprimer')}
 </Button>
         </Space>
       ),
@@ -471,43 +524,43 @@ const tableContainerStyle: React.CSSProperties = {
 
   const categoriesColumns = [
     {
-      title: 'Nom Catégorie',
+      title: t('category3Managment.displayData.nomCategorie'),
       dataIndex: 'nom',
       key: 'nom',
       render: (_: any, record: Categorie) => renderEditableCell('categorie', record, 'nom')
     },
     {
-      title: 'Niveau',
+      title: t('category3Managment.displayData.niveau'),
       dataIndex: 'niveau',
       key: 'niveau',
       render: (_: any, record: Categorie) => renderEditableCell('categorie', record, 'niveau')
     },
     {
-      title: 'Saisonnalité',
+      title: t('category3Managment.displayData.saisonnalite'),
       dataIndex: 'saisonnalite',
       key: 'saisonnalite',
       render: (_: any, record: Categorie) => renderEditableCell('categorie', record, 'saisonnalite')
     },
     {
-      title: 'Priorité',
+      title: t('category3Managment.displayData.priorite'),
       dataIndex: 'priorite',
       key: 'priorite',
       render: (_: any, record: Categorie) => renderEditableCell('categorie', record, 'priorite')
     },
     {
-      title: 'Zone Exposition Préférée',
+      title: t('category3Managment.displayData.zonePreferer'),
       dataIndex: 'zone_exposition_preferee',
       key: 'zone_exposition_preferee',
       render: (_: any, record: Categorie) => renderEditableCell('categorie', record, 'zone_exposition_preferee')
     },
     {
-      title: 'Date de modification',
+      title: t('category3Managment.displayData.dateModif'),
       dataIndex: 'date_modification',
       key: 'date_modification',
       render: (date: string) => new Date(date).toLocaleString()
     },
     {
-      title: 'Actions',
+      title: t('category3Managment.displayData.actions'),
       key: 'actions',
       fixed: 'right',
       width: 150,
@@ -523,7 +576,7 @@ const tableContainerStyle: React.CSSProperties = {
   onClick={() => handleDelete('categorie', record.id)}
   icon={<DeleteOutlined />} 
 >
-  Supprimer
+{t('category3Managment.displayData.supprimer')}
 </Button>
         </Space>
       ),
@@ -532,19 +585,19 @@ const tableContainerStyle: React.CSSProperties = {
 
   const zonesColumns = [
     {
-      title: 'Nom Zone',
+      title: t('category3Managment.displayData.nomZone'),
       dataIndex: 'nom_zone',
       key: 'nom_zone',
       render: (_: any, record: Zone) => renderEditableCell('zone', record, 'nom_zone')
     },
     {
-      title: 'Description',
+      title: t('category3Managment.displayData.description'),
       dataIndex: 'description',
       key: 'description',
       render: (_: any, record: Zone) => renderEditableCell('zone', record, 'description')
     },
     {
-      title: 'Magasin',
+      title: t('category3Managment.displayData.magasin'),
       dataIndex: 'magasin_id',
       key: 'magasin_id',
       render: (_: any, record: Zone) => renderEditableCell(
@@ -556,19 +609,19 @@ const tableContainerStyle: React.CSSProperties = {
       )
     },
     {
-      title: 'Emplacement',
+      title: t('category3Managment.displayData.emplacement'),
       dataIndex: 'emplacement',
       key: 'emplacement',
       render: (_: any, record: Zone) => renderEditableCell('zone', record, 'emplacement')
     },
     {
-      title: 'Date de modification',
+      title: t('category3Managment.displayData.dateModif'),
       dataIndex: 'date_modification',
       key: 'date_modification',
       render: (date: string) => new Date(date).toLocaleString()
     },
     {
-      title: 'Actions',
+      title: t('category3Managment.displayData.actions'),
       key: 'actions',
       fixed: 'right',
       width: 150,
@@ -584,7 +637,7 @@ const tableContainerStyle: React.CSSProperties = {
   onClick={() => handleDelete('zone', record.id)}
   icon={<DeleteOutlined />} 
 >
-  Supprimer
+{t('category3Managment.displayData.supprimer')}
 </Button>
         </Space>
       ),
@@ -597,19 +650,19 @@ const tableContainerStyle: React.CSSProperties = {
       case 'magasin':
         return (
           <>
-            <Form.Item label="Nom du magasin" name="nom_magasin" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.nomDelMagasin')} name="nom_magasin" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Surface (m²)" name="surface" rules={[{ required: true, type: 'number' }]}>
+            <Form.Item label={t('category3Managment.displayData.surface')} name="surface" rules={[{ required: true, type: 'number' }]}>
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Longueur" name="longueur">
+            <Form.Item label={t('category3Managment.displayData.longueur')} name="longueur">
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Largeur" name="largeur">
+            <Form.Item label={t('category3Managment.displayData.largeur')} name="largeur">
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Adresse" name="adresse">
+            <Form.Item label={t('category3Managment.displayData.adresse')} name="adresse">
               <Input.TextArea />
             </Form.Item>
           </>
@@ -617,10 +670,10 @@ const tableContainerStyle: React.CSSProperties = {
       case 'categorie':
         return (
           <>
-            <Form.Item label="Nom de la catégorie" name="nom" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.nomDelCategorie')} name="nom" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Catégorie parente" name="parent_id">
+            <Form.Item label={t('category3Managment.displayData.categorieParent')} name="parent_id">
               <Select>
                 <Select.Option value="">Aucune</Select.Option>
                 {categories.map(cat => (
@@ -630,16 +683,16 @@ const tableContainerStyle: React.CSSProperties = {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item label="Niveau" name="niveau">
+            <Form.Item label={t('category3Managment.displayData.niveau')} name="niveau">
               <Input />
             </Form.Item>
-            <Form.Item label="Saisonnalité" name="saisonnalite">
+            <Form.Item label={t('category3Managment.displayData.saisonnalite')} name="saisonnalite">
               <Input />
             </Form.Item>
-            <Form.Item label="Priorité" name="priorite">
+            <Form.Item label={t('category3Managment.displayData.priorite')} name="priorite">
               <Input />
             </Form.Item>
-            <Form.Item label="Zone Exposition Préférée" name="zone_exposition_preferee">
+            <Form.Item label={t('category3Managment.displayData.zonePreferer')} name="zone_exposition_preferee">
               <Input />
             </Form.Item>
           </>
@@ -647,10 +700,10 @@ const tableContainerStyle: React.CSSProperties = {
       case 'zone':
         return (
           <>
-            <Form.Item label="Nom de la zone" name="nom_zone" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.nomDelZone')} name="nom_zone" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Magasin" name="magasin_id" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.magasin')} name="magasin_id" rules={[{ required: true }]}>
               <Select>
                 {magasins.map(mag => (
                   <Select.Option key={mag.magasin_id} value={mag.magasin_id}>
@@ -659,10 +712,10 @@ const tableContainerStyle: React.CSSProperties = {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item label="Description" name="description">
+            <Form.Item label={t('category3Managment.displayData.description')} name="description">
               <Input.TextArea />
             </Form.Item>
-            <Form.Item label="Emplacement" name="emplacement">
+            <Form.Item label={t('category3Managment.displayData.emplacement')} name="emplacement">
               <Input />
             </Form.Item>
           </>
@@ -678,22 +731,22 @@ const tableContainerStyle: React.CSSProperties = {
       case 'magasin':
         return (
           <>
-            <Form.Item label="ID Magasin" name="magasin_id" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.idMagasin')} name="magasin_id" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Nom du magasin" name="nom_magasin" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.nomDelMagasin')} name="nom_magasin" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Surface (m²)" name="surface" rules={[{ required: true, type: 'number' }]}>
+            <Form.Item label={t('category3Managment.displayData.surface')} name="surface" rules={[{ required: true, type: 'number' }]}>
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Longueur" name="longueur">
+            <Form.Item label={t('category3Managment.displayData.longueur')} name="longueur">
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Largeur" name="largeur">
+            <Form.Item label={t('category3Managment.displayData.largeur')} name="largeur">
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Adresse" name="adresse">
+            <Form.Item label={t('category3Managment.displayData.adresse')} name="adresse">
               <Input.TextArea />
             </Form.Item>
           </>
@@ -701,13 +754,13 @@ const tableContainerStyle: React.CSSProperties = {
       case 'categorie':
         return (
           <>
-            <Form.Item label="ID Catégorie" name="categorie_id" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.idCategorie')} name="categorie_id" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Nom de la catégorie" name="nom" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.nomDelCategorie')} name="nom" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Catégorie parente" name="parent_id">
+            <Form.Item label={t('category3Managment.displayData.categorieParent')} name="parent_id">
               <Select>
                 <Select.Option value="">Aucune</Select.Option>
                 {categories.map(cat => (
@@ -717,30 +770,30 @@ const tableContainerStyle: React.CSSProperties = {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item label="Niveau" name="niveau">
+            <Form.Item label={t('category3Managment.displayData.niveau')} name="niveau">
               <Input />
             </Form.Item>
-            <Form.Item label="Saisonnalité" name="saisonnalite">
+            <Form.Item label={t('category3Managment.displayData.saisonnalite')} name="saisonnalite">
               <Input />
             </Form.Item>
-            <Form.Item label="Priorité" name="priorite">
+            <Form.Item label={t('category3Managment.displayData.priorite')} name="priorite">
               <Input />
             </Form.Item>
-            <Form.Item label="Zone Exposition Préférée" name="zone_exposition_preferee">
+            <Form.Item label={t('category3Managment.displayData.zonePreferer')} name="zone_exposition_preferee">
               <Input />
             </Form.Item>
-            <Form.Item label="témperature d'exposition" name="temperature_exposition">
+            <Form.Item label={t('category3Managment.displayData.temperature')}name="temperature_exposition">
               <Input />
             </Form.Item>
-            <Form.Item label="Conditionnement" name="conditionnement">
+            <Form.Item label={t('category3Managment.displayData.conditionnement')} name="conditionnement">
               <Input />
             </Form.Item>
-            <Form.Item label="Clientèle ciblée" name="clientele_ciblee">
+            <Form.Item label={t('category3Managment.displayData.clientelle')} name="clientele_ciblee">
               <Input />
             </Form.Item>
-            <Form.Item label="Catégorie parente" name="parent_id">
+            <Form.Item label={t('category3Managment.displayData.categorieParent')} name="parent_id">
               <Select>
-                <Select.Option value="">Aucune</Select.Option>
+                <Select.Option value="">{t('category3Managment.displayData.aucune')}</Select.Option>
                 {magasins.map(mag => (
                   <Select.Option key={mag.magasin_id} value={mag.magasin_id}>
                     {mag.nom_magasin}
@@ -753,13 +806,13 @@ const tableContainerStyle: React.CSSProperties = {
       case 'zone':
         return (
           <>
-            <Form.Item label="ID Zone" name="zone_id" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.idZone')} name="zone_id" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Nom de la zone" name="nom_zone" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.nomDelZone')} name="nom_zone" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Magasin" name="magasin_id" rules={[{ required: true }]}>
+            <Form.Item label={t('category3Managment.displayData.magasin')} name="magasin_id" rules={[{ required: true }]}>
               <Select>
                 {magasins.map(mag => (
                   <Select.Option key={mag.magasin_id} value={mag.magasin_id}>
@@ -768,10 +821,10 @@ const tableContainerStyle: React.CSSProperties = {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item label="Description" name="description">
+            <Form.Item label={t('category3Managment.displayData.description')} name="description">
               <Input.TextArea />
             </Form.Item>
-            <Form.Item label="Emplacement" name="emplacement">
+            <Form.Item label={t('category3Managment.displayData.emplacement')} name="emplacement">
               <Input />
             </Form.Item>
           </>
@@ -782,16 +835,17 @@ const tableContainerStyle: React.CSSProperties = {
   };
 
   return (
-    <div className="display-data-container">
+    <div className="display-data-container" dir={textDirection}>
       <div className="header-container">
-        <h1 className="main-title">📊 Gestion des Données</h1>
+        <h1 className="main-title">📊 {t('category3Managment.displayData.gestionDonnees')}</h1>
         <div className="action-buttons">
           <Button 
             type={editMode ? "primary" : "default"} 
             icon={editMode ? <SaveOutlined /> : <EditOutlined />}
             onClick={toggleEditMode}
           >
-            {editMode ? "Quitter le mode édition" : "Mode édition"}
+           {editMode ? t('category3Managment.displayData.quitEdition') : t('category3Managment.displayData.edition')}
+
           </Button>
         </div>
       </div>
@@ -800,7 +854,7 @@ const tableContainerStyle: React.CSSProperties = {
       <div className="section">
         <div className="section-header">
           <h2>
-            Magasins 
+          {t('category3Managment.displayData.magasins')} 
             <span className="count-badge">{magasins.length}</span>
           </h2>
           <div>
@@ -810,7 +864,7 @@ const tableContainerStyle: React.CSSProperties = {
               onClick={() => openAddModal('magasin')}
               style={{ marginRight: 10 }}
             >
-              Ajouter Magasin
+              {t('category3Managment.displayData.ajouterMagasin')}
             </Button>
             <Switch 
               checked={showMagasins}
@@ -841,7 +895,7 @@ const tableContainerStyle: React.CSSProperties = {
       <div className="section">
         <div className="section-header">
           <h2>
-            Catégories 
+          {t('category3Managment.displayData.categories')} 
             <span className="count-badge">{categories.length}</span>
           </h2>
           <div>
@@ -851,7 +905,7 @@ const tableContainerStyle: React.CSSProperties = {
               onClick={() => openAddModal('categorie')}
               style={{ marginRight: 10 }}
             >
-              Ajouter Catégorie
+              {t('category3Managment.displayData.ajouterCategorie')}
             </Button>
             <Switch 
               checked={showCategories}
@@ -882,7 +936,7 @@ const tableContainerStyle: React.CSSProperties = {
       <div className="section">
         <div className="section-header">
           <h2>
-            Zones 
+          {t('category3Managment.displayData.zones')}
             <span className="count-badge">{zones.length}</span>
           </h2>
           <div>
@@ -892,7 +946,7 @@ const tableContainerStyle: React.CSSProperties = {
               onClick={() => openAddModal('zone')}
               style={{ marginRight: 10 }}
             >
-              Ajouter Zone
+              {t('category3Managment.displayData.ajouterZone')}
             </Button>
             <Switch 
               checked={showZones}
@@ -921,46 +975,51 @@ const tableContainerStyle: React.CSSProperties = {
 
       {/* Modal d'édition */}
       <Modal
-        title={`Modifier ${editingType}`}
+        title={`${t('category3Managment.displayData.modifier')} ${editingType}`}
         open={isEditingModalVisible}
         onOk={saveModalEditing}
         onCancel={() => {
           setIsEditingModalVisible(false);
           form.resetFields();
         }}
-        okText="Enregistrer"
-        cancelText="Annuler"
+        okText={t('front.support.enregistrer')}
+        cancelText={t('category3Managment.displayData.annuler')}
         width={800}
         destroyOnHidden
       >
+        <div dir={textDirection}>
         <Form
           form={form}
           layout="vertical"
         >
           {getFormItems()}
         </Form>
+        </div>
       </Modal>
 
       {/* Modal d'ajout */}
       <Modal
-        title={`Ajouter un nouveau ${editingType}`}
+        title={`${t('category3Managment.displayData.ajouterNouv')} ${editingType}`}
+
         open={isAddingModalVisible}
         onOk={saveNewItem}
         onCancel={() => {
           setIsAddingModalVisible(false);
           addForm.resetFields();
         }}
-        okText="Ajouter"
-        cancelText="Annuler"
+        okText={t('category3Managment.displayData.ajouter')} 
+        cancelText={t('category3Managment.displayData.annuler')} 
         width={800}
         destroyOnHidden
       >
+        <div dir={textDirection}>
         <Form
           form={addForm}
           layout="vertical"
         >
           {getAddFormItems()}
         </Form>
+        </div>
       </Modal>
     </div>
   );

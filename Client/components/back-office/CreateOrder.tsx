@@ -23,12 +23,13 @@ const CreateOrder = () => {
   const { t, i18n } = useTranslation(); 
   const isRTL = i18n.language === 'ar'; // RTL pour l'arabe, sinon LTR
   const textDirection = isRTL ? 'rtl' : 'ltr';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Récupérer l'utilisateur connecté et l'ID de l'entreprise
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           credentials: "include",
         });
         if (!response.ok) {
@@ -54,7 +55,7 @@ const CreateOrder = () => {
     if (currentEntrepriseID) {
       const fetchFournisseurs = async () => {
         try {
-          const response = await fetch(`http://localhost:8081/api/fournisseur/getAllFournisseursByEntreprise/${currentEntrepriseID}`);
+          const response = await fetch(`${API_BASE_URL}/fournisseur/getAllFournisseursByEntreprise/${currentEntrepriseID}`);
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -74,7 +75,7 @@ const CreateOrder = () => {
     if (currentEntrepriseID) {
       const fetchMagasins = async () => {
         try {
-          const response = await fetch(`http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${currentEntrepriseID}`);
+          const response = await fetch(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${currentEntrepriseID}`);
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -100,7 +101,7 @@ const CreateOrder = () => {
           setIsLoading(true);
           // Utilisation directe de selectedMagasin dans l'URL
           const response = await fetch(
-            `http://localhost:8081/api/produits/getProductsByMagasin/${selectedMagasin}`
+           `${API_BASE_URL}/produits/getProductsByMagasin/${selectedMagasin}`
           );
           
           if (!response.ok) {
@@ -207,7 +208,7 @@ const CreateOrder = () => {
   
       console.log("Données de la commande:", commandeData); // Pour le débogage
   
-      const response = await fetch('http://localhost:8081/api/commande-achat/createCommandeAchat', {
+      const response = await fetch(`${API_BASE_URL}/commande-achat/createCommandeAchat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

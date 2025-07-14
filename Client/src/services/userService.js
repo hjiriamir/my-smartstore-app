@@ -1,5 +1,5 @@
-const API_BASE_URL = "http://localhost:8081/api";
-
+//const API_BASE_URL = "http://localhost:8081/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // 🔹 Récupérer toutes les demandes d'abonnement
 export const fetchDemandes = async () => {
     try {

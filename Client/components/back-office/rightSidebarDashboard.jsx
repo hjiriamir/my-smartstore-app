@@ -15,6 +15,7 @@ const RightSidebarDashboard = () => {
   const [message, setMessage] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Lecture de l'élément actif depuis le localStorage lors du chargement de la page
   const [activeItem, setActiveItem] = useState('dashboard');
@@ -38,7 +39,7 @@ const RightSidebarDashboard = () => {
   };
 
   const handleDelete = () => {
-    axios.get('http://localhost:8081/api/auth/logout')
+    axios.get(`${API_BASE_URL}/auth/logout`)
       .then(res => {
         setAuth(false); // Réinitialise l'état auth
         setMessage('You are not authenticated'); // Affiche le message d'erreur

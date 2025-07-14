@@ -89,6 +89,7 @@ export function CommunicationContent() {
   const [newConversationTitle, setNewConversationTitle] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   // Récupérer l'ID de l'utilisateur courant et son entreprise
   useEffect(() => {
@@ -99,7 +100,7 @@ export function CommunicationContent() {
           throw new Error("Token d'authentification manquant");
         }
 
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -137,7 +138,7 @@ export function CommunicationContent() {
         const token = localStorage.getItem("token");
         
         const response = await fetch(
-          `http://localhost:8081/api/auth1/getActifUsersByEntreprise/${currentUserEntrepriseId}`, 
+          `${API_BASE_URL}/auth1/getActifUsersByEntreprise/${currentUserEntrepriseId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -172,7 +173,7 @@ export function CommunicationContent() {
         const token = localStorage.getItem("token");
         
         const response = await fetch(
-          `http://localhost:8081/api/conversation/getConversationsByParticipant/${currentUserId}`, 
+          `${API_BASE_URL}/conversation/getConversationsByParticipant/${currentUserId}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -210,7 +211,7 @@ export function CommunicationContent() {
         const token = localStorage.getItem("token");
         
         const response = await fetch(
-          `http://localhost:8081/api/chatMessageRoutes/getMessagesByConversation/${selectedConversation.id}`, 
+          `${API_BASE_URL}/chatMessageRoutes/getMessagesByConversation/${selectedConversation.id}`, 
           {
             headers: {
               "Authorization": `Bearer ${token}`
@@ -243,7 +244,7 @@ export function CommunicationContent() {
       const token = localStorage.getItem("token");
       
       const response = await fetch(
-        "http://localhost:8081/api/chatMessageRoutes/createMessage",
+        `${API_BASE_URL}/chatMessageRoutes/createMessage`,
         {
           method: "POST",
           headers: {
@@ -265,7 +266,7 @@ export function CommunicationContent() {
 
       // Rafraîchir les messages après envoi
       const updatedMessages = await fetch(
-        `http://localhost:8081/api/chatMessageRoutes/getMessagesByConversation/${selectedConversation.id}`, 
+        `${API_BASE_URL}/chatMessageRoutes/getMessagesByConversation/${selectedConversation.id}`, 
         {
           headers: {
             "Authorization": `Bearer ${token}`
@@ -294,7 +295,7 @@ export function CommunicationContent() {
       const allParticipants = [...selectedUsers, currentUserId];
       
       const response = await fetch(
-        "http://localhost:8081/api/conversation/createConversation/",
+        `${API_BASE_URL}/conversation/createConversation/`,
         {
           method: "POST",
           headers: {
@@ -316,7 +317,7 @@ export function CommunicationContent() {
       
       // Rafraîchir la liste des conversations
       const conversationsResponse = await fetch(
-        `http://localhost:8081/api/conversation/getConversationsByParticipant/${currentUserId}`, 
+        `${API_BASE_URL}/conversation/getConversationsByParticipant/${currentUserId}`, 
         {
           headers: {
             "Authorization": `Bearer ${token}`

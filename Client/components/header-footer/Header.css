@@ -1,7 +1,7 @@
 /* Navigation */
 .navbar {
   padding: 1rem 2rem;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
   left: 0;
@@ -18,76 +18,105 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 60px;
 }
 
-.menu {
+/* Sections du header */
+.left-section {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  flex: 0 0 auto;
 }
 
+.center-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 0 0 auto;
+}
+
+/* Navigation links */
 .nav-links {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: nowrap;
 }
 
 .nav-link-text {
   display: inline-block;
-  max-width: 10px; /* Ajustez cette valeur selon vos besoins */
   text-align: center;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
 }
 
-.menu a {
+.nav-links a {
   color: white;
   text-decoration: none;
   font-weight: 800;
   white-space: nowrap;
+  transition: all 0.3s ease;
+  border-radius: 4px;
 }
 
-.menu .separator {
-  margin: 0 0.2rem;
+.nav-links a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.separator {
+  margin: 0 0.5rem;
   color: white;
-}
-
-.menu-buttons {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  font-weight: normal;
+  opacity: 0.7;
 }
 
 /* Buttons */
-.contact-us, .login {
+.contact-us,
+.login {
   display: inline-block;
   background-color: #006d77;
   color: white;
   font-size: 1rem;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 8px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
-  min-width: 80px; /* Largeur minimale pour les boutons */
+  font-weight: 600;
+  min-width: 100px;
 }
 
-.contact-us:hover, .login:hover {
+.contact-us:hover,
+.login:hover {
   transform: translateY(-2px);
+  background-color: #005a63;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Navigation active */
-.navbar .menu a.active {
+.nav-links a.active {
   color: #2424dc !important;
   position: relative;
+  background-color: rgba(36, 36, 220, 0.1);
 }
 
-.navbar .menu a.active::after {
+.nav-links a.active::after {
   content: "";
   position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 100%;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
   height: 2px;
   background-color: #2424dc;
   animation: underlineSlide 0.3s ease;
@@ -97,29 +126,122 @@
 .language-selector-container {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background-color: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 8px 16px;
+  border-radius: 25px;
   transition: all 0.3s ease;
   cursor: pointer;
+  min-width: 60px;
+  justify-content: center;
 }
 
 .language-selector-container:hover {
   background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
 .language-icon {
   color: white;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .language-flag {
-  font-size: 1rem;
+  font-size: 1.2rem;
   margin-left: 4px;
 }
 
 @keyframes underlineSlide {
-  from { width: 0; }
-  to { width: 100%; }
+  from {
+    width: 0;
+  }
+  to {
+    width: 80%;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 0.8rem 1.5rem;
+  }
+
+  .nav-link-text {
+    padding: 0.4rem 0.8rem;
+  }
+
+  .contact-us,
+  .login {
+    padding: 8px 16px;
+    min-width: 90px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.5rem 1rem;
+  }
+
+  .navbar-content {
+    flex-direction: column;
+    gap: 1rem;
+    min-height: auto;
+  }
+
+  .left-section,
+  .right-section {
+    order: 2;
+  }
+
+  .center-section {
+    order: 1;
+  }
+
+  .right-section {
+    gap: 0.5rem;
+  }
+
+  .nav-links {
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .separator {
+    margin: 0 0.3rem;
+  }
+
+  .contact-us,
+  .login {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-content {
+    gap: 0.5rem;
+  }
+
+  .left-section,
+  .right-section {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .separator {
+    display: none;
+  }
+
+  .contact-us,
+  .login {
+    width: 100%;
+    text-align: center;
+  }
 }

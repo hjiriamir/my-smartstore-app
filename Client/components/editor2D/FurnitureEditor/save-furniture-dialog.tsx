@@ -96,6 +96,8 @@
     const [planograms, setPlanograms] = useState<any[]>([]);
     const [selectedPlanogramId, setSelectedPlanogramId] = useState<number | null>(null);
     const [isLoadingPlanograms, setIsLoadingPlanograms] = useState(false);
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const API_BASE = process.env.NEXT_PUBLIC_BASE_URL;
 
     // Charger les planogrammes selon le magasin
 useEffect(() => {
@@ -103,7 +105,7 @@ useEffect(() => {
         const fetchPlanograms = async () => {
             setIsLoadingPlanograms(true);
             try {
-                const response = await fetch(`http://localhost:8081/api/planogram/fetchPlanogramByStore/${selectedMagasinId}`);
+                const response = await fetch(`${API_BASE_URL}/planogram/fetchPlanogramByStore/${selectedMagasinId}`);
                 if (!response.ok) {
                     throw new Error(`Erreur HTTP: ${response.status}`);
                 }
@@ -504,7 +506,7 @@ useEffect(() => {
     useEffect(() => {
         const fetchCurrentUser = async () => {
         try {
-            const response = await fetch("http://localhost:8081/api/auth/me", {
+            const response = await fetch(`${API_BASE_URL}/auth/me`, {
             credentials: "include",
             })
             if (!response.ok) {
@@ -531,7 +533,7 @@ useEffect(() => {
         const fetchMagasins = async () => {
         setIsLoading(true)
         try {
-            const response = await fetch("http://localhost:8081/api/magasins/getAllMagasins")
+            const response = await fetch(`${API_BASE_URL}/magasins/getAllMagasins`)
             if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`)
             }
@@ -561,7 +563,7 @@ useEffect(() => {
         const fetchZones = async () => {
             setIsLoadingZones(true)
             try {
-            const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinId}`)
+            const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedMagasinId}`)
             if (!response.ok) {
                 throw new Error(`Erreur HTTP: ${response.status}`)
             }
@@ -593,7 +595,7 @@ useEffect(() => {
         const fetchUsers = async () => {
             setIsLoadingUsers(true)
             try {
-            const response = await fetch(`http://localhost:8081/api/auth1/users/store/${selectedMagasinId}`)
+            const response = await fetch(`${API_BASE_URL}/auth1/users/store/${selectedMagasinId}`)
             if (!response.ok) {
                 throw new Error(`Erreur HTTP: ${response.status}`)
             }
@@ -624,7 +626,7 @@ useEffect(() => {
         const fetchFurnitureTypes = async () => {
         setIsLoadingFurnitureTypes(true)
         try {
-            const response = await fetch("http://localhost:8081/api/furnitureType/getAllFurnitureTypes")
+            const response = await fetch(`${API_BASE_URL}/furnitureType/getAllFurnitureTypes`)
             if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`)
             }
@@ -656,7 +658,7 @@ useEffect(() => {
                 return;
             }
     
-            const response = await fetch("http://localhost:8081/api/emails/sendBasicEmail", {
+            const response = await fetch(`${API_BASE_URL}/emails/sendBasicEmail`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -686,7 +688,7 @@ useEffect(() => {
         formData.append("file", file, fileName);
         
         try {
-            const response = await fetch("http://localhost:8081/api/furniture/upload", {
+            const response = await fetch(`${API_BASE_URL}/furniture/upload`, {
                 method: "POST",
                 body: formData,
                 credentials: "include",
@@ -772,7 +774,7 @@ useEffect(() => {
             const productIdMap = new Map<string, number>();
             for (const code of productCodes) {
                 try {
-                    const response = await fetch(`http://localhost:8081/api/produits/getProductIdsByCodes/${code}`);
+                    const response = await fetch( `${API_BASE_URL}/produits/getProductIdsByCodes/${code}`);
                     if (!response.ok) {
                         throw new Error(`Erreur HTTP: ${response.status} pour le produit ${code}`);
                     }
@@ -862,8 +864,8 @@ useEffect(() => {
     
             // Envoi de la requête au serveur
             const apiUrl = selectedPlanogramId 
-                ? "http://localhost:8081/api/planogram/createFullPlanogramm" 
-                : "http://localhost:8081/api/planogram/createFullPlanogram";
+                ?  `${API_BASE_URL}/planogram/createFullPlanogramm`
+                : `${API_BASE_URL}/planogram/createFullPlanogram`;
     
             const requestBody = selectedPlanogramId ? {
                 planogram_id: selectedPlanogramId, // ✅ Inclure l'ID du planogramme existant
@@ -1352,7 +1354,7 @@ useEffect(() => {
                     <div className="flex flex-wrap gap-2">
                         {image2DUrl && (
                             <a 
-                                href={`http://localhost:8081/${image2DUrl}`} 
+                                href={`${API_BASE}/${image2DUrl}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 className="text-xs text-blue-600 hover:underline flex items-center"
@@ -1363,7 +1365,7 @@ useEffect(() => {
                         )}
                         {image3DUrl && (
                             <a 
-                                href={`http://localhost:8081/${image3DUrl}`} 
+                                href={`${API_BASE}/${image3DUrl}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 className="text-xs text-blue-600 hover:underline flex items-center"
@@ -1374,7 +1376,7 @@ useEffect(() => {
                         )}
                         {pdfUrl && (
                             <a 
-                                href={`http://localhost:8081/${pdfUrl}`} 
+                                href={`${API_BASE}/${pdfUrl}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 className="text-xs text-blue-600 hover:underline flex items-center"

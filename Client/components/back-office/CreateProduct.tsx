@@ -10,8 +10,8 @@ import './CreateOrder.css';
 import '../multilingue/i18n.js';
 import { useTranslation } from 'react-i18next';
 
-const API_BASE_URL = "http://localhost:8081/api";
-
+//const API_BASE_URL = "http://localhost:8081/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // Composant pour afficher les détails du produit dans un modal
 const ProductDetailsModal = ({ product, onClose, categories, fournisseurs }) => {
   const { t, i18n } = useTranslation(); 
@@ -175,7 +175,7 @@ const CreateProduct = () => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch("http://localhost:8081/api/auth/me", {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
           credentials: "include",
         });
         if (!response.ok) {
@@ -201,7 +201,7 @@ const CreateProduct = () => {
     if (currentEntrepriseID) {
       const fetchMagasins = async () => {
         try {
-          const response = await fetch(`http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${currentEntrepriseID}`);
+          const response = await fetch(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${currentEntrepriseID}`);
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }
@@ -222,7 +222,7 @@ const CreateProduct = () => {
     if (currentEntrepriseID) {
       const fetchFournisseurs = async () => {
         try {
-          const response = await fetch(`http://localhost:8081/api/fournisseur/getAllFournisseursByEntreprise/${currentEntrepriseID}`);
+          const response = await fetch(`${API_BASE_URL}/fournisseur/getAllFournisseursByEntreprise/${currentEntrepriseID}`);
           if (!response.ok) {
             throw new Error(`Erreur HTTP: ${response.status}`);
           }

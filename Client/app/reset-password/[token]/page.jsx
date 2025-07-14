@@ -12,6 +12,7 @@ const ResetPassword = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     useEffect(() => {
         // Extrait le token de l'URL
@@ -31,7 +32,7 @@ const ResetPassword = () => {
 
         try {
             const response = await axios.post(
-                `http://localhost:8081/api/auth/reset-password/${token}`,
+                `${API_BASE_URL}/auth/reset-password/${token}`,
                 { password }
             );
 
