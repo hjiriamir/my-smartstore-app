@@ -1589,7 +1589,7 @@ useEffect(() => {
       )}
       {image3DUrl && (
         <a 
-          href={`${BASE_URL}/${image3DUrl}`;} 
+          href={`${BASE_URL}/${image3DUrl}`} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="text-xs text-blue-600 hover:underline flex items-center"
