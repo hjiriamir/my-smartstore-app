@@ -413,7 +413,7 @@ export const getPlanogramsByMagasin = async (req, res) => {
             idUser,
             type: 'mise_en_place'
           },
-          required: false,
+          required: true,
           include: [
             {
               model: Users,
@@ -453,11 +453,7 @@ export const getPlanogramsByMagasin = async (req, res) => {
           date_fin_prevue: t.date_fin_prevue,
           date_fin_reelle: t.date_fin_reelle,
           priorite: t.priorite,
-          assignedUser: t.assignedUser ? {
-            id: t.assignedUser.id,
-            name: t.assignedUser.name,
-            email: t.assignedUser.email
-          } : null
+          idUser: t.idUser
         }))
       };
     });

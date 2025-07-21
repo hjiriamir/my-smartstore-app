@@ -86,13 +86,42 @@ export const createProduitsList = async (req, res) => {
     if (!Array.isArray(produits) || produits.length === 0) {
       return res.status(400).json({ error: 'Le corps de la requête doit être un tableau non vide' });
     }
-    const createdProduits = await Produit.bulkCreate(produits, { validate: true });
-    res.status(201).json(createdProduits);
+
+    // Extraire les produit_id envoyés
+    const produitIds = produits.map(p => p.produit_id);
+
+    // Trouver les produits existants avec ces produit_id
+    const produitsExistants = await Produit.findAll({
+      where: {
+        produit_id: produitIds
+      },
+      attributes: ['produit_id']
+    });
+
+    // Extraire les ids existants
+    const idsExistants = produitsExistants.map(p => p.produit_id);
+
+    // Filtrer les produits à créer (ceux dont produit_id n'existe pas encore)
+    const produitsAInserer = produits.filter(p => !idsExistants.includes(p.produit_id));
+
+    if (produitsAInserer.length === 0) {
+      return res.status(200).json({ message: 'Tous les produits existent déjà. Aucun ajout effectué.' });
+    }
+
+    // Créer les nouveaux produits
+    const createdProduits = await Produit.bulkCreate(produitsAInserer, { validate: true });
+
+    res.status(201).json({
+      message: `${createdProduits.length} produit(s) créé(s) avec succès.`,
+      produits: createdProduits
+    });
+
   } catch (error) {
     console.error('Erreur création liste de produits :', error);
     res.status(400).json({ error: error.message });
   }
 };
+
 
 
 export const getProduitDetails = async (req, res) => {

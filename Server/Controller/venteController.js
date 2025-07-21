@@ -185,11 +185,26 @@ export const fetchStat = async (req, res) => {
 
     const magasins = await magasin1.findAll({
       where: { entreprise_id: idEntreprise },
-      attributes: ['id', 'magasin_id']
+      attributes: ['id', 'magasin_id', 'nom_magasin']
     });
 
+    // Retourner des données vides si aucun magasin n'est trouvé
     if (!magasins || magasins.length === 0) {
-      return res.status(404).json({ error: "Aucun magasin trouvé pour cette entreprise." });
+      return res.status(200).json({
+        todaySales: 0,
+        yearlySales: 0,
+        netIncome: 0,
+        produitsEnStock: 0,
+        mouvementsStock: Array.from({ length: 12 }, (_, i) => ({
+          month: i + 1,
+          in: 0,
+          out: 0
+        })),
+        commandesParStatut: {},
+        commandesParCanal: {},
+        commandes: [],
+        magasinsDisponibles: []
+      });
     }
 
     const magasinUniqueIds = magasins.map(m => m.magasin_id);
@@ -363,9 +378,9 @@ export const fetchStat = async (req, res) => {
       produitsEnStock,
       mouvementsStock: mouvementsParMois,
       commandesParStatut,
-      commandesParCanal, // Ajout des statistiques par canal
+      commandesParCanal, 
       commandes: commandesFormatees,
-      magasinsDisponibles: magasins.map(m => ({ id: m.id, magasin_id: m.magasin_id }))
+      magasinsDisponibles: magasins.map(m => ({ id: m.id, magasin_id: m.magasin_id, nom_magasin: m.nom_magasin }))
     });
 
   } catch (error) {

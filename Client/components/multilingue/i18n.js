@@ -11,9 +11,17 @@ i18n
     resources: {
       en: {
         translation: {
+          noProductsData:"No products available",
+          noStoresTitle: "No store found",
+          noStoresMessage: "Your business doesn't have any stores yet. Create your first store to get started.",
+          createFirstStore: "Create store",
+          noDataTitle: "No data available",
+          noDataMessage: "Your stats will appear here once you make sales or add products.",
+
           backToDashboard: "Retour au tableau de bord",
           category3Managment: {
             displayData: {
+              retourDashboard: "Back to Dashboard",
               gestionDonnees: "Data Management",
               edition: "Edit Mode",
               quitEdition: "Exit Edit Mode",
@@ -43,6 +51,7 @@ i18n
               magasin: "Store",
               emplacement: "Location",
               idZone: "Zone ID",
+              ajouterCategorie: "Add Category",
 nomDelZone: "Zone Name",
 annuler: "Cancel",
 ajouter: "Add",
@@ -1593,9 +1602,16 @@ largeur: "Width",
       },
       fr: {
         translation: {
+          noProductsData:"Aucun produit disponible",
+          noStoresTitle: "Aucun magasin trouvé",
+          noStoresMessage: "Votre entreprise n'a pas encore de magasins. Créez votre premier magasin pour commencer.",
+          createFirstStore: "Créer un magasin",
+          noDataTitle:"Aucune donnée disponible",
+          noDataMessage:"Vos statistiques apparaîtront ici lorsque vous aurez effectué des ventes ou ajouté des produits.",
           backToDashboard: "Back to Dashboard",
           category3Managment : {
             displayData : {
+              retourDashboard:"Retour au Dashboard",
               gestionDonnees:"Gestion des Données",
               edition:"Mode édition",
               quitEdition:"Quitter le mode édition",
@@ -1637,7 +1653,7 @@ largeur: "Width",
               zonePreferer: "Zone Exposition Préférée",
               ajouterCategorie: "Ajouter Catégorie",
               zonePreferer: "Preferred Display Zone",
-              ajouterCategorie: "Add Category",
+              
               idMagasin:"ID Magasin",
               nomDelMagasin:"Nom du magasin",
               longueur:"Longueur",
@@ -3189,9 +3205,16 @@ largeur: "Width",
       },
       ar: {
         translation: {
+          noProductsData:"لا توجد منتجات متاحة",
+          noStoresTitle: "لم يتم العثور على أي متجر",
+          noStoresMessage: "لا تملك شركتك أي متاجر حتى الآن. أنشئ متجرك الأول للبدء.",
+          createFirstStore: "إنشاء متجر",
+          noDataTitle: "لا توجد بيانات متاحة",
+          noDataMessage: "ستظهر إحصائياتك هنا عند إجراء مبيعات أو إضافة منتجات.",
           backToDashboard: "العودة إلى لوحة التحكم",
           category3Managment: {
             displayData: {
+              retourDashboard: "العودة إلى لوحة التحكم",
               gestionDonnees: "إدارة البيانات",
               edition: "وضع التحرير",
               quitEdition: "الخروج من وضع التحرير",

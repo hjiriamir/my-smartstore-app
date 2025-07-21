@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, notification, Modal, Input, Switch, Form, InputNumber, Select } from 'antd';
-import { 
-  EyeOutlined, EyeInvisibleOutlined, DeleteOutlined, 
-  EditOutlined, CheckOutlined, CloseOutlined, 
-  PlusOutlined, SaveOutlined 
-} from '@ant-design/icons';
+
 import axios from 'axios';
 import './DisplayData.css';
 import { motion } from 'framer-motion';
 import '../../multilingue/i18n.js';
 import { useTranslation } from 'react-i18next';
+import Link from 'next/link';
+import { 
+  EyeOutlined, EyeInvisibleOutlined, DeleteOutlined, 
+  EditOutlined, CheckOutlined, CloseOutlined, 
+  PlusOutlined, SaveOutlined, ArrowLeftOutlined 
+} from '@ant-design/icons';
+
 
 interface Magasin {
   id: number;
@@ -47,6 +50,14 @@ interface Zone {
   emplacement?: string;
   date_modification: string;
 }
+interface User {
+  idUtilisateur: number;
+  entreprises_id: number;
+  name: string;
+  role: string;
+  email: string;
+ 
+}
 
 const DisplayData: React.FC = () => {
   // États pour les données
@@ -57,6 +68,7 @@ const DisplayData: React.FC = () => {
   const isRTL = i18n.language === 'ar'; // RTL pour l'arabe, sinon LTR
   const textDirection = isRTL ? 'rtl' : 'ltr';
   
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
 // Ajoutez ces styles constants en haut du composant
 const tableStyle: React.CSSProperties = {
@@ -94,28 +106,95 @@ const tableContainerStyle: React.CSSProperties = {
 
   // Chargement des données
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [categoriesRes, magasinsRes, zonesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/categories/getAllCategories`),
-        axios.get(`${API_BASE_URL}/magasins/getAllMagasins`),
-        axios.get(`${API_BASE_URL}/zones/getAllZones`)
-      ]);
+    console.log("Début du chargement des données..."); // Debug
+    
+    const fetchCurrentUser = async () => {
+      try {
+        console.log("Tentative de récupération de l'utilisateur...");
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+          withCredentials: true
+        });
+        const userData = response.data.user || response.data;
+        console.log("Utilisateur récupéré:", userData);
+        setCurrentUser(userData);
+        return userData.entreprises_id; 
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur:", error);
+        notification.error({
+          message: 'Erreur',
+          description: "Impossible de récupérer les informations de l'utilisateur"
+        });
+        return null;
+      }
+    };
+  
+    const fetchData = async (entrepriseId: number) => {
+      if (!entrepriseId) {
+        console.log("Aucun ID d'entreprise, arrêt du chargement des données"); // Debug
+        return;
+      }
       
-      setCategories(categoriesRes.data);
-      setMagasins(magasinsRes.data);
-      setZones(zonesRes.data);
-    } catch (error) {
-      notification.error({
-        message: 'Erreur',
-        description: 'Impossible de charger les données'
+      try {
+        console.log(`Récupération des magasins pour l'entreprise ${entrepriseId}...`); // Debug
+        const magasinsRes = await axios.get(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`);
+        console.log("Magasins récupérés:", magasinsRes.data); // Debug
+        setMagasins(magasinsRes.data);
+  
+        // Pour les catégories et zones, on les charge pour chaque magasin
+        console.log("Récupération des catégories et zones pour chaque magasin..."); // Debug
+        const categoriesPromises = magasinsRes.data.map((magasin: Magasin) => {
+          console.log(`Récupération des catégories pour le magasin ${magasin.magasin_id}`); // Debug
+          return axios.get(`${API_BASE_URL}/categories/getCategoriesByMagasin/${magasin.magasin_id}`);
+        });
+        
+        const zonesPromises = magasinsRes.data.map((magasin: Magasin) => {
+          console.log(`Récupération des zones pour le magasin ${magasin.magasin_id}`); // Debug
+          return axios.get(`${API_BASE_URL}/zones/getZonesMagasin/${magasin.magasin_id}`);
+        });
+  
+        const [categoriesResults, zonesResults] = await Promise.all([
+          Promise.all(categoriesPromises),
+          Promise.all(zonesPromises)
+        ]);
+  
+        // Fusionner toutes les catégories et zones
+        const allCategories = categoriesResults.flatMap(res => {
+          console.log("Catégories récupérées:", res.data); // Debug
+          return res.data;
+        });
+        const allZones = zonesResults.flatMap(res => {
+          console.log("Zones récupérées:", res.data); // Debug
+          return res.data;
+        });
+  
+        setCategories(allCategories);
+        setZones(allZones);
+        
+        console.log("Données finales:", { // Debug
+          magasins: magasinsRes.data,
+          categories: allCategories,
+          zones: allZones
+        });
+      } catch (error) {
+        console.error('Error fetching data:', error); // Debug
+        notification.error({
+          message: 'Erreur',
+          description: 'Impossible de charger les données'
+        });
+      }
+    };
+  
+    // Exécution
+    fetchCurrentUser()
+      .then(entrepriseId => {
+        console.log("ID entreprise récupéré:", entrepriseId); // Debug
+        if (entrepriseId) {
+          fetchData(entrepriseId);
+        } else {
+          console.log("Aucun ID entreprise trouvé"); // Debug
+        }
       });
-      console.error('Error fetching data:', error);
-    }
-  };
+  }, []);
 
   // Fonction pour ouvrir le modal d'ajout
   const openAddModal = (type: 'magasin' | 'categorie' | 'zone') => {
@@ -139,19 +218,20 @@ const tableContainerStyle: React.CSSProperties = {
   // Sauvegarde d'un nouvel élément via le modal
   const saveNewItem = async () => {
     // Vérification que le formulaire est bien initialisé
-    if (!addForm) {
-      console.error('Form instance not available');
+    if (!addForm || !currentUser) {
+      console.error('Form instance or user not available');
       return;
     }
   
     try {
-      // Validation des champs du formulaire
       const values = await addForm.validateFields();
-      
-      // Ajout de la date de modification
       values.date_modification = new Date().toISOString();
+      
+      // Ajout de l'entreprise_id pour les magasins
+      if (editingType === 'magasin') {
+        values.entreprise_id = currentUser.entreprise_id;
+      }
   
-      // Configuration en fonction du type d'élément
       let endpoint = '';
       let successMessage = '';
       let errorMessage = '';
@@ -675,7 +755,7 @@ const tableContainerStyle: React.CSSProperties = {
             </Form.Item>
             <Form.Item label={t('category3Managment.displayData.categorieParent')} name="parent_id">
               <Select>
-                <Select.Option value="">Aucune</Select.Option>
+                <Select.Option value="">{t('category3Managment.displayData.aucune')}</Select.Option>
                 {categories.map(cat => (
                   <Select.Option key={cat.categorie_id} value={cat.categorie_id}>
                     {cat.nom}
@@ -733,7 +813,10 @@ const tableContainerStyle: React.CSSProperties = {
           <>
             <Form.Item label={t('category3Managment.displayData.idMagasin')} name="magasin_id" rules={[{ required: true }]}>
               <Input />
-            </Form.Item>
+              </Form.Item>
+              <Form.Item name="entreprise_id" initialValue={currentUser?.entreprise_id} hidden>
+                <Input />
+              </Form.Item>
             <Form.Item label={t('category3Managment.displayData.nomDelMagasin')} name="nom_magasin" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
@@ -762,7 +845,7 @@ const tableContainerStyle: React.CSSProperties = {
             </Form.Item>
             <Form.Item label={t('category3Managment.displayData.categorieParent')} name="parent_id">
               <Select>
-                <Select.Option value="">Aucune</Select.Option>
+                <Select.Option value="">{t('category3Managment.displayData.aucune')}</Select.Option>
                 {categories.map(cat => (
                   <Select.Option key={cat.categorie_id} value={cat.categorie_id}>
                     {cat.nom}
@@ -791,7 +874,7 @@ const tableContainerStyle: React.CSSProperties = {
             <Form.Item label={t('category3Managment.displayData.clientelle')} name="clientele_ciblee">
               <Input />
             </Form.Item>
-            <Form.Item label={t('category3Managment.displayData.categorieParent')} name="parent_id">
+            <Form.Item label={t('categoryImport.headers.parent_id')} name="parent_id">
               <Select>
                 <Select.Option value="">{t('category3Managment.displayData.aucune')}</Select.Option>
                 {magasins.map(mag => (
@@ -836,6 +919,23 @@ const tableContainerStyle: React.CSSProperties = {
 
   return (
     <div className="display-data-container" dir={textDirection}>
+      <Link href="/Dashboard" passHref>
+    <Button 
+      type="primary" 
+      style={{ 
+        marginRight: '16px',
+        backgroundColor: '#1890ff',
+        borderColor: '#1890ff',
+        boxShadow: '0 2px 0 rgba(0, 0, 0, 0.045)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      icon={<ArrowLeftOutlined />}
+    >
+      {t('category3Managment.displayData.retourDashboard')}
+    </Button>
+  </Link>
       <div className="header-container">
         <h1 className="main-title">📊 {t('category3Managment.displayData.gestionDonnees')}</h1>
         <div className="action-buttons">
