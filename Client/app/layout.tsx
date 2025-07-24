@@ -5,8 +5,9 @@ import Header from "../components/header-footer/Header"
 import Footer from "../components/header-footer/footer"
 import TopBanner from "../components/back-office/TopBanner"
 import { AuthProvider } from "../src/context/AuthContext"
-import { type ReactNode, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import ProtectedRoute from "./ProtectedRoute"
+//import '../components/aboutUs.css';
 
 const noHeaderFooterRoutes = [
   "/Dashboard",
@@ -46,6 +47,7 @@ const noHeaderFooterRoutes = [
   "/marketing-strategy",
   "/shelf-labels",
   "/shop-pillars",
+   
 ]
 
 const topBannerRoutes = [
@@ -74,13 +76,10 @@ const topBannerRoutes = [
   "/marketing-strategy",
   "/shelf-labels",
   "/shop-pillars",
+ 
 ]
 
-interface RootLayoutProps {
-  children: ReactNode
-}
-
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function ClientLayout({ children }) {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
@@ -100,6 +99,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return topBannerRoutes.some((route) => pathname.startsWith(route))
   }
 
+
+
   return (
     <html lang="en">
       <body>
@@ -107,7 +108,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ProtectedRoute>
             {mounted && shouldShowHeaderFooter() && <Header key={pathname} />}
             {mounted && shouldShowTopBanner() && <TopBanner />}
-            <main>{children}</main>
+            <main style={{ minHeight: "100vh" }}>{children}</main>
             {mounted && shouldShowHeaderFooter() && <Footer />}
           </ProtectedRoute>
         </AuthProvider>

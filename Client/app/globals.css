@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Cairo", "Arial", sans-serif;
 }
 
 @layer utilities {
@@ -48,6 +48,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -82,18 +83,25 @@ body {
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
-@layer base {
+  .rtl {
+    direction: rtl;
+  }
+
+  .ltr {
+    direction: ltr;
+  }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-/* Pour le défilement horizontal personnalisé */
+/* Scrollbar personnalisé */
 .overflow-x-auto {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--background));
@@ -110,5 +118,12 @@ body {
 .overflow-x-auto::-webkit-scrollbar-thumb {
   background-color: hsl(var(--muted-foreground));
   border-radius: 6px;
-  border: 2px solid hsl(var(--background)));
+  border: 2px solid hsl(var(--background));
+}
+
+/* Animations fluides */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
 }

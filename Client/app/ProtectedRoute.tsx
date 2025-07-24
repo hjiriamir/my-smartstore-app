@@ -12,7 +12,8 @@ const publicRoutes = [
   '/LoginSignup',
   '/AbonnementList',
   '/reset-password',
-  '/ListeDemandes'
+  '/ListeDemandes',
+  '/about'
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {

@@ -1,0 +1,332 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap");
+
+:root {
+  --primary-color: #006064;
+  --secondary-color: #00838f;
+  --accent-color: #4dd0e1;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --blue-600: #2563eb;
+  --text-color: #333;
+  --light-gray: #f5f5f5;
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Cairo", sans-serif;
+}
+
+body {
+  line-height: 1.6;
+}
+
+/* Hero Section */
+.hero {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("/acceuil.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: white;
+  padding: 8rem 2rem 6rem;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 2rem;
+  font-weight: bold;
+}
+
+.hero p {
+  max-width: 900px;
+  margin: 0 auto;
+  font-size: 1.2rem;
+  line-height: 1.8;
+}
+
+/* Vision Section */
+.vision {
+  display: flex;
+  padding: 6rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 4rem;
+  align-items: center;
+}
+
+.vision-content {
+  flex: 1;
+}
+
+.vision-content h2 {
+  font-size: 2.5rem;
+  color: var(--blue-600);
+  margin-bottom: 2rem;
+  font-weight: bold;
+}
+
+.vision-content p {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: var(--gray-700);
+}
+
+.vision-image {
+  flex: 1;
+}
+
+.vision-image img {
+  width: 100%;
+  border-radius: 15px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  object-fit: cover;
+}
+
+/* Goals Section */
+.vision1 {
+  display: flex;
+  padding: 6rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 4rem;
+  align-items: center;
+  background-color: var(--gray-50);
+}
+
+.vision-content1 {
+  flex: 1;
+}
+
+.vision-content1 h1 {
+  font-size: 2.5rem;
+  color: var(--teal-600);
+  margin-bottom: 2rem;
+  font-weight: bold;
+}
+
+.vision-content1 ul {
+  list-style: none;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.vision-content1 li {
+  margin-bottom: 1.5rem;
+  padding-inline-end: 2rem;
+  position: relative;
+  color: var(--gray-700);
+}
+
+.vision-content1 li::before {
+  content: "✓";
+  color: var(--teal-600);
+  position: absolute;
+  inset-inline-end: 0;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.vision-image1 {
+  flex: 1;
+}
+
+.vision-image1 img {
+  width: 100%;
+  border-radius: 15px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  object-fit: cover;
+}
+
+/* Stats Section */
+.stats {
+  margin: 4rem 2rem;
+  display: flex;
+  justify-content: space-around;
+  padding: 4rem 2rem;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("/acceuil.jpg");
+  background-size: cover;
+  background-position: center;
+  color: white;
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 1400px;
+  margin-inline: auto;
+}
+
+.stat-item {
+  flex: 1;
+  padding: 1rem;
+}
+
+.stat-item h3 {
+  font-size: 3rem;
+  color: white;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.stat-item p {
+  font-size: 1.3rem;
+  color: white;
+  opacity: 0.9;
+}
+
+/* Direction-specific styles */
+[dir="rtl"] {
+  /* RTL specific styles */
+  .vision {
+    flex-direction: row-reverse;
+  }
+  
+  .vision1 {
+    flex-direction: row;
+  }
+  
+  .hero h1,
+  .hero p,
+  .vision-content h2,
+  .vision-content p,
+  .vision-content1 h1,
+  .vision-content1 ul {
+    text-align: right;
+  }
+}
+
+[dir="ltr"] {
+  /* LTR specific styles */
+  .vision {
+    flex-direction: row;
+  }
+  
+  .vision1 {
+    flex-direction: row-reverse;
+  }
+  
+  .hero h1,
+  .hero p,
+  .vision-content h2,
+  .vision-content p,
+  .vision-content1 h1,
+  .vision-content1 ul {
+    text-align: left;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .about-us-container {
+    padding-top: 60px;
+  }
+
+  .hero {
+    padding: 6rem 1rem 4rem;
+    min-height: 50vh;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero p {
+    font-size: 1.1rem;
+  }
+
+  .vision,
+  .vision1 {
+    flex-direction: column;
+    padding: 4rem 1rem;
+    gap: 2rem;
+  }
+
+  .vision-content h2,
+  .vision-content1 h1 {
+    font-size: 2rem;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 2rem;
+    margin: 2rem 1rem;
+    padding: 3rem 1rem;
+  }
+
+  .stat-item h3 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero h1 {
+    font-size: 3.5rem;
+  }
+
+  .hero p {
+    font-size: 1.3rem;
+  }
+
+  .vision,
+  .vision1 {
+    padding: 8rem 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero h1 {
+    font-size: 4rem;
+  }
+
+  .vision-content h2,
+  .vision-content1 h1 {
+    font-size: 3rem;
+  }
+
+  .stat-item h3 {
+    font-size: 3.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .vision-content h2,
+  .vision-content1 h1 {
+    font-size: 1.8rem;
+  }
+
+  .vision-content p,
+  .vision-content1 li {
+    font-size: 1rem;
+  }
+
+  .stat-item h3 {
+    font-size: 2rem;
+  }
+
+  .stat-item p {
+    font-size: 1.1rem;
+  }
+}

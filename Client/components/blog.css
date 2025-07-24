@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+/* Hero Section */
+.hero {
+    padding: 12rem 2rem;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/background.jpg");
+    background-size: cover;
+    background-position: center;
+    color: white;
+}
+
+.hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.hero h1,
+.hero p {
+    margin-top: 25px;
+    max-width: 80%;
+    font-size: 1.5rem;
+}
+
+/* Sectors Section */
+.sectors {
+    padding: 4rem 2rem;
+    background-color: var(--light-gray);
+}
+
+.sectors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-row h6 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.sector-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+    padding: 20px;
+}
+
+.sector-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    margin: 0 auto 20px;
+    border-radius: 8px;
+    display: block;
+}
+
+.author {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-top: 1px solid #eee;
+}
+
+.author img {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-inline-end: 10px;
+}
+
+.author-info {
+    font-size: 14px;
+}
+
+.sector-card:hover {
+    background-color: #00a69c;
+    color: white;
+}
+
+.sector-card h3, 
+.sector-card p {
+    padding: 1rem 0;
+}
+
+/* Styles spécifiques RTL */
+[dir="rtl"] .hero h1,
+[dir="rtl"] .hero p,
+[dir="rtl"] .sector-card h3, 
+[dir="rtl"] .sector-card p,
+[dir="rtl"] .info-row {
+    text-align: right;
+}
+
+[dir="rtl"] .author {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .author img {
+    margin-inline-end: 0;
+    margin-inline-start: 10px;
+}
+
+/* Styles spécifiques LTR */
+[dir="ltr"] .hero h1,
+[dir="ltr"] .hero p,
+[dir="ltr"] .sector-card h3, 
+[dir="ltr"] .sector-card p,
+[dir="ltr"] .info-row {
+    text-align: left;
+}
+
+[dir="ltr"] .author {
+    flex-direction: row;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero {
+        padding: 8rem 2rem;
+    }
+    
+    .hero h1,
+    .hero p {
+        max-width: 100%;
+    }
+    
+    .sectors-grid {
+        grid-template-columns: 1fr;
+    }
+}
