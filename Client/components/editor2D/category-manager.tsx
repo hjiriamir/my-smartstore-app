@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Folder, FolderPlus, Trash2, Edit, Save, X, ChevronRight, ChevronDown, ArrowLeft  } from "lucide-react"
-import { MainNav } from "@/components/editor2D/main-nav"
+import { Folder, FolderPlus, Trash2, Edit, Save, X, ChevronRight, ChevronDown, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,10 +17,15 @@ interface Category {
   children: Category[]
 }
 
-export function CategoryManager() {
-  const { toast } = useToast()
-  const { categories, addCategory, updateCategory, deleteCategory } = useProductStore()
+interface CategoryManagerProps {
+  categories: Category[]
+  onCategoriesChange: (categories: Category[]) => void
+  onCategoryAdd: (newCategory: Category) => void
+}
 
+export function CategoryManager({ categories, onCategoriesChange, onCategoryAdd }: CategoryManagerProps) {
+  const { toast } = useToast()
+  const { addCategory, updateCategory, deleteCategory } = useProductStore() // Using store actions directly
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [newCategory, setNewCategory] = useState<{
@@ -48,7 +52,6 @@ export function CategoryManager() {
   // Build category tree (inchangé)
   const buildCategoryTree = (): Category[] => {
     const categoryMap = new Map<string, Category>()
-
     categories.forEach((cat) => {
       categoryMap.set(cat.id, {
         ...cat,
@@ -57,7 +60,6 @@ export function CategoryManager() {
     })
 
     const rootCategories: Category[] = []
-
     categoryMap.forEach((category) => {
       if (category.parentId === null) {
         rootCategories.push(category)
@@ -68,7 +70,6 @@ export function CategoryManager() {
         }
       }
     })
-
     return rootCategories
   }
 
@@ -101,7 +102,7 @@ export function CategoryManager() {
     // Vérifier si un ID personnalisé est fourni et qu'il est unique
     const customId = newCategory.id.trim()
     if (customId) {
-      if (categories.some(cat => cat.id === customId)) {
+      if (categories.some((cat) => cat.id === customId)) {
         toast({
           title: "Erreur",
           description: "Cet ID est déjà utilisé par une autre catégorie",
@@ -113,14 +114,12 @@ export function CategoryManager() {
 
     // Utiliser l'ID personnalisé ou générer un nouvel ID
     const id = customId || `cat-${Date.now()}`
-
     addCategory({
       id,
       name: newCategory.name.trim(),
       color: newCategory.color,
       parentId: newCategory.parentId,
     })
-
     // Réinitialiser le formulaire
     setNewCategory({
       id: "", // Réinitialiser l'ID pour la prochaine catégorie
@@ -128,7 +127,6 @@ export function CategoryManager() {
       color: "#6366f1",
       parentId: null,
     })
-
     toast({
       title: "Catégorie ajoutée",
       description: `La catégorie "${newCategory.name}" a été ajoutée avec succès (ID: ${id})`,
@@ -155,14 +153,11 @@ export function CategoryManager() {
       })
       return
     }
-
     updateCategory(editForm.id, {
       name: editForm.name.trim(),
       color: editForm.color,
     })
-
     setEditingCategory(null)
-
     toast({
       title: "Catégorie mise à jour",
       description: `La catégorie a été mise à jour avec succès`,
@@ -172,7 +167,6 @@ export function CategoryManager() {
   // Delete a category (inchangé)
   const handleDeleteCategory = (categoryId: string) => {
     deleteCategory(categoryId)
-
     toast({
       title: "Catégorie supprimée",
       description: `La catégorie a été supprimée avec succès`,
@@ -183,30 +177,33 @@ export function CategoryManager() {
   const renderCategory = (category: Category, level = 0) => {
     const isExpanded = expandedCategories.has(category.id)
     const isEditing = editingCategory === category.id
-
     return (
       <div key={category.id} className="category-item">
         <div
           className={`
             flex items-center p-2 rounded-md
-            ${level > 0 ? "ml-6" : ""}
+            ${level > 0 ? `pl-${3 + level * 3} sm:pl-${6 + level * 6}` : ""}
             ${isEditing ? "bg-muted" : "hover:bg-muted/50"}
           `}
         >
           {category.children.length > 0 && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 mr-1" onClick={() => toggleCategory(category.id)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 mr-1 shrink-0"
+              onClick={() => toggleCategory(category.id)}
+            >
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </Button>
           )}
-
           {!isEditing ? (
             <>
-              <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: category.color }} />
-              <Folder className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span className="flex-1">
+              <div className="w-4 h-4 rounded-full mr-2 shrink-0" style={{ backgroundColor: category.color }} />
+              <Folder className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+              <span className="flex-1 truncate">
                 {category.name} <span className="text-xs text-muted-foreground ml-2">(ID: {category.id})</span>
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(category)}>
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -221,7 +218,7 @@ export function CategoryManager() {
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-2 flex-1">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
               <Input
                 type="color"
                 value={editForm.color}
@@ -234,21 +231,22 @@ export function CategoryManager() {
                 className="flex-1"
                 placeholder="Nom de la catégorie"
               />
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={saveCategory}>
-                <Save className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive"
-                onClick={() => setEditingCategory(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={saveCategory}>
+                  <Save className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => setEditingCategory(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
-
         {isExpanded && category.children.length > 0 && (
           <div className="category-children">{category.children.map((child) => renderCategory(child, level + 1))}</div>
         )}
@@ -257,10 +255,10 @@ export function CategoryManager() {
   }
 
   return (
-    <div className="space-y-2">     
-      <Button 
-        variant="outline" 
-        onClick={() => window.location.href = "/Editor"}
+    <div className="space-y-6 p-4">
+      <Button
+        variant="outline"
+        onClick={() => (window.location.href = "/Editor")}
         className="flex items-center gap-2 mb-4"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -269,7 +267,7 @@ export function CategoryManager() {
       <div className="space-y-4">
         <div className="space-y-2">
           <h3 className="text-lg font-medium">Ajouter une nouvelle catégorie</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             {/* Nouveau champ pour l'ID */}
             <div>
               <Label htmlFor="category-id">ID (optionnel)</Label>
@@ -306,11 +304,11 @@ export function CategoryManager() {
                 />
               </div>
             </div>
-            <div>
+            <div className="sm:col-span-full md:col-span-1">
               <Label htmlFor="category-parent">Catégorie parente</Label>
               <select
                 id="category-parent"
-                className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md text-sm"
                 value={newCategory.parentId || ""}
                 onChange={(e) =>
                   setNewCategory({
@@ -336,7 +334,6 @@ export function CategoryManager() {
           </div>
         </div>
       </div>
-
       <div className="space-y-2">
         <h3 className="text-lg font-medium">Hiérarchie des catégories</h3>
         <div className="border rounded-md">

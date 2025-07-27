@@ -20,6 +20,7 @@ export function Dashboard() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -42,19 +43,19 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-14">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="p-6">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
         {activeTab !== "dashboard" && (
           <button
             onClick={handleBackToDashboard}
-            className="flex items-center gap-2 mb-6 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+            className="flex items-center gap-2 mb-4 sm:mb-6 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
           >
-            <ArrowLeftCircle className="w-5 h-5" />
-            <span>{t("backToDashboard")}</span>
+            <ArrowLeftCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden xs:inline">{t("backToDashboard")}</span>
           </button>
         )}
-        {renderContent()}
+        <div className="w-full max-w-full overflow-hidden">{renderContent()}</div>
       </main>
     </div>
   )

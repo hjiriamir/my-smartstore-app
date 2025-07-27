@@ -108,13 +108,13 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
   }
 
   return (
-    <Card className="overflow-hidden text-left">
+    <Card className="overflow-hidden text-left flex flex-col h-full">
       <div
         className="relative aspect-video bg-muted/30 flex items-center justify-center cursor-pointer"
         onClick={() => setShowPreview(true)}
       >
         {showPreview ? (
-          <Canvas shadows>
+          <Canvas shadows className="w-full h-full">
             {render3DPreview()}
             <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
             <ambientLight intensity={0.7} />
@@ -123,13 +123,13 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
             <directionalLight position={[0, 5, 0]} intensity={0.4} />
           </Canvas>
         ) : (
-          <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center p-4">
             {getFurnitureIcon(furniture.furniture.type)}
             <span className="text-xs text-muted-foreground mt-2">{t("furnitureEditor.visualiser")}</span>
           </div>
         )}
       </div>
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1">
         <div className="space-y-2">
           <div className="flex items-start justify-between">
             <h3 className="font-medium truncate">{furniture.furniture.name}</h3>
@@ -142,7 +142,7 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
             {furniture.products.length} {t("productImport.produitPlacerIA")}
           </div>
 
-          {/* Affichage du magasin */}
+          {/* Store display */}
           {(furniture.storeName || furniture.furniture.storeName) && (
             <div className="text-xs flex items-center text-blue-600">
               <Store className="h-3 w-3 mr-1" />
@@ -174,16 +174,33 @@ const FurnitureCard = ({ furniture, onEdit, onDelete, onUse }) => {
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        <Button variant="outline" size="sm" onClick={() => onEdit(furniture)}>
+      <CardFooter className="p-4 pt-0 flex justify-between items-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => onEdit(furniture)}
+          className="flex-1 min-w-[80px] max-w-[100px]"
+        >
           <Edit className="h-4 w-4 mr-2" />
-          {t("modifier")}
+          <span className="hidden sm:inline">{t("modifier")}</span>
+          <span className="sm:hidden">Edit</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={() => onUse(furniture)}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => onUse(furniture)}
+          className="flex-1 min-w-[80px] max-w-[100px]"
+        >
           <ArrowRight className="h-4 w-4 mr-2" />
-          {t("utiliser")}
+          <span className="hidden sm:inline">{t("utiliser")}</span>
+          <span className="sm:hidden">Use</span>
         </Button>
-        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => onDelete(furniture.furniture.id)}>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-destructive flex-1 min-w-[40px] max-w-[60px]"
+          onClick={() => onDelete(furniture.furniture.id)}
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardFooter>
@@ -198,7 +215,7 @@ const DeleteConfirmationDialog = ({ isOpen, onClose, onConfirm, furnitureName })
   const textDirection = isRTL ? "rtl" : "ltr"
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-[95vw] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("productImport.floorPlan.deleteFurniture")}</DialogTitle>
           <DialogDescription>
@@ -239,30 +256,25 @@ export function FurnitureLibrary() {
   const [clearLibraryDialogOpen, setClearLibraryDialogOpen] = useState(false)
 
   // Filter furniture
-  // Filter furniture
-const filteredFurniture = savedFurniture.filter((furniture) => {
-  // First check if furniture and its properties exist
-  if (!furniture || !furniture.furniture || !furniture.furniture.name) {
-    return false; // Skip invalid furniture items
-  }
+  const filteredFurniture = savedFurniture.filter((furniture) => {
+    if (!furniture || !furniture.furniture || !furniture.furniture.name) {
+      return false
+    }
 
-  // Ensure name is a string before calling toLowerCase
-  const name = typeof furniture.furniture.name === 'string' 
-    ? furniture.furniture.name 
-    : String(furniture.furniture.name);
-  
-  // Search term filter
-  const matchesSearch =
-    name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (furniture.description && 
-     typeof furniture.description === 'string' && 
-     furniture.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const name = typeof furniture.furniture.name === 'string' 
+      ? furniture.furniture.name 
+      : String(furniture.furniture.name)
+    
+    const matchesSearch =
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (furniture.description && 
+       typeof furniture.description === 'string' && 
+       furniture.description.toLowerCase().includes(searchTerm.toLowerCase()))
 
-  // Type filter
-  const matchesType = selectedType === "all" || furniture.furniture.type === selectedType;
+    const matchesType = selectedType === "all" || furniture.furniture.type === selectedType
 
-  return matchesSearch && matchesType;
-});
+    return matchesSearch && matchesType
+  })
 
   // Handle clear library
   const handleClearLibrary = () => {
@@ -275,41 +287,39 @@ const filteredFurniture = savedFurniture.filter((furniture) => {
   }
 
   // Sort furniture
- // Sort furniture
-const sortedFurniture = [...filteredFurniture].sort((a, b) => {
-  let valueA: string | number, valueB: string | number
+  const sortedFurniture = [...filteredFurniture].sort((a, b) => {
+    let valueA: string | number, valueB: string | number
 
-  switch (sortField) {
-    case "name":
-      // Ensure name is treated as string
-      valueA = typeof a.furniture.name === 'string' 
-        ? a.furniture.name.toLowerCase() 
-        : String(a.furniture.name).toLowerCase()
-      valueB = typeof b.furniture.name === 'string'
-        ? b.furniture.name.toLowerCase()
-        : String(b.furniture.name).toLowerCase()
-      break
-    case "type":
-      valueA = a.furniture.type
-      valueB = b.furniture.type
-      break
-    case "products":
-      valueA = a.products.length
-      valueB = b.products.length
-      break
-    default:
-      valueA = typeof a.furniture.name === 'string'
-        ? a.furniture.name.toLowerCase()
-        : String(a.furniture.name).toLowerCase()
-      valueB = typeof b.furniture.name === 'string'
-        ? b.furniture.name.toLowerCase()
-        : String(b.furniture.name).toLowerCase()
-  }
+    switch (sortField) {
+      case "name":
+        valueA = typeof a.furniture.name === 'string' 
+          ? a.furniture.name.toLowerCase() 
+          : String(a.furniture.name).toLowerCase()
+        valueB = typeof b.furniture.name === 'string'
+          ? b.furniture.name.toLowerCase()
+          : String(b.furniture.name).toLowerCase()
+        break
+      case "type":
+        valueA = a.furniture.type
+        valueB = b.furniture.type
+        break
+      case "products":
+        valueA = a.products.length
+        valueB = b.products.length
+        break
+      default:
+        valueA = typeof a.furniture.name === 'string'
+          ? a.furniture.name.toLowerCase()
+          : String(a.furniture.name).toLowerCase()
+        valueB = typeof b.furniture.name === 'string'
+          ? b.furniture.name.toLowerCase()
+          : String(b.furniture.name).toLowerCase()
+    }
 
-  if (valueA < valueB) return sortDirection === "asc" ? -1 : 1
-  if (valueA > valueB) return sortDirection === "asc" ? 1 : -1
-  return 0
-})
+    if (valueA < valueB) return sortDirection === "asc" ? -1 : 1
+    if (valueA > valueB) return sortDirection === "asc" ? 1 : -1
+    return 0
+  })
 
   // Handle sort change
   const handleSortChange = (field: "name" | "type" | "products") => {
@@ -345,50 +355,53 @@ const sortedFurniture = [...filteredFurniture].sort((a, b) => {
 
   // Handle edit furniture
   const handleEditFurniture = (furniture: SavedFurniture) => {
-    // Navigate to furniture editor with this furniture
-    // This would be implemented with router in a real app
     console.log("Edit furniture:", furniture)
   }
 
   // Handle use furniture
   const handleUseFurniture = (furniture: SavedFurniture) => {
-    // Add to store display
-    // This would be implemented with router in a real app
     console.log("Use furniture:", furniture)
   }
 
   return (
     <div
-      className="container max-w-6xl mx-auto py-6 mt-12"
-      dir={textDirection} // Applique RTL/LTR au conteneur principal
+      className="container mx-auto px-4 py-6 mt-12 max-w-7xl"
+      dir={textDirection}
     >
       <div className="flex flex-col space-y-6">
-        <div className="flex items-center justify-between">
+        {/* Header section */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h1 className="text-2xl font-bold">{t("furnitureLibrary")}</h1>
-          <Button
-            variant="outline"
-            onClick={() => (window.location.href = "/Editor")}
-            className="flex items-center gap-2 mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("productImport.backToEditor")}
-          </Button>
-          <div className="flex space-x-2">
-            <Button variant="destructive" onClick={() => setClearLibraryDialogOpen(true)}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              {t("productImport.clearLibrary") || "Vider la bibliothèque"}
+          
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => (window.location.href = "/Editor")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t("productImport.backToEditor")}
             </Button>
-            <Button asChild>
-              <Link href="/furniture-editor">
-                <Plus className="h-4 w-4 mr-2" />
-                {t("productImport.floorPlan.creerMeuble")}
-              </Link>
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={() => setClearLibraryDialogOpen(true)} className="flex-1">
+                <Trash2 className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">{t("productImport.clearLibrary") || "Vider la bibliothèque"}</span>
+                <span className="sm:hidden">Vider</span>
+              </Button>
+              <Button asChild className="flex-1">
+                <Link href="/furniture-editor">
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">{t("productImport.floorPlan.creerMeuble")}</span>
+                  <span className="sm:hidden">Créer</span>
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
+        {/* Filters and search */}
         <div className="flex flex-col space-y-4">
-          {/* Filters */}
           <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -396,13 +409,13 @@ const sortedFurniture = [...filteredFurniture].sort((a, b) => {
                 placeholder={t("productImport.rechercheFurniture")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 w-full"
               />
             </div>
 
-            <div className="flex space-x-2">
+            <div className="w-full md:w-auto">
               <select
-                className="p-2 border rounded-md"
+                className="p-2 border rounded-md w-full md:w-48"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value as FurnitureType | "all")}
               >
@@ -418,7 +431,7 @@ const sortedFurniture = [...filteredFurniture].sort((a, b) => {
           </div>
 
           {/* Sort options */}
-          <div className="flex items-center space-x-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-muted-foreground">{t("productImport.sortBy")}:</span>
             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("name")}>
               {t("productImport.name")}
@@ -444,25 +457,25 @@ const sortedFurniture = [...filteredFurniture].sort((a, b) => {
           <div className="text-sm text-muted-foreground">
             {filteredFurniture.length} {t("productImport.meubletrouve")}
           </div>
+        </div>
 
-          {/* Furniture grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sortedFurniture.length > 0 ? (
-              sortedFurniture.map((furniture) => (
-                <FurnitureCard
-                  key={furniture.furniture.id}
-                  furniture={furniture}
-                  onEdit={handleEditFurniture}
-                  onDelete={handleDeleteFurniture}
-                  onUse={handleUseFurniture}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12 text-muted-foreground">
-                {t("productImport.noFurnitureInLibrary")}
-              </div>
-            )}
-          </div>
+        {/* Furniture grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {sortedFurniture.length > 0 ? (
+            sortedFurniture.map((furniture) => (
+              <FurnitureCard
+                key={furniture.furniture.id}
+                furniture={furniture}
+                onEdit={handleEditFurniture}
+                onDelete={handleDeleteFurniture}
+                onUse={handleUseFurniture}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              {t("productImport.noFurnitureInLibrary")}
+            </div>
+          )}
         </div>
       </div>
 
@@ -478,7 +491,7 @@ const sortedFurniture = [...filteredFurniture].sort((a, b) => {
 
       {/* Clear library confirmation dialog */}
       <Dialog open={clearLibraryDialogOpen} onOpenChange={setClearLibraryDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("productImport.clearLibrary") || "Vider la bibliothèque"}</DialogTitle>
             <DialogDescription>

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
@@ -68,7 +67,6 @@ export function ProductImport() {
   const router = useRouter()
   const { toast } = useToast()
   const { addProducts, updateProductImage, products, categories, setActiveTab } = useProductStore()
-
   const [step, setStep] = useState<number>(1)
   const [file, setFile] = useState<File | null>(null)
   const [imageFiles, setImageFiles] = useState<File[]>([])
@@ -80,13 +78,12 @@ export function ProductImport() {
   const [rawData, setRawData] = useState<any[]>([])
   const [categoriesWithIds, setCategoriesWithIds] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const [categoryMatchingStats, setCategoryMatchingStats] = useState({
     matched: 0,
     unmatched: 0,
     total: 0,
   })
-
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -99,7 +96,6 @@ export function ProductImport() {
         throw new Error("Erreur lors de la récupération des catégories")
       }
       const data = await response.json()
-
       // Transformer les données pour correspondre à l'interface Category
       const transformedCategories: Category[] = data.map((cat: any) => ({
         ...cat,
@@ -108,7 +104,6 @@ export function ProductImport() {
         parentId: cat.parent_id,
         children: [],
       }))
-
       setCategoriesWithIds(transformedCategories)
       toast({
         title: "Catégories chargées",
@@ -143,7 +138,6 @@ export function ProductImport() {
   // Parse Excel or CSV file
   const parseFile = (file: File) => {
     const fileExtension = file.name.split(".").pop()?.toLowerCase()
-
     if (fileExtension === "csv") {
       Papa.parse(file, {
         header: true,
@@ -199,20 +193,16 @@ export function ProductImport() {
       })
       return
     }
-
     const filteredData = data.filter((row) => {
       return Object.values(row).some((value) => value !== undefined && value !== null && value !== "")
     })
-
     setParsedData(filteredData)
 
     // Auto-detect columns avec les nouvelles colonnes simplifiées
     const firstRow = data[0]
     const mapping: Record<string, string> = {}
-
     Object.keys(firstRow).forEach((column) => {
       const lowerColumn = column.toLowerCase().trim()
-
       // Détection de l'ID primaire
       if (
         lowerColumn === "primary_id" ||
@@ -296,7 +286,6 @@ export function ProductImport() {
         mapping[firstNumericColumn] = "primary_id"
       }
     }
-
     if (!Object.values(mapping).includes("name")) {
       const firstTextColumn = Object.keys(firstRow).find(
         (column) => typeof firstRow[column] === "string" && !Object.values(mapping).includes(column),
@@ -305,7 +294,6 @@ export function ProductImport() {
         mapping[firstTextColumn] = "name"
       }
     }
-
     setColumnMapping(mapping)
     setStep(2)
   }
@@ -326,11 +314,9 @@ export function ProductImport() {
   // Validate the data before import
   const validateData = () => {
     const errors: string[] = []
-
     if (!Object.values(columnMapping).includes("primary_id")) {
       errors.push("L'identifiant primaire (primary_id) est requis - veuillez sélectionner une colonne pour l'ID")
     }
-
     if (!Object.values(columnMapping).includes("name")) {
       errors.push("Le nom du produit (name) est requis - veuillez sélectionner une colonne pour le nom")
     }
@@ -338,7 +324,6 @@ export function ProductImport() {
     // Validation des données avec matching des catégories
     let matchedCategories = 0
     let unmatchedCategories = 0
-
     parsedData.forEach((row, index) => {
       const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_id")?.[0]
       const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
@@ -350,7 +335,6 @@ export function ProductImport() {
           errors.push(`Ligne ${index + 1}: Identifiant primaire manquant`)
         }
       }
-
       if (nameColumn) {
         const nameValue = row[nameColumn]
         if (nameValue === undefined || nameValue === null || nameValue === "") {
@@ -380,7 +364,6 @@ export function ProductImport() {
     })
 
     setValidationErrors(errors)
-
     if (errors.length === 0) {
       setStep(3)
     }
@@ -393,14 +376,12 @@ export function ProductImport() {
       name: "",
       supplier: "",
     }
-
     Object.entries(columnMapping).forEach(([originalColumn, mappedColumn]) => {
       if (mappedColumn) {
         mappedRow[mappedColumn] =
           row[originalColumn] !== undefined && row[originalColumn] !== null ? row[originalColumn] : ""
       }
     })
-
     return mappedRow
   }
 
@@ -415,7 +396,6 @@ export function ProductImport() {
   // Fonction pour mapper automatiquement les catégories
   const mapCategories = (product: ProductData): ProductData => {
     const mappedProduct = { ...product }
-
     // Matching automatique via category_id
     if (product.category_id) {
       const category = findCategoryById(product.category_id)
@@ -423,7 +403,6 @@ export function ProductImport() {
         mappedProduct.category_name = category.nom
       }
     }
-
     return mappedProduct
   }
 
@@ -444,7 +423,6 @@ export function ProductImport() {
     }
 
     setImportProgress(0)
-
     const interval = setInterval(() => {
       setImportProgress((prev) => {
         if (prev >= 95) {
@@ -457,7 +435,6 @@ export function ProductImport() {
 
     // Match images with products BEFORE adding products to store
     const imageMap = new Map<string, string>()
-
     // Process images synchronously first
     const processImages = async () => {
       const imagePromises = imageFiles.map((file) => {
@@ -472,7 +449,6 @@ export function ProductImport() {
           reader.readAsDataURL(file)
         })
       })
-
       await Promise.all(imagePromises)
 
       // Now add products with images
@@ -483,20 +459,17 @@ export function ProductImport() {
           image: imageUrl || undefined,
         }
       })
-
       addProducts(productsWithImages)
 
       // Complete progress
       setTimeout(() => {
         clearInterval(interval)
         setImportProgress(100)
-
         setTimeout(() => {
           setStep(4)
         }, 500)
       }, 1000)
     }
-
     processImages()
   }
 
@@ -512,25 +485,23 @@ export function ProductImport() {
     console.log("Mapping des colonnes:", columnMapping)
     console.log("Catégories:", categoriesWithIds)
     console.log("Statistiques matching:", categoryMatchingStats)
-
     parsedData.forEach((row, index) => {
       const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_id")?.[0]
       const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
       const categoryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "category_id")?.[0]
-
       console.log(`Ligne ${index + 1}:`)
-      console.log(`  ID (${primaryIdColumn}):`, row[primaryIdColumn])
-      console.log(`  Nom (${nameColumn}):`, row[nameColumn])
+      console.log(`   ID (${primaryIdColumn}):`, row[primaryIdColumn])
+      console.log(`   Nom (${nameColumn}):`, row[nameColumn])
       if (categoryIdColumn) {
-        console.log(`  Category ID (${categoryIdColumn}):`, row[categoryIdColumn])
+        console.log(`   Category ID (${categoryIdColumn}):`, row[categoryIdColumn])
         const category = findCategoryById(row[categoryIdColumn])
-        console.log(`  Category trouvée:`, category?.nom || "Non trouvée")
+        console.log(`   Category trouvée:`, category?.nom || "Non trouvée")
       }
     })
   }
 
   return (
-    <div className="container max-w-4xl mx-auto py-6" dir={textDirection}>
+    <div className="container max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8" dir={textDirection}>
       <Button
         variant="outline"
         onClick={() => (window.location.href = "/Editor")}
@@ -539,7 +510,6 @@ export function ProductImport() {
         <ArrowLeft className="h-4 w-4" />
         {t("productImport.backToEditor")}
       </Button>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{t("productImport.title")}</CardTitle>
@@ -553,9 +523,9 @@ export function ProductImport() {
         <CardContent>
           {showCategoryManager ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <h3 className="text-lg font-medium">Gestion des catégories</h3>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={fetchCategories} disabled={loadingCategories}>
                     {loadingCategories && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Actualiser les catégories
@@ -575,31 +545,27 @@ export function ProductImport() {
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-2">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+                <div className="flex flex-wrap items-center gap-2 md:space-x-2">
                   <Badge variant={step >= 1 ? "default" : "outline"}>1</Badge>
                   <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>
                     {t("productImport.step1")}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-
                   <Badge variant={step >= 2 ? "default" : "outline"}>2</Badge>
                   <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>
                     {t("productImport.step2")}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-
                   <Badge variant={step >= 3 ? "default" : "outline"}>3</Badge>
                   <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>
                     {t("productImport.step3")}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-
                   <Badge variant={step >= 4 ? "default" : "outline"}>4</Badge>
                   <span className={step >= 4 ? "font-medium" : "text-muted-foreground"}>Terminé</span>
                 </div>
-
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     onClick={() => setShowCategoryManager(true)}
@@ -608,30 +574,26 @@ export function ProductImport() {
                     <FolderTree className="h-4 w-4" />
                     {t("productImport.manageCategories")}
                   </Button>
-
                   {loadingCategories && (
                     <Badge variant="secondary" className="flex items-center gap-2">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Chargement des catégories...
                     </Badge>
                   )}
-
                   {categoriesWithIds.length > 0 && (
                     <Badge variant="secondary">{categoriesWithIds.length} catégories disponibles</Badge>
                   )}
                 </div>
               </div>
-
               {step === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">{t("productImport.fileStep.title")}</h3>
                     <p className="text-sm text-muted-foreground">{t("productImport.fileStep.description")}</p>
                   </div>
-
                   <div
                     className={`
-                      border-2 border-dashed rounded-lg p-12 text-center
+                      border-2 border-dashed rounded-lg p-6 sm:p-12 text-center
                       ${file ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25"}
                       hover:border-primary/50 transition-colors cursor-pointer
                     `}
@@ -677,7 +639,6 @@ export function ProductImport() {
                       onChange={handleFileChange}
                     />
                   </div>
-
                   {file && (
                     <div className="flex justify-end">
                       <Button onClick={() => setStep(2)}>Continuer</Button>
@@ -685,14 +646,12 @@ export function ProductImport() {
                   )}
                 </div>
               )}
-
               {step === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">{t("productImport.columnsStep.title")}</h3>
                     <p className="text-sm text-muted-foreground">{t("productImport.columnsStep.description")}</p>
                   </div>
-
                   <div className="border rounded-md">
                     <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 font-medium border-b">
                       <div>{t("productImport.columnsStep.fileColumn")}</div>
@@ -702,10 +661,10 @@ export function ProductImport() {
                       <div className="p-4 space-y-4">
                         {parsedData.length > 0 &&
                           Object.keys(parsedData[0]).map((column, index) => (
-                            <div key={index} className="grid grid-cols-2 gap-4 items-center">
+                            <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 items-center">
                               <div className="font-mono text-sm">{column}</div>
                               <select
-                                className="w-full p-2 border rounded-md"
+                                className="w-full p-2 border rounded-md text-sm"
                                 value={columnMapping[column] || ""}
                                 onChange={(e) => updateColumnMapping(column, e.target.value)}
                               >
@@ -723,12 +682,11 @@ export function ProductImport() {
                       </div>
                     </ScrollArea>
                   </div>
-
                   {/* Statistiques de matching des catégories */}
                   {categoryMatchingStats.total > 0 && (
                     <div className="bg-muted/50 p-4 rounded-lg">
                       <h4 className="font-medium mb-2">Matching automatique des catégories</h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                         <div className="text-center">
                           <div className="text-2xl font-bold text-green-600">{categoryMatchingStats.matched}</div>
                           <div className="text-muted-foreground">Catégories trouvées</div>
@@ -744,7 +702,6 @@ export function ProductImport() {
                       </div>
                     </div>
                   )}
-
                   <div className="space-y-4">
                     <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
                     <ScrollArea className="h-[200px] border rounded-md">
@@ -768,7 +725,6 @@ export function ProductImport() {
                               const category = mappedProduct.category_id
                                 ? findCategoryById(mappedProduct.category_id)
                                 : null
-
                               return (
                                 <tr key={rowIndex} className="border-b">
                                   {Object.entries(columnMapping)
@@ -806,7 +762,6 @@ export function ProductImport() {
                       </div>
                     </ScrollArea>
                   </div>
-
                   {validationErrors.length > 0 && (
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
@@ -821,8 +776,7 @@ export function ProductImport() {
                       </AlertDescription>
                     </Alert>
                   )}
-
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row justify-between gap-2">
                     <Button variant="outline" onClick={() => setStep(1)}>
                       {t("productImport.back")}
                     </Button>
@@ -835,17 +789,15 @@ export function ProductImport() {
                   </div>
                 </div>
               )}
-
               {step === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium">{t("productImport.imagesStep.title")}</h3>
                     <p className="text-sm text-muted-foreground">{t("productImport.imagesStep.description")}</p>
                   </div>
-
                   <div
                     className={`
-                      border-2 border-dashed rounded-lg p-12 text-center
+                      border-2 border-dashed rounded-lg p-6 sm:p-12 text-center
                       ${imageFiles.length ? "border-primary/50 bg-primary/5" : "border-muted-foreground/25"}
                       hover:border-primary/50 transition-colors cursor-pointer
                     `}
@@ -911,7 +863,6 @@ export function ProductImport() {
                       onChange={handleImageFilesChange}
                     />
                   </div>
-
                   <div className="space-y-4">
                     <h4 className="font-medium">{t("productImport.imagesStep.matchingTitle")}</h4>
                     <ScrollArea className="h-[200px] border rounded-md">
@@ -923,9 +874,11 @@ export function ProductImport() {
                           const category = mappedProduct.category_id
                             ? findCategoryById(mappedProduct.category_id)
                             : null
-
                           return (
-                            <div key={index} className="flex items-center gap-4 p-2 border-b">
+                            <div
+                              key={index}
+                              className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-2 border-b"
+                            >
                               <div className="font-medium">{productId}</div>
                               <div className="flex-1 truncate">{mappedProduct.name}</div>
                               {category && (
@@ -960,8 +913,7 @@ export function ProductImport() {
                       </div>
                     </ScrollArea>
                   </div>
-
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row justify-between gap-2">
                     <Button variant="outline" onClick={() => setStep(2)}>
                       {t("productImport.back")}
                     </Button>
@@ -969,10 +921,9 @@ export function ProductImport() {
                   </div>
                 </div>
               )}
-
               {step === 3 && importProgress > 0 && (
-                <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
-                  <Card className="w-[400px]">
+                <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50 p-4">
+                  <Card className="w-full max-w-sm">
                     <CardHeader>
                       <CardTitle>{t("productImport.importProgress.title")}</CardTitle>
                       <CardDescription>{t("productImport.importProgress.description")}</CardDescription>
@@ -990,7 +941,6 @@ export function ProductImport() {
                   </Card>
                 </div>
               )}
-
               {step === 4 && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-center p-8">
@@ -1004,10 +954,9 @@ export function ProductImport() {
                       </p>
                     </div>
                   </div>
-
                   <div className="space-y-4">
                     <h4 className="font-medium">{t("productImport.completeStep.summary")}</h4>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="border rounded-md p-4 space-y-2">
                         <p className="text-sm text-muted-foreground">
                           {t("productImport.completeStep.importedProducts")}
@@ -1024,8 +973,7 @@ export function ProductImport() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex justify-center gap-4">
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Button
                       variant="outline"
                       onClick={() => {

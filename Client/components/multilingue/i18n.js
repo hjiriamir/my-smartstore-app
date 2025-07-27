@@ -11,6 +11,28 @@ i18n
     resources: {
       en: {
         translation: {
+          mobileFront : {
+            tracking: {
+                  filtres: "Filters",
+                  status: "Status",
+                  tous: "All",
+                  enCours: "In progress",
+                  aImplementer: "To be implemented",
+                  termine: "Completed",
+                  enRetard: "Late",
+                },
+                visualization: {
+                  control: "Controls",
+                  controlDescription: "Visualization controls",
+                  selectMeuble: "Select a furniture",
+                  modeAffichage: "Display mode",
+                  menu: "Menu",
+                  new:"New",
+                  chargement: "Loading",
+                  aucunParticipant: "No participant",
+                  aucunConversation: "No conversation",
+                },
+            },
           additionalPages: {
             about: {
               quiNous: "Who We Are",
@@ -265,6 +287,7 @@ largeur: "Width",
               annuler: "Cancel",
               creer: "Create",
               tapezMessage:"Type your message...",
+              selectConversation: "Please select a conversation",
             },
             recherche: {
               rechercheProd: "Product search",
@@ -1675,6 +1698,30 @@ largeur: "Width",
       },
       fr: {
         translation: {
+          mobileFront : {
+            tracking: {
+              filtres:"Filtres",
+              status:"Statut",
+              tous:"Tous",
+              enCours:"En cours",
+              aImplementer:"À implémenter",
+              termine:"Terminé",
+              enRetard:"En retard",
+            },
+            visualization : {
+              control:"Contrôles",
+              controlDescription: "Contrôles de visualisation",
+              selectMeuble:"Sélectionner un meuble",
+              modeAffichage:"Mode d'affichage",
+              menu:"Menu",
+              new:"Nouvelle",
+              chargement:"chargement",
+              aucunParticipant:"Aucun participant",
+              aucunConversation:"Aucune conversation",
+
+
+            },
+          },
           additionalPages: {
             about: {
               quiNous: "Qui sommes-nous",
@@ -1748,8 +1795,6 @@ largeur: "Width",
             
                       
           },
-
-
           noProductsData:"Aucun produit disponible",
           noStoresTitle: "Aucun magasin trouvé",
           noStoresMessage: "Votre entreprise n'a pas encore de magasins. Créez votre premier magasin pour commencer.",
@@ -1942,6 +1987,7 @@ largeur: "Width",
                 annuler:"Annuler",
                 creer:"Créer",
                 tapezMessage:"Tapez votre message...",
+                selectConversation: "Veuillez sélectionner une conversation"
 
                 
               },
@@ -3353,6 +3399,28 @@ largeur: "Width",
       },
       ar: {
         translation: {
+          mobileFront : {
+            tracking: {
+                  filtres: "الفلاتر",
+                  status: "الحالة",
+                  tous: "الكل",
+                  enCours: "قيد التنفيذ",
+                  aImplementer: "قيد التطبيق",
+                  termine: "مكتمل",
+                  enRetard: "متأخر",
+                },
+                visualization: {
+                  control: "عناصر التحكم",
+                  controlDescription: "عناصر التحكم في العرض",
+                  selectMeuble: "اختر قطعة أثاث",
+                  modeAffichage: "وضع العرض",
+                  menu: "القائمة",
+                  new:"إنشاء محادثة",
+                  chargement: "جارٍ التحميل",
+                  aucunParticipant: "لا يوجد مشاركون",
+                  aucunConversation: "لا توجد محادثات",
+                },
+              },
           additionalPages: {
             about: {
               quiNous:"من نحن",
@@ -3605,6 +3673,7 @@ largeur: "العرض",
               annuler: "إلغاء",
               creer: "إنشاء",
               tapezMessage:" ...اكتب رسالتك",
+              selectConversation: "يرجى اختيار محادثة",
             },
             recherche: {
               rechercheProd: "بحث عن المنتجات",

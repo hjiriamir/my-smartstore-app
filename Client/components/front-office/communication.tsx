@@ -1,14 +1,14 @@
 "use client"
-
+import type React from "react"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, Send, Phone, Video, Paperclip, Users, Plus } from "lucide-react"
+import { MessageSquare, Send, Phone, Video, Paperclip, Users, Plus, Menu, AlertCircle, X } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useTranslation } from "react-i18next"
 import "@/components/multilingue/i18n.js"
-
 
 interface User {
   id: number
@@ -53,11 +53,10 @@ interface Magasin {
 }
 
 export default function Communication() {
-
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
-  
+
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null)
   const [newMessage, setNewMessage] = useState("")
@@ -71,27 +70,23 @@ export default function Communication() {
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [conversationParticipants, setConversationParticipants] = useState<User[]>([])
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const [isMobileConversationsOpen, setIsMobileConversationsOpen] = useState(false)
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   useEffect(() => {
     const fetchConversationParticipants = async () => {
       if (!selectedConversation) return
-
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch(
-          `${API_BASE_URL}/conversation/getAllConversations/${selectedConversation}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          }
-        )
-
+        const response = await fetch(`${API_BASE_URL}/conversation/getAllConversations/${selectedConversation}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des participants")
         }
-
         const data = await response.json()
         if (data.length > 0 && data[0].Users) {
           setConversationParticipants(data[0].Users)
@@ -100,7 +95,6 @@ export default function Communication() {
         console.error("Error fetching conversation participants:", error)
       }
     }
-
     fetchConversationParticipants()
   }, [selectedConversation])
 
@@ -111,20 +105,17 @@ export default function Communication() {
         if (!token) {
           throw new Error("Token d'authentification manquant")
         }
-
         const response = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          credentials: "include"
+          credentials: "include",
         })
-
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des données utilisateur")
         }
-
         const data = await response.json()
         const userId = data.user?.idUtilisateur || data.idUtilisateur || data.id
         setCurrentUserId(userId)
@@ -133,137 +124,110 @@ export default function Communication() {
         console.error("Error fetching current user ID:", error)
       }
     }
-
     fetchCurrentUserId()
   }, [])
 
   useEffect(() => {
     const fetchUserMagasin = async () => {
       if (!currentUserId) return
-
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch( `${API_BASE_URL}/magasins/getMagasinByUser/${currentUserId}`, {
+        const response = await fetch(`${API_BASE_URL}/magasins/getMagasinByUser/${currentUserId}`, {
           headers: {
-            "Authorization": `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         })
-
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération du magasin")
         }
-
         const data = await response.json()
         setCurrentMagasin(data)
       } catch (error) {
         console.error("Error fetching user's magasin:", error)
       }
     }
-
     fetchUserMagasin()
   }, [currentUserId])
 
   useEffect(() => {
     const fetchAllUsers = async () => {
       if (!currentMagasin) return
-    
       try {
         const token = localStorage.getItem("token")
         if (!token) {
           throw new Error("Token d'authentification manquant")
         }
-    
-        const response = await fetch(
-          `${API_BASE_URL}/auth1/users/store/${currentMagasin.magasin_id}`,
-          {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          }
-        )
-    
+        const response = await fetch(`${API_BASE_URL}/auth1/users/store/${currentMagasin.magasin_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
         if (!response.ok) {
           const errorData = await response.json().catch(() => null)
-          throw new Error(
-            errorData?.message || 
-            `Erreur ${response.status} lors de la récupération des utilisateurs`
-          )
+          throw new Error(errorData?.message || `Erreur ${response.status} lors de la récupération des utilisateurs`)
         }
-    
         const data = await response.json()
         setAllUsers(data)
       } catch (error) {
         console.error("Error fetching all users:", error)
       }
     }
-
     fetchAllUsers()
   }, [currentMagasin])
 
   useEffect(() => {
     const fetchConversations = async () => {
       if (!currentUserId) return
-
       try {
         const token = localStorage.getItem("token")
         const response = await fetch(`${API_BASE_URL}/conversation/getConversationsByParticipant/${currentUserId}`, {
           headers: {
-            "Authorization": `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         })
-
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des conversations")
         }
-
         const data = await response.json()
-        
         const transformedConversations = data.map((conv: any) => ({
           id: conv.id,
           titre: conv.titre,
           nbParticipants: conv.nbParticipants,
           date_creation: conv.date_creation,
           lastMessage: "Nouvelle conversation",
-          lastTime: new Date(conv.date_creation).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          lastTime: new Date(conv.date_creation).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           unread: 0,
           status: "active",
-          type: "team"
+          type: "team",
         }))
-
         setConversations(transformedConversations)
-        
         if (transformedConversations.length > 0) {
           setSelectedConversation(transformedConversations[0].id)
         }
-
         setIsLoading(false)
       } catch (error) {
         console.error("Error fetching conversations:", error)
         setIsLoading(false)
       }
     }
-
     fetchConversations()
   }, [currentUserId])
 
   const fetchMessages = async () => {
     if (!selectedConversation || !currentUserId) return
-
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(
-       `${API_BASE_URL}/chatMessageRoutes/getMessagesByConversation/${selectedConversation}`,
+        `${API_BASE_URL}/chatMessageRoutes/getMessagesByConversation/${selectedConversation}`,
         {
           headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       )
-
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des messages")
       }
-
       const apiMessages = await response.json()
       setMessages(apiMessages)
     } catch (error) {
@@ -277,11 +241,9 @@ export default function Communication() {
 
   useEffect(() => {
     if (!selectedConversation) return
-
     const interval = setInterval(() => {
       fetchMessages()
     }, 5000)
-
     return () => clearInterval(interval)
   }, [selectedConversation, currentUserId])
 
@@ -290,45 +252,43 @@ export default function Communication() {
       setSelectedParticipants([...selectedParticipants, participantId])
     }
   }
-  
+
   const handleRemoveParticipant = (participantId: number) => {
     setSelectedParticipants(selectedParticipants.filter((id) => id !== participantId))
   }
-  
+
   const handleCreateConversation = async () => {
     if (!newConversationTitle.trim() || selectedParticipants.length === 0 || !currentUserId) return
-
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(`${API_BASE_URL}/conversation/createConversation`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           titre: newConversationTitle,
-          participants: [...selectedParticipants, currentUserId]  
-        })
+          participants: [...selectedParticipants, currentUserId],
+        }),
       })
-
       if (!response.ok) {
         throw new Error("Erreur lors de la création de la conversation")
       }
-
       const newConversation = await response.json()
-      
-      setConversations([...conversations, {
-        id: newConversation.id,
-        titre: newConversation.titre,
-        date_creation: newConversation.date_creation,
-        lastMessage: "Nouvelle conversation créée",
-        lastTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        unread: 0,
-        status: "active",
-        type: "team"
-      }])
-
+      setConversations([
+        ...conversations,
+        {
+          id: newConversation.id,
+          titre: newConversation.titre,
+          date_creation: newConversation.date_creation,
+          lastMessage: "Nouvelle conversation créée",
+          lastTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          unread: 0,
+          status: "active",
+          type: "team",
+        },
+      ])
       setShowNewConversationDialog(false)
       setNewConversationTitle("")
       setSelectedParticipants([])
@@ -339,42 +299,39 @@ export default function Communication() {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !currentUserId) return
-  
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(`${API_BASE_URL}/chatMessageRoutes/createMessage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           conversation_id: selectedConversation,
           utilisateur_id: currentUserId,
           message: newMessage,
           date_envoi: new Date().toISOString(),
-          fichier_joint_url: ""
-        })
+          fichier_joint_url: "",
+        }),
       })
-  
       if (!response.ok) {
         throw new Error("Erreur lors de l'envoi du message")
       }
-  
       const newMessageFromApi = await response.json()
-      
       setMessages([...messages, newMessageFromApi])
       setNewMessage("")
-      
-      setConversations(conversations.map(conv => 
-        conv.id === selectedConversation 
-          ? { 
-              ...conv, 
-              lastMessage: newMessage,
-              lastTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            } 
-          : conv
-      ))
+      setConversations(
+        conversations.map((conv) =>
+          conv.id === selectedConversation
+            ? {
+                ...conv,
+                lastMessage: newMessage,
+                lastTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              }
+            : conv,
+        ),
+      )
     } catch (error) {
       console.error("Error sending message:", error)
     }
@@ -382,46 +339,43 @@ export default function Communication() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !selectedConversation || !currentUserId) return
-  
     const file = e.target.files[0]
     const formData = new FormData()
-    formData.append('file', file)
-    formData.append('conversation_id', selectedConversation.toString())
-    formData.append('utilisateur_id', currentUserId.toString())
-  
+    formData.append("file", file)
+    formData.append("conversation_id", selectedConversation.toString())
+    formData.append("utilisateur_id", currentUserId.toString())
+
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(`${API_BASE_URL}/chatMessageRoutes/upload-message`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: formData
+        body: formData,
       })
-  
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Erreur lors de l'upload du fichier")
       }
-  
       const newMessage = await response.json()
-      
       setMessages([...messages, newMessage])
-      
-      setConversations(conversations.map(conv => 
-        conv.id === selectedConversation 
-          ? { 
-              ...conv, 
-              lastMessage: "Fichier joint",
-              lastTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            } 
-          : conv
-      ))
+      setConversations(
+        conversations.map((conv) =>
+          conv.id === selectedConversation
+            ? {
+                ...conv,
+                lastMessage: "Fichier joint",
+                lastTime: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              }
+            : conv,
+        ),
+      )
     } catch (error) {
       console.error("Error uploading file:", error)
       alert(error.message)
     } finally {
-      e.target.value = ''
+      e.target.value = ""
     }
   }
 
@@ -429,299 +383,595 @@ export default function Communication() {
     try {
       const urlObj = new URL(url)
       const pathname = urlObj.pathname
-      return pathname.split('/').pop() || "Fichier joint"
+      return pathname.split("/").pop() || "Fichier joint"
     } catch {
-      return url.split('/').pop() || "Fichier joint"
+      return url.split("/").pop() || "Fichier joint"
     }
   }
-  
+
   const isImageFile = (url: string) => {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif']
-    const extension = url.substring(url.lastIndexOf('.')).toLowerCase()
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif"]
+    const extension = url.substring(url.lastIndexOf(".")).toLowerCase()
     return imageExtensions.includes(extension)
   }
 
   const getConversationIcon = (type?: string) => {
     switch (type) {
       case "support":
-        return <MessageSquare className="h-4 w-4 text-blue-600" />
+        return <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
       case "team":
-        return <Users className="h-4 w-4 text-green-600" />
+        return <Users className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
       case "management":
-        return <AlertCircle className="h-4 w-4 text-red-600" />
+        return <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 flex-shrink-0" />
       default:
-        return <MessageSquare className="h-4 w-4" />
+        return <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
     }
   }
 
+  // Mobile Conversations Sidebar Component
+  const MobileConversationsSidebar = () => (
+    <div className="lg:hidden space-y-3 mt-14">
+      {/* Boutons d'action mobile */}
+      <div className="flex gap-2 mb-4 mt-12">
+        <Sheet open={isMobileConversationsOpen} onOpenChange={setIsMobileConversationsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 bg-white border-gray-200 hover:bg-gray-50 transition-colors shadow-sm"
+            >
+              <Menu className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">{t("front.communication.conversations")}</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+              side={isRTL ? "right" : "left"}
+              className="w-[300px] sm:w-[400px] p-0 flex flex-col h-full bg-white"
+            >
+            <SheetHeader className="p-4 border-b bg-white sticky top-0 z-10">
+              <div className="flex justify-between items-center">
+                <SheetTitle className="text-lg font-semibold">{t("front.communication.conversations")}</SheetTitle>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowNewConversationDialog(true)
+                    setIsMobileConversationsOpen(false)
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 text-sm"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t("mobileFront.visualization.new")}
+                </Button>
+              </div>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto p-3 mt-3">
+              <div className="space-y-2">
+                <div className="px-3 py-2 text-sm text-muted-foreground font-medium">
+                  {t("front.communication.messageSupport")}
+                </div>
+                {conversations.length > 0 ? (
+                  conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                        selectedConversation === conversation.id
+                          ? "bg-blue-50 border-l-4 border-blue-500 shadow-sm"
+                          : "hover:bg-gray-50 active:bg-gray-100"
+                      }`}
+                      onClick={() => {
+                        setSelectedConversation(conversation.id)
+                        setIsMobileConversationsOpen(false)
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {getConversationIcon(conversation.type)}
+                          <span className="font-medium text-sm truncate">{conversation.titre}</span>
+                        </div>
+                        {conversation.unread && conversation.unread > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="h-5 w-5 p-0 text-xs flex items-center justify-center ml-2 flex-shrink-0"
+                          >
+                            {conversation.unread}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mb-2">{conversation.lastMessage}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {conversation.nbParticipants || 0}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{conversation.lastTime}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-32 text-muted-foreground">
+                    <div className="text-center">
+                      <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">{t("mobileFront.visualization.aucunConversation")}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Bouton New séparé et bien visible */}
+        <Button
+          size="sm"
+          onClick={() => setShowNewConversationDialog(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 shadow-sm"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          <span className="text-sm font-medium">{t("mobileFront.visualization.new")}</span>
+        </Button>
+      </div>
+    </div>
+  )
+
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Chargement...</div>
+    return (
+      <div className="flex justify-center items-center min-h-screen p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-600 mx-auto mb-2 sm:mb-4"></div>
+          <p className="text-muted-foreground text-sm sm:text-base">Chargement...</p>
+        </div>
+      </div>
+    )
   }
 
   const currentMessages = messages.filter((m) => m.conversation_id === selectedConversation)
   const currentConversation = conversations.find((c) => c.id === selectedConversation)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-150px)]" dir={textDirection}>
-      {/* Liste des conversations - plus large */}
-      <Card className="lg:col-span-2 border-0 shadow-none">
-        <CardHeader className="p-4 pb-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-semibold">{t("front.communication.conversations")}</h2>
-            </div>
-            <Button 
-              size="sm" 
-              onClick={() => setShowNewConversationDialog(true)}
-              className="gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              <span>{t("front.communication.nouvelle")}</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-2">
-          <div className="h-[calc(100vh-220px)] overflow-y-auto">
-            <div className="space-y-2 pr-2">
-              <div className="px-3 py-1 text-sm text-muted-foreground">
-              {t("front.communication.messageSupport")}
-              </div>
-              
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedConversation === conversation.id
-                      ? "bg-blue-50"
-                      : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => setSelectedConversation(conversation.id)}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      {getConversationIcon(conversation.type)}
-                      <span className="font-medium text-sm">{conversation.titre}</span>
-                    </div>
-                    {conversation.unread && conversation.unread > 0 && (
-                      <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
-                        {conversation.unread}
-                      </Badge>
-                    )}
+    <div className="min-h-screen bg-gray-50/50" dir={textDirection}>
+      <div className="container mx-auto p-2 sm:p-4 lg:p-6 max-w-7xl">
+        {/* Mobile and Tablet Layout */}
+        <div className="lg:hidden">
+          <MobileConversationsSidebar />
+
+          {/* Chat Area for Mobile/Tablet */}
+          {selectedConversation ? (
+            <Card className="border shadow-sm bg-white">
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 py-2 sm:py-3 border-b">
+                <div className="flex justify-between items-start gap-2 sm:gap-3">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-sm sm:text-base lg:text-lg truncate font-semibold">
+                      {currentConversation?.titre}
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-0.5 sm:mt-1 truncate">
+                      {conversationParticipants.length > 0
+                        ? conversationParticipants.map((p) => p.name).join(", ")
+                        : t("mobileFront.visualization.aucunParticipant")}
+                    </CardDescription>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{conversation.lastMessage}</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {conversation.nbParticipants || 0}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{conversation.lastTime}</span>
+                  <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="p-1 sm:p-2 bg-transparent hover:bg-gray-50">
+                      <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="p-1 sm:p-2 bg-transparent hover:bg-gray-50">
+                      <Video className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              </CardHeader>
 
-      {/* Zone de chat - plus large */}
-      <Card className="lg:col-span-3">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-lg">{currentConversation?.titre}</CardTitle>
-              <CardDescription>
-                {conversationParticipants.length > 0 
-                  ? conversationParticipants.map(p => p.name).join(", ") 
-                  : "Aucun participant"}
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button size="sm" variant="outline">
-                <Phone className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="outline">
-                <Video className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="flex flex-col h-[calc(100vh-220px)]">
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-            {currentMessages.length > 0 ? (
-              currentMessages.map((message) => (
-                <div 
-                  key={message.id} 
-                  className={`flex ${
-                    message.utilisateur_id === currentUserId ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.utilisateur_id === currentUserId 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-gray-100 text-gray-900"
-                    }`}
-                  >
-                    {message.utilisateur_id !== currentUserId && (
-                      <div className="text-xs font-medium mb-1">
-                        {message.utilisateur?.name || "Utilisateur inconnu"}
+              <CardContent className="p-0">
+                <div className="flex flex-col h-[calc(100vh-200px)] sm:h-[calc(100vh-180px)] md:h-[calc(100vh-160px)]">
+                  {/* Messages */}
+                  <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 p-3 sm:p-4">
+                    {currentMessages.length > 0 ? (
+                      currentMessages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.utilisateur_id === currentUserId ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[85%] sm:max-w-[75%] md:max-w-xs lg:max-w-md px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg ${
+                              message.utilisateur_id === currentUserId
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 text-gray-900"
+                            }`}
+                          >
+                            {message.utilisateur_id !== currentUserId && (
+                              <div className="text-xs font-medium mb-1 opacity-90">
+                                {message.utilisateur?.name || "Utilisateur inconnu"}
+                              </div>
+                            )}
+                            <div className="text-xs sm:text-sm break-words leading-relaxed">{message.message}</div>
+                            {message.fichier_joint_url && (
+                              <div className="mt-1 sm:mt-2">
+                                <a
+                                  href={message.fichier_joint_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`inline-flex items-center text-xs ${
+                                    message.utilisateur_id === currentUserId
+                                      ? "text-blue-100 hover:text-blue-200"
+                                      : "text-blue-600 hover:text-blue-800"
+                                  } transition-colors`}
+                                  download
+                                >
+                                  <Paperclip className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
+                                  <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                                    {getFileNameFromUrl(message.fichier_joint_url)}
+                                  </span>
+                                </a>
+                                {isImageFile(message.fichier_joint_url) && (
+                                  <div className="mt-1 sm:mt-2">
+                                    <img
+                                      src={message.fichier_joint_url || "/placeholder.svg"}
+                                      alt="Fichier joint"
+                                      className="max-w-full max-h-32 sm:max-h-40 rounded-md"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div
+                              className={`text-xs mt-1 opacity-75 ${
+                                message.utilisateur_id === currentUserId ? "text-blue-100" : "text-gray-500"
+                              }`}
+                            >
+                              {new Date(message.date_envoi).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <div className="text-center">
+                          <MessageSquare className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-4 opacity-50" />
+                          <p className="text-xs sm:text-sm">{t("front.communication.noMessage")}</p>
+                        </div>
                       </div>
                     )}
-                    <div className="text-sm">{message.message}</div>
-                    {message.fichier_joint_url && (
-                      <div className="mt-2">
-                        <a 
-                          href={message.fichier_joint_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className={`inline-flex items-center text-xs ${
-                            message.utilisateur_id === currentUserId 
-                              ? "text-blue-100 hover:text-blue-200" 
-                              : "text-blue-600 hover:text-blue-800"
-                          }`}
-                          download
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="border-t p-2 sm:p-3 bg-gray-50/50">
+                    <div className="flex space-x-1 sm:space-x-2">
+                      <div className="relative flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          type="button"
+                          className="relative p-1.5 sm:p-2 bg-transparent hover:bg-gray-50"
+                          disabled={isUploading}
                         >
-                          <Paperclip className="h-3 w-3 mr-1" />
-                          {getFileNameFromUrl(message.fichier_joint_url)}
-                        </a>
-                        {isImageFile(message.fichier_joint_url) && (
-                          <div className="mt-2">
-                            <img 
-                              src={message.fichier_joint_url} 
-                              alt="Fichier joint" 
-                              className="max-w-xs max-h-40 rounded-md"
-                            />
-                          </div>
+                          <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <input
+                            type="file"
+                            onChange={handleFileUpload}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt"
+                          />
+                        </Button>
+                      </div>
+                      <Input
+                        placeholder={t("front.communication.tapezMessage")}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                        className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleSendMessage}
+                        disabled={!newMessage.trim()}
+                        className="p-1.5 sm:p-2 flex-shrink-0 h-8 sm:h-9"
+                      >
+                        <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border shadow-sm bg-white">
+              <CardContent className="text-center py-8 sm:py-12">
+                <MessageSquare className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2 sm:mb-4" />
+                <p className="text-gray-500 text-xs sm:text-sm md:text-base">
+                  {t("front.communication.selectConversation")}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Desktop Layout (XL and above) */}
+        <div className="hidden lg:grid lg:grid-cols-5 2xl:grid-cols-4 gap-4 lg:gap-6 h-[calc(100vh-120px)]">
+          {/* Conversations List */}
+          <Card className="xl:col-span-2 2xl:col-span-1 border shadow-sm bg-white">
+            <CardHeader className="p-4 pb-3 border-b">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-semibold">{t("front.communication.conversations")}</h2>
+                </div>
+                <Button size="sm" onClick={() => setShowNewConversationDialog(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span>{t("front.communication.nouvelle")}</span>
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-2">
+              <div className="h-[calc(100vh-200px)] overflow-y-auto">
+                <div className="space-y-2 pr-2">
+                  <div className="px-3 py-2 text-sm text-muted-foreground font-medium">
+                    {t("front.communication.messageSupport")}
+                  </div>
+                  {conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                        selectedConversation === conversation.id
+                          ? "bg-blue-50 border-l-4 border-blue-500 shadow-sm"
+                          : "hover:bg-gray-50"
+                      }`}
+                      onClick={() => setSelectedConversation(conversation.id)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {getConversationIcon(conversation.type)}
+                          <span className="font-medium text-sm truncate">{conversation.titre}</span>
+                        </div>
+                        {conversation.unread && conversation.unread > 0 && (
+                          <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
+                            {conversation.unread}
+                          </Badge>
                         )}
                       </div>
-                    )}
-                    <div className={`text-xs mt-1 ${
-                      message.utilisateur_id === currentUserId 
-                        ? "text-blue-100" 
-                        : "text-gray-500"
-                    }`}>
-                      {new Date(message.date_envoi).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <p className="text-xs text-muted-foreground truncate mb-2">{conversation.lastMessage}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {conversation.nbParticipants || 0}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{conversation.lastTime}</span>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                {t("front.communication.noMessage")}
-              </div>
-            )}
-          </div>
-
-          <div className="flex space-x-2">
-            <div className="relative">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                type="button"
-                className="relative"
-              >
-                <Paperclip className="h-4 w-4" />
-                <input
-                  type="file"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt"
-                />
-              </Button>
-            </div>
-            <Input
-              placeholder= {t("front.communication.tapezMessage")}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              className="flex-1"
-            />
-            <Button 
-              size="sm" 
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim()}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dialog for new conversation */}
-      {showNewConversationDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle> {t("front.communication.nouvConversation")}</CardTitle>
-              <CardDescription>{t("front.communication.nouvConversationDescr")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("front.communication.titreConversation")}</label>
-                <Input
-                  placeholder="Titre"
-                  value={newConversationTitle}
-                  onChange={(e) => setNewConversationTitle(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("front.communication.participants")}</label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedParticipants.map((participantId) => {
-                    const participant = allUsers.find(u => u.id === participantId)
-                    return (
-                      <Badge key={participantId} className="flex items-center gap-1">
-                        {participant?.name || "Unknown"}
-                        <button 
-                          onClick={() => handleRemoveParticipant(participantId)}
-                          className="ml-1"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    )
-                  })}
-                </div>
-                
-                <select
-                  className="w-full p-2 border rounded"
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleAddParticipant(Number(e.target.value))
-                      e.target.value = ""
-                    }
-                  }}
-                >
-                  <option value="">{t("front.communication.selectParticipant")}</option>
-                  {allUsers
-                    .filter(u => !selectedParticipants.includes(u.id))
-                    .map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.role})
-                      </option>
-                    ))}
-                </select>
               </div>
             </CardContent>
-            <div className="flex justify-end gap-2 p-4 border-t">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowNewConversationDialog(false)}
-              >
-                {t("front.communication.annuler")}
-              </Button>
-              <Button 
-                onClick={handleCreateConversation}
-                disabled={!newConversationTitle.trim() || selectedParticipants.length === 0}
-              >
-                {t("front.communication.creer")}
-              </Button>
-            </div>
+          </Card>
+
+          {/* Chat Area */}
+          <Card className="xl:col-span-3 2xl:col-span-3 border shadow-sm bg-white">
+            <CardHeader className="p-4 pb-3 border-b">
+              <div className="flex justify-between items-center">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-lg truncate">{currentConversation?.titre}</CardTitle>
+                  <CardDescription className="mt-1 truncate">
+                    {conversationParticipants.length > 0
+                      ? conversationParticipants.map((p) => p.name).join(", ")
+                      : t("mobileFront.visualization.aucunParticipant")}
+                  </CardDescription>
+                </div>
+                <div className="flex space-x-2 flex-shrink-0">
+                  <Button size="sm" variant="outline" className="hover:bg-gray-50 bg-transparent">
+                    <Phone className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="hover:bg-gray-50 bg-transparent">
+                    <Video className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="flex flex-col h-[calc(100vh-200px)] p-0">
+              <div className="flex-1 overflow-y-auto space-y-4 p-4">
+                {currentMessages.length > 0 ? (
+                  currentMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.utilisateur_id === currentUserId ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-2 rounded-lg ${
+                          message.utilisateur_id === currentUserId
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      >
+                        {message.utilisateur_id !== currentUserId && (
+                          <div className="text-xs font-medium mb-1 opacity-90">
+                            {message.utilisateur?.name || "Utilisateur inconnu"}
+                          </div>
+                        )}
+                        <div className="text-sm break-words leading-relaxed">{message.message}</div>
+                        {message.fichier_joint_url && (
+                          <div className="mt-2">
+                            <a
+                              href={message.fichier_joint_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center text-xs ${
+                                message.utilisateur_id === currentUserId
+                                  ? "text-blue-100 hover:text-blue-200"
+                                  : "text-blue-600 hover:text-blue-800"
+                              } transition-colors`}
+                              download
+                            >
+                              <Paperclip className="h-3 w-3 mr-1" />
+                              {getFileNameFromUrl(message.fichier_joint_url)}
+                            </a>
+                            {isImageFile(message.fichier_joint_url) && (
+                              <div className="mt-2">
+                                <img
+                                  src={message.fichier_joint_url || "/placeholder.svg"}
+                                  alt="Fichier joint"
+                                  className="max-w-full max-h-40 rounded-md"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div
+                          className={`text-xs mt-1 opacity-75 ${
+                            message.utilisateur_id === currentUserId ? "text-blue-100" : "text-gray-500"
+                          }`}
+                        >
+                          {new Date(message.date_envoi).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                      <p>{t("front.communication.noMessage")}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t p-4 bg-gray-50/50">
+                <div className="flex space-x-2">
+                  <div className="relative">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      className="relative bg-transparent hover:bg-gray-50"
+                      disabled={isUploading}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      <input
+                        type="file"
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt"
+                      />
+                    </Button>
+                  </div>
+                  <Input
+                    placeholder={t("front.communication.tapezMessage")}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={handleSendMessage} disabled={!newMessage.trim()}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
-      )}
+
+        {/* New Conversation Dialog - Fully Responsive */}
+        {showNewConversationDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+            <Card className="w-full max-w-xs sm:max-w-md lg:max-w-lg max-h-[95vh] overflow-auto">
+              <CardHeader className="pb-3 sm:pb-4">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base sm:text-lg">{t("front.communication.nouvConversation")}</CardTitle>
+                    <CardDescription className="mt-1 text-xs sm:text-sm">
+                      {t("front.communication.nouvConversationDescr")}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewConversationDialog(false)}
+                    className="p-1 flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-3 sm:space-y-4">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1 sm:mb-2">
+                    {t("front.communication.titreConversation")}
+                  </label>
+                  <Input
+                    placeholder={t("front.communication.titreConversation")}
+                    value={newConversationTitle}
+                    onChange={(e) => setNewConversationTitle(e.target.value)}
+                    className="w-full text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1 sm:mb-2">
+                    {t("front.communication.participants")}
+                  </label>
+                  <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3">
+                    {selectedParticipants.map((participantId) => {
+                      const participant = allUsers.find((u) => u.id === participantId)
+                      return (
+                        <Badge
+                          key={participantId}
+                          className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs"
+                        >
+                          <span>{participant?.name || "Unknown"}</span>
+                          <button
+                            onClick={() => handleRemoveParticipant(participantId)}
+                            className="ml-0.5 sm:ml-1 hover:bg-red-500 rounded-full p-0.5 transition-colors"
+                          >
+                            <X className="h-2 w-2 sm:h-3 sm:w-3" />
+                          </button>
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                  <select
+                    className="w-full p-1.5 sm:p-2 border rounded-md text-xs sm:text-sm bg-white"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleAddParticipant(Number(e.target.value))
+                        e.target.value = ""
+                      }
+                    }}
+                  >
+                    <option value="">{t("front.communication.selectParticipant")}</option>
+                    {allUsers
+                      .filter((u) => !selectedParticipants.includes(u.id))
+                      .map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name} ({user.role})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </CardContent>
+
+              <div className="flex flex-col sm:flex-row justify-end gap-2 p-3 sm:p-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowNewConversationDialog(false)}
+                  className="w-full sm:w-auto order-2 sm:order-1 text-xs sm:text-sm"
+                >
+                  {t("front.communication.annuler")}
+                </Button>
+                <Button
+                  onClick={handleCreateConversation}
+                  disabled={!newConversationTitle.trim() || selectedParticipants.length === 0}
+                  className="w-full sm:w-auto order-1 sm:order-2 text-xs sm:text-sm"
+                >
+                  {t("front.communication.creer")}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

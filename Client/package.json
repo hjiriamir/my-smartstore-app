@@ -82,6 +82,7 @@
     "react-day-picker": "8.10.1",
     "react-dnd": "latest",
     "react-dnd-html5-backend": "latest",
+    "react-dnd-touch-backend": "^16.0.1",
     "react-dom": "^19",
     "react-dropzone": "^14.0.0",
     "react-feather": "^2.0.10",

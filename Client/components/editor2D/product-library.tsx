@@ -14,7 +14,6 @@ import {
   AlertDialogFooter,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-
 import {
   Search,
   Grid,
@@ -29,7 +28,6 @@ import {
   Trash2,
   ArrowLeft,
 } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -42,7 +40,6 @@ import type { Product, Category } from "@/lib/product-store"
 export function ProductLibrary() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
-
   const router = useRouter()
   const { toast } = useToast()
   const { products, categories, deleteProduct, setActiveTab, clearLibrary } = useProductStore()
@@ -153,24 +150,20 @@ export function ProductLibrary() {
   }
 
   return (
-    <div className={`container max-w-6xl mx-auto py-6 ${isRTL ? "rtl" : "ltr"}`}>
-      <div className="container max-w-6xl mx-auto py-6 mt-6"></div>
-
+    <div className={`container max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8 mt-12 ${isRTL ? "rtl" : "ltr"}`}>
       <div className="flex flex-col space-y-6">
-        {/* Header avec disposition inversée pour RTL */}
-        <div className="flex items-center justify-between flex-row-reverse">
+        {/* Header with responsive layout */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className={`text-2xl font-bold ${isRTL ? "text-right" : "text-left"}`}>{t("productLibrary")}</h1>
-
-          <div className={`flex space-x-2 ${isRTL ? "flex-row-reverse space-x-reverse" : ""}`}>
+          <div className={`flex flex-wrap gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
             <Button
               variant="outline"
               onClick={() => (window.location.href = "/Editor")}
-              className={`flex items-center gap-2 mb-4 ${isRTL ? "flex-row-reverse" : ""}`}
+              className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}
             >
               <ArrowLeft className="h-4 w-4" />
               {t("productImport.backToEditor")}
             </Button>
-
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={products.length === 0}>
@@ -198,7 +191,6 @@ export function ProductLibrary() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-
             <Button
               onClick={() => {
                 setActiveTab("import")
@@ -224,10 +216,9 @@ export function ProductLibrary() {
                 className={isRTL ? "pr-9" : "pl-9"}
               />
             </div>
-
-            <div className={`flex space-x-2 ${isRTL ? "space-x-reverse" : ""}`}>
+            <div className={`flex flex-wrap gap-2 md:flex-nowrap ${isRTL ? "flex-row-reverse" : ""}`}>
               <Select value={selectedCategory || ""} onValueChange={(value) => setSelectedCategory(value || null)}>
-                <SelectTrigger className={`w-[180px] ${isRTL ? "text-right" : "text-left"}`}>
+                <SelectTrigger className={`w-full sm:w-[180px] ${isRTL ? "text-right" : "text-left"}`}>
                   <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                     <Folder className="h-4 w-4" />
                     <SelectValue placeholder={t("productImport.category")} />
@@ -250,9 +241,8 @@ export function ProductLibrary() {
                   })}
                 </SelectContent>
               </Select>
-
               <Select value={selectedSupplier || ""} onValueChange={(value) => setSelectedSupplier(value || null)}>
-                <SelectTrigger className={`w-[180px] ${isRTL ? "text-right" : "text-left"}`}>
+                <SelectTrigger className={`w-full sm:w-[180px] ${isRTL ? "text-right" : "text-left"}`}>
                   <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                     <Tag className="h-4 w-4" />
                     <SelectValue placeholder={t("productImport.supplier")} />
@@ -267,7 +257,6 @@ export function ProductLibrary() {
                   ))}
                 </SelectContent>
               </Select>
-
               <div className="flex border rounded-md">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
@@ -290,37 +279,39 @@ export function ProductLibrary() {
           </div>
 
           {/* Sort options */}
-          <div className={`flex items-center space-x-2 text-sm ${isRTL ? "space-x-reverse" : ""}`}>
-            <span className="text-muted-foreground">{t("productImport.sortBy")}:</span>
-            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("name")}>
-              {t("name")}
-              {sortField === "name" && (
-                <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs"
-              onClick={() => handleSortChange("primary_id")}
-            >
-              {t("productImport.id")}
-              {sortField === "primary_id" && (
-                <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
-              )}
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("supplier")}>
-              {t("productImport.supplier")}
-              {sortField === "supplier" && (
-                <ArrowUpDown className={`ml-1 h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
-              )}
-            </Button>
-          </div>
+          <div className={`flex flex-wrap items-center gap-2 text-sm ${isRTL ? "flex-row-reverse" : ""}`}>
+  <span className={`text-muted-foreground ${isRTL ? "mr-1" : "ml-1"}`}>{t("productImport.sortBy")}:</span>
+  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("name")}>
+    {t("name")}
+    {sortField === "name" && (
+      <ArrowUpDown className={`${isRTL ? "mr-1" : "ml-1"} h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+    )}
+  </Button>
+  <Button
+    variant="ghost"
+    size="sm"
+    className="h-8 px-2 text-xs"
+    onClick={() => handleSortChange("primary_id")}
+  >
+    {t("productImport.id")}
+    {sortField === "primary_id" && (
+      <ArrowUpDown className={`${isRTL ? "mr-1" : "ml-1"} h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+    )}
+  </Button>
+  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleSortChange("supplier")}>
+    {t("productImport.supplier")}
+    {sortField === "supplier" && (
+      <ArrowUpDown className={`${isRTL ? "mr-1" : "ml-1"} h-3 w-3 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+    )}
+  </Button>
+</div>
 
           {/* Results count */}
-          <div className={`text-sm text-muted-foreground ${isRTL ? "text-right" : "text-left"}`}>
-            {t("productImport.productsFound", { count: filteredProducts.length })}
-          </div>
+          {filteredProducts.length > 0 && (
+  <div className={`text-sm text-muted-foreground ${isRTL ? "text-right" : "text-left"}`}>
+    {t("productImport.productsFound", { count: filteredProducts.length })}
+  </div>
+)}
 
           {/* Product grid/list */}
           <div
@@ -332,7 +323,6 @@ export function ProductLibrary() {
               paginatedProducts.map((product) => {
                 // Utiliser primary_id si disponible, sinon utiliser primary_Id
                 const productId = product.primary_id || product.primary_Id
-
                 const category1 = getCategoryById(product.category1_id)
                 const category2 = getCategoryById(product.category2_id)
                 const category3 = getCategoryById(product.category3_id)
@@ -380,39 +370,33 @@ export function ProductLibrary() {
                             {t("supplier")}: {product.supplier}
                           </div>
                         )}
-
                         {/* Affichage du category_id */}
                         {product.category_id && (
                           <div className="text-xs text-muted-foreground">
                             {t("category_id")}: {product.category_id}
                           </div>
                         )}
-
-                        <div className="flex flex-col items-start space-y-1 mt-1">
+                        <div className="flex flex-wrap items-start gap-1 mt-1">
                           {mainCategory && (
-                            <div className="flex items-center">
-                              <Badge
-                                variant="outline"
-                                className="text-xs"
-                                style={{ borderColor: mainCategory.color, color: mainCategory.color }}
-                              >
-                                {mainCategory.name}
-                              </Badge>
-                            </div>
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{ borderColor: mainCategory.color, color: mainCategory.color }}
+                            >
+                              {mainCategory.name}
+                            </Badge>
                           )}
                           {category1 && !mainCategory && (
-                            <div className="flex items-center">
-                              <Badge
-                                variant="outline"
-                                className="text-xs"
-                                style={{ borderColor: category1.color, color: category1.color }}
-                              >
-                                {category1.name}
-                              </Badge>
-                            </div>
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{ borderColor: category1.color, color: category1.color }}
+                            >
+                              {category1.name}
+                            </Badge>
                           )}
                           {category2 && (
-                            <div className="flex items-center ml-3">
+                            <div className="flex items-center">
                               <ChevronRight className="h-3 w-3 text-muted-foreground mr-1" />
                               <Badge
                                 variant="outline"
@@ -424,7 +408,7 @@ export function ProductLibrary() {
                             </div>
                           )}
                           {category3 && (
-                            <div className="flex items-center ml-6">
+                            <div className="flex items-center">
                               <ChevronRight className="h-3 w-3 text-muted-foreground mr-1" />
                               <Badge
                                 variant="outline"
@@ -450,9 +434,9 @@ export function ProductLibrary() {
                 ) : (
                   <div
                     key={productId}
-                    className={`flex items-center border rounded-md p-3 hover:bg-muted/30 ${isRTL ? "flex-row-reverse" : ""}`}
+                    className={`flex flex-col sm:flex-row items-start sm:items-center border rounded-md p-3 hover:bg-muted/30 gap-2 sm:gap-4 ${isRTL ? "sm:flex-row-reverse" : ""}`}
                   >
-                    <div className="h-12 w-12 bg-muted/30 rounded-md flex items-center justify-center mr-4">
+                    <div className="h-12 w-12 bg-muted/30 rounded-md flex items-center justify-center shrink-0">
                       {product.image ? (
                         <img
                           src={product.image || "/placeholder.svg"}
@@ -467,9 +451,11 @@ export function ProductLibrary() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`flex items-center ${isRTL ? "flex-row-reverse" : ""}`}>
+                      <div
+                        className={`flex flex-col sm:flex-row items-start sm:items-center ${isRTL ? "sm:flex-row-reverse" : ""}`}
+                      >
                         <h3 className="font-medium truncate">{product.name}</h3>
-                        <div className={`text-xs text-muted-foreground ${isRTL ? "mr-2 ml-0" : "ml-2"}`}>
+                        <div className={`text-xs text-muted-foreground ${isRTL ? "sm:mr-2 sm:ml-0" : "sm:ml-2"}`}>
                           ({t("id")}: {productId})
                         </div>
                       </div>
@@ -477,7 +463,7 @@ export function ProductLibrary() {
                         {product.supplier && `${t("supplier")}: ${product.supplier}`}
                         {product.category_id && ` | ${t("category_id")}: ${product.category_id}`}
                       </div>
-                      <div className={`flex items-center space-x-1 mt-1 ${isRTL ? "space-x-reverse" : ""}`}>
+                      <div className={`flex flex-wrap items-center gap-1 mt-1 ${isRTL ? "flex-row-reverse" : ""}`}>
                         {mainCategory && (
                           <Badge
                             variant="outline"
@@ -497,26 +483,32 @@ export function ProductLibrary() {
                           </Badge>
                         )}
                         {category2 && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs"
-                            style={{ borderColor: category2.color, color: category2.color }}
-                          >
-                            {category2.name}
-                          </Badge>
+                          <div className="flex items-center">
+                            <ChevronRight className="h-3 w-3 text-muted-foreground mr-1" />
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{ borderColor: category2.color, color: category2.color }}
+                            >
+                              {category2.name}
+                            </Badge>
+                          </div>
                         )}
                         {category3 && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs"
-                            style={{ borderColor: category3.color, color: category3.color }}
-                          >
-                            {category3.name}
-                          </Badge>
+                          <div className="flex items-center">
+                            <ChevronRight className="h-3 w-3 text-muted-foreground mr-1" />
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                              style={{ borderColor: category3.color, color: category3.color }}
+                            >
+                              {category3.name}
+                            </Badge>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <div className={`flex space-x-2 ${isRTL ? "mr-auto ml-4 space-x-reverse" : "ml-4"}`}>
+                    <div className={`flex flex-wrap gap-2 mt-2 sm:mt-0 ${isRTL ? "sm:mr-auto sm:ml-4" : "sm:ml-4"}`}>
                       <Button variant="secondary" size="sm" onClick={() => goToPlanogramEditor(product)}>
                         {t("place")}
                       </Button>
@@ -546,7 +538,7 @@ export function ProductLibrary() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className={`flex items-center justify-between ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className={`flex flex-col sm:flex-row items-center justify-between gap-4`}>
               <div className="text-sm text-muted-foreground">
                 {t("productImport.showingProducts", {
                   start: (currentPage - 1) * itemsPerPage + 1,
@@ -554,7 +546,7 @@ export function ProductLibrary() {
                   total: filteredProducts.length,
                 })}
               </div>
-              <div className={`flex items-center space-x-2 ${isRTL ? "space-x-reverse" : ""}`}>
+              <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                 <Button
                   variant="outline"
                   size="icon"

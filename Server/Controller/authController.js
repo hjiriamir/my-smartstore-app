@@ -220,7 +220,7 @@ export const getMe = async (req, res) => {
         });
 
         const user = await Users.findByPk(req.user.idUtilisateur, {
-            attributes: { 
+            attributes: {
                 exclude: ['password']
             }
         });
