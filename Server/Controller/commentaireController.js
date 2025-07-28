@@ -8,7 +8,7 @@ export const createCommentaire = async (req, res) => {
     const commentaire = await Commentaire.create(req.body);
     res.status(201).json(commentaire);
   } catch (error) {
-    console.error("Erreur lors de la création du commentaire :", error);
+    console.error("Erreur lors de la cré  ation du commentaire :", error);
     res.status(500).json({ error: error.message });
   }
 };

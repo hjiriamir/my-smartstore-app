@@ -1,6 +1,6 @@
 import Categorie1 from '../Model/Categorie1.js';
 import Categorie from '../Model/Categorie1.js';
-
+import { Op } from "sequelize";
 export const createCategorie = async (req, res) => {
     try {
         const categorie = await Categorie.create(req.body);
@@ -86,3 +86,37 @@ export const getCategoriesByMagasin = async(req, res) =>{
         res.status(400).json({ error: error.message });
     }
 }
+
+export const getCategoriesByMagasins = async (req, res) => {
+    try {
+      const { idMagasin } = req.query; // on utilise query, pas params
+  
+      if (!idMagasin) {
+        return res.status(400).json({ error: "idMagasin requis (un ou plusieurs)." });
+      }
+  
+      // Normaliser en tableau
+      let listeMagasins = [];
+      if (Array.isArray(idMagasin)) {
+        listeMagasins = idMagasin;
+      } else if (typeof idMagasin === "string") {
+        listeMagasins = idMagasin.split(",").map((id) => id.trim());
+      } else {
+        listeMagasins = [String(idMagasin)];
+      }
+  
+      // Requête Sequelize
+      const categories = await Categorie1.findAll({
+        where: {
+          magasin_id: {
+            [Op.in]: listeMagasins,
+          },
+        },
+      });
+  
+      res.status(200).json(categories);
+    } catch (error) {
+      console.error("Erreur lors de getCategoriesByMagasins :", error);
+      res.status(400).json({ error: error.message });
+    }
+  };

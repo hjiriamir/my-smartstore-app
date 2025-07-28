@@ -278,3 +278,17 @@ try {
     return res.status(500).json({ error: "Erreur serveur" });
 }
 }
+
+export const getProduitsByCategorie = async (req,res) =>{
+  try {
+    const { idCategorie } = req.params;
+    const produits = await Produit.findAll({
+      where: {categorie_id: idCategorie}
+    })
+
+    return res.json(produits);
+  } catch (error) {
+    console.error("Erreur dans get Produits By Categorie:", error);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+}

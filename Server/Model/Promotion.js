@@ -23,6 +23,10 @@ const Promotion = sequelize.define('Promotion', {
     type: DataTypes.DATE,
     allowNull: false,
   },
+  discount : {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   type_promotion: {
     type: DataTypes.ENUM('remise %', 'remise fixe', 'offre spéciale', 'bundle', 'livraison gratuite'),
     allowNull: false,

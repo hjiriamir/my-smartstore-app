@@ -11,6 +11,44 @@ i18n
     resources: {
       en: {
         translation: {
+          marketing: {
+            dashboard: {
+              titre: "Platform",
+              titre1: "for retail",
+              titreDescription: "Comprehensive retail management platform with advanced marketing strategies, store experience pillars, and dynamic price labeling",
+              marketingStrategy: "Marketing Strategy",
+              marketingStrategyDescr: "Manage promotions, digital planograms, and targeted campaigns",
+              marketingFeatures1: "• Dynamic promotions & offers",
+              marketingFeatures2: "• Digital planograms",
+              marketingFeatures3: "• Advanced A/B testing",
+              marketingFeatures4: "• Omnichannel integration",
+              acceder: "Access the module",
+          
+              shopPillars: "Shop Pillars",
+              shopPillarsDescr: "Core pillars of the physical and digital store experience",
+              shopPillarsFeatures1: "• Smart zoning",
+              shopPillarsFeatures2: "• Consistent visual branding",
+              shopPillarsFeatures3: "• Customer interactivity",
+              shopPillarsFeatures4: "• Physical analytics",
+          
+              shelfLabels: "Shelf Labels Pricing",
+              shelfLabelsDescr: "Dynamic price labeling with intelligent stock management",
+              shelfLabelsFeatures1: "• Real-time dynamic pricing",
+              shelfLabelsFeatures2: "• Electronic Shelf Labels (ESL)",
+              shelfLabelsFeatures3: "• Stock integration",
+              shelfLabelsFeatures4: "• Legal compliance",
+          
+              accederDashboard: "Access Main Dashboard",
+              synergie: "Synergies between modules",
+              connectivite: "Connectivity",
+              lienCRM: "Links between CRM and personalized promotional display",
+              automatisation: "Automation",
+              automatisationDescr: "Real-time updates of prices and promotions",
+              analyse: "Analytics",
+              analyseDescr: "Measure ROI of each display element",
+            },
+          },
+          
           mobileFront : {
             tracking: {
                   filtres: "Filters",
@@ -1698,6 +1736,44 @@ largeur: "Width",
       },
       fr: {
         translation: {
+          marketing: {
+            dashboard: {
+              titre: "Plateforme",
+              titre1: "de vente au détail",
+              titreDescription: "Plateforme complète de gestion retail avec stratégies marketing avancées, piliers d’expérience magasin et étiquetage dynamique des prix",
+              marketingStrategy: "Stratégie Marketing",
+              marketingStrategyDescr: "Gestion des promotions, planogrammes digitaux et campagnes ciblées",
+              marketingFeatures1: "• Promotions et offres dynamiques",
+              marketingFeatures2: "• Planogrammes digitaux",
+              marketingFeatures3: "• Tests A/B avancés",
+              marketingFeatures4: "• Intégration multicanale",
+              acceder: "Accéder au module",
+          
+              shopPillars: "Piliers du magasin",
+              shopPillarsDescr: "Piliers essentiels de l’expérience magasin physique et digitale",
+              shopPillarsFeatures1: "• Zonage intelligent",
+              shopPillarsFeatures2: "• Identité visuelle cohérente",
+              shopPillarsFeatures3: "• Interactivité client",
+              shopPillarsFeatures4: "• Analyses physiques",
+          
+              shelfLabels: "Étiquetage des prix en rayon",
+              shelfLabelsDescr: "Étiquetage dynamique des prix avec gestion intelligente des stocks",
+              shelfLabelsFeatures1: "• Prix dynamiques en temps réel",
+              shelfLabelsFeatures2: "• Étiquettes électroniques (ESL)",
+              shelfLabelsFeatures3: "• Intégration des stocks",
+              shelfLabelsFeatures4: "• Conformité légale",
+          
+              accederDashboard: "Accéder au tableau de bord principal",
+              synergie: "Synergies entre les modules",
+              connectivite: "Connectivité",
+              lienCRM: "Liens entre CRM et affichage promotionnel personnalisé",
+              automatisation: "Automatisation",
+              automatisationDescr: "Mises à jour en temps réel des prix et promotions",
+              analyse: "Analytique",
+              analyseDescr: "Mesure du ROI de chaque élément d’affichage",
+            },
+          },
+          
           mobileFront : {
             tracking: {
               filtres:"Filtres",
@@ -3399,7 +3475,46 @@ largeur: "Width",
       },
       ar: {
         translation: {
+          marketing: {
+            dashboard: {
+              titre: "منصة",
+              titre1:"للبيع بالتجزئة",
+              titreDescription: "منصة متكاملة لإدارة تجارة التجزئة مع استراتيجيات تسويق متقدمة، ركائز تجربة المتجر وعرض الأسعار الديناميكي",
+              marketingStrategy: "استراتيجية التسويق",
+              marketingStrategyDescr: "إدارة العروض الترويجية، المخططات الرقمية والحملات المستهدفة",
+              marketingFeatures1: "• عروض وترقيات ديناميكية",
+              marketingFeatures2: "• مخططات رقمية للأرفف",
+              marketingFeatures3: "• اختبارات A/B متقدمة",
+              marketingFeatures4: "• تكامل متعدد القنوات",
+              acceder: "الوصول إلى الوحدة",
+          
+              shopPillars: "ركائز المتجر",
+              shopPillarsDescr: "الركائز الأساسية لتجربة المتجر الفعلية والرقمية",
+              shopPillarsFeatures1: "• تقسيم ذكي للمساحات",
+              shopPillarsFeatures2: "• هوية بصرية متناسقة",
+              shopPillarsFeatures3: "• تفاعل العملاء",
+              shopPillarsFeatures4: "• تحليلات فيزيائية",
+          
+              shelfLabels: "تسعير الأرفف",
+              shelfLabelsDescr: "تسعير ديناميكي للأسعار مع إدارة ذكية للمخزون",
+              shelfLabelsFeatures1: "• تسعير ديناميكي في الوقت الفعلي",
+              shelfLabelsFeatures2: "• ملصقات إلكترونية (ESL)",
+              shelfLabelsFeatures3: "• تكامل مع المخزون",
+              shelfLabelsFeatures4: "• الامتثال القانوني",
+          
+              accederDashboard: "الوصول إلى لوحة التحكم الرئيسية",
+              synergie: "التكامل بين الوحدات",
+              connectivite: "الاتصال",
+              lienCRM: "روابط بين CRM والعروض الترويجية المخصصة",
+              automatisation: "التشغيل الآلي",
+              automatisationDescr: "تحديثات الأسعار والعروض الترويجية في الوقت الفعلي",
+              analyse: "التحليلات",
+              analyseDescr: "قياس العائد على الاستثمار لكل عنصر عرض",
+            },
+          },
           mobileFront : {
+            
+            
             tracking: {
                   filtres: "الفلاتر",
                   status: "الحالة",

@@ -15,6 +15,11 @@ const Commentaire = sequelize.define('commentaires', {
     type: DataTypes.TEXT,
     allowNull: false
   },
+  type_commentaire: {
+    type: DataTypes.ENUM('promo', 'reclamation', 'retour_magasin', 'autre'),
+    allowNull: true,
+    defaultValue: 'autre'
+  },
   date_creation: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW

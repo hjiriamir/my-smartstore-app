@@ -20,6 +20,7 @@ import Formation from './Formation.js';
 import CommandeAchat from './CommandeAchat.js';
 import LigneCommandeAchat from './LigneCommandeAchat.js';
 import EntrepriseFournisseur from './EntrepriseFournisseur.js'
+import Promotion from './Promotion.js';
 //import Conversation from './Conversation.js';
 // === Associations Conversation/Users===
 Conversation.belongsToMany(Users, {
@@ -27,6 +28,18 @@ Conversation.belongsToMany(Users, {
   foreignKey: 'conversation_id',
   otherKey: 'utilisateur_id'
 });
+Promotion.belongsTo(magasin1, {
+  as: 'magasin',
+  foreignKey: 'magasin_id',   // champ dans Promotion
+  targetKey: 'magasin_id',    // champ unique dans magasin1 (pas la PK)
+});
+magasin1.hasMany(Promotion, {
+  foreignKey: 'magasin_id',
+  sourceKey: 'magasin_id',
+});
+
+Promotion.belongsTo(Produit, { foreignKey: 'produit_id', targetKey: 'id' });
+Produit.hasOne(Promotion, { foreignKey: 'produit_id', sourceKey: 'id' });
 
 Users.belongsToMany(Conversation, {
   through: ConversationParticipant,
