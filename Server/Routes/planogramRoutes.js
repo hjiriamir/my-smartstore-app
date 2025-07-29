@@ -11,7 +11,8 @@ import {
   planogramsRecent,
   getPlanogramDetails,
   fetchPlanogramByStore,
-  createFullPlanogramm
+  createFullPlanogramm,
+  calculateConversionRate 
 } from '../Controller/planogramController.js';
 
 const router = express.Router();
@@ -33,5 +34,7 @@ router.get('/planogramsRecent/:idMagasin/:idUser', planogramsRecent);
 router.get('/getPlanogramsByMagasin/:idMagasin/:idUser', getPlanogramsByMagasin);
 router.put('/updatePlanogram/:id', updatePlanogram);
 router.delete('/deletePlanogram/:id', deletePlanogram);
+
+router.get('/conversion', calculateConversionRate);
 
 export default router;

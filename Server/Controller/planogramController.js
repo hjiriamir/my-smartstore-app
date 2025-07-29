@@ -9,6 +9,11 @@ import Users from '../Model/Users.js';
 import Notification from '../Model/Notification.js';
 import { sendBasicEmail } from '../Services/SendEmail.js';
 import Zone1 from '../Model/zone1.js';
+import {
+  getProductsPerPlanogram,
+  getVenteProduitsPerPlanogram,
+  getVisiteursParZone
+} from '../Services/planogramService.js';
 
 // Créer un planogramme simple
 export const createPlanogram = async (req, res) => {
@@ -613,3 +618,93 @@ export const fetchPlanogramByStore = async(req,res) =>{
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }
+
+export const calculateConversionRate = async (req, res) => {
+  try {
+    const { idPlanogram, date_debut, date_fin } = req.query;
+
+    if (!idPlanogram) {
+      return res.status(400).json({ error: "idPlanogram est obligatoire" });
+    }
+
+    // 1. Récupérer les ventes pour les produits du planogramme
+    const ventes = await getVenteProduitsPerPlanogram(idPlanogram, date_debut, date_fin);
+    const nombreAchats = ventes.length;
+
+    // 2. Calcul sécurisé de la somme totale
+    const sommeTotale = ventes.reduce((total, vente) => {
+      // Conversion en nombres et valeurs par défaut
+      const quantite = Number(vente.quantite) || 0;
+      const prix = Number(vente.prix_unitaire) || 0;
+      const montantTotal = Number(vente.montant_total) || null;
+      
+      const montant = montantTotal !== null 
+        ? montantTotal 
+        : quantite * prix;
+      
+      // Vérification finale pour éviter NaN
+      return total + (Number.isFinite(montant) ? montant : 0);
+    }, 0);
+
+    // 3. Formatage numérique sécurisé
+    const formatMontant = (val) => {
+      const num = Number(val);
+      return Number.isFinite(num) ? num.toFixed(2) : "0.00";
+    };
+
+    // 4. Récupérer les produits du planogramme pour trouver leur zone
+    const produits = await getProductsPerPlanogram(idPlanogram);
+    
+    if (produits.length === 0) {
+      return res.status(404).json({ error: "Aucun produit trouvé pour ce planogramme" });
+    }
+
+    // Supposons que tous les produits du planogramme sont dans la même zone
+    const idZone = produits[0].zone_id;
+    const myPlanogram = await Planogram.findOne({
+      where: { planogram_id: idPlanogram }
+    });
+    
+    if (!myPlanogram) {
+      throw new Error(`Planogram with id ${idPlanogram} not found`);
+    }
+    
+    const zone = await Zone1.findOne({
+      where: { zone_id: myPlanogram.zone_id },
+      attributes: ['nom_zone'],
+      raw: true
+    });
+    
+    const zoneName = zone ? zone.nom_zone : null;
+    const zoneId = myPlanogram.zone_id;
+
+    // 5. Récupérer le nombre total de visites de la zone
+    const nombreVisites = await getVisiteursParZone(zoneId, date_debut, date_fin);
+
+    // 6. Calculer le taux de conversion
+    const tauxConversion = nombreVisites > 0 
+      ? (nombreAchats / nombreVisites) * 100 
+      : 0;
+
+    // 7. Retourner le résultat complet
+    res.json({
+      idPlanogram,
+      zoneName,
+      date_debut,
+      date_fin,
+      nombreAchats,
+      nombreVisites,
+      tauxConversion: tauxConversion.toFixed(2) + '%',
+      sommeTotale: formatMontant(sommeTotale),
+      details:  `Calcul: ${nombreAchats} achats / ${nombreVisites} visites = ${tauxConversion.toFixed(2)}%`,
+        
+    });
+
+  } catch (error) {
+    console.error("Erreur dans calculateConversionRate:", error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};

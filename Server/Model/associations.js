@@ -21,6 +21,8 @@ import CommandeAchat from './CommandeAchat.js';
 import LigneCommandeAchat from './LigneCommandeAchat.js';
 import EntrepriseFournisseur from './EntrepriseFournisseur.js'
 import Promotion from './Promotion.js';
+//import zone1 from './zone1.js';
+import ZoneVisites from './ZoneVisites.js'
 //import Conversation from './Conversation.js';
 // === Associations Conversation/Users===
 Conversation.belongsToMany(Users, {
@@ -192,6 +194,9 @@ Fournisseur.belongsToMany(Entreprises, {
   otherKey: 'entrepriseId',
 });
 
+Zone1.hasMany(ZoneVisites, { foreignKey: 'zone_id' });
+ZoneVisites.belongsTo(Zone1, { foreignKey: 'zone_id' });
+
 export {
   Conversation,
   ConversationParticipant,
@@ -212,5 +217,6 @@ export {
   Formation,
   Entreprises,
   CommandeAchat,
-  LigneCommandeAchat
+  LigneCommandeAchat,
+  ZoneVisites
 };

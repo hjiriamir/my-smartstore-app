@@ -2,6 +2,12 @@
 import magasin1 from '../Model/magasin1.js';
 import Magasin from '../Model/magasin1.js';
 import Users from '../Model/Users.js'
+import { Op } from 'sequelize';
+
+import {getVenteTotalByMagasin} from '../Services/magasinService.js'
+import {getVenteTotalByZone, getZonesByMagasin} from '../Services/zoneService.js'
+
+
 // Créer un nouveau magasin
 export const createMagasin = async (req, res) => {
   try {
@@ -145,3 +151,62 @@ export const createMagasinsList = async (req, res) => {
       res.status(400).json({ error: error.message });
     }
   }
+
+  export const getPerformanceZones = async (req, res) => {
+    try {
+      const { idMagasin, date_debut, date_fin } = req.query;
+  
+      if (!idMagasin) {
+        return res.status(400).json({ error: "Le paramètre idMagasin est obligatoire" });
+      }
+  
+      // 1. Récupérer les ventes totales du magasin
+      const ventesMagasin = await getVenteTotalByMagasin(idMagasin, date_debut, date_fin);
+      const totalVentesMagasin = ventesMagasin.totalVentes;
+  
+      if (totalVentesMagasin === 0) {
+        return res.status(200).json({
+          message: "Aucune vente enregistrée pour cette période",
+          performances: []
+        });
+      }
+  
+      // 2. Récupérer toutes les zones du magasin
+      const zones = await getZonesByMagasin(idMagasin);
+      
+      // 3. Calculer les performances pour chaque zone
+      const performances = await Promise.all(
+        zones.map(async (zone) => {
+          const ventesZone = await getVenteTotalByZone(zone.zone_id, idMagasin, date_debut, date_fin);
+          const performance = (ventesZone.totalVentes / totalVentesMagasin) * 100;
+          
+          return {
+            zone_id: zone.zone_id,
+            nom_zone: zone.nom_zone,
+            ventes_zone: ventesZone.totalVentes,
+            performance: performance.toFixed(2) + '%',
+            details: ventesZone.details
+          };
+        })
+      );
+  
+      // 4. Trier par performance décroissante
+      performances.sort((a, b) => parseFloat(b.performance) - parseFloat(a.performance));
+  
+      // 5. Retourner les résultats
+      res.json({
+        idMagasin,
+        date_debut,
+        date_fin,
+        total_ventes_magasin: totalVentesMagasin,
+        performances
+      });
+  
+    } catch (error) {
+      console.error("Erreur dans getPerformanceZones:", error);
+      res.status(500).json({ 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  };

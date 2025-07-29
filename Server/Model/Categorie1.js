@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../Config/database1.js';
 import magasin1 from './magasin1.js';
-
+import zone1 from './zone1.js'
 const Categorie1 = sequelize.define('Categorie', {
     // Clé primaire auto-incrémentée
     id: {
@@ -53,10 +53,18 @@ const Categorie1 = sequelize.define('Categorie', {
       references: {         // déclaration FK
         model: magasin1,    // table référencée
         key: 'magasin_id',         // colonne référencée (clé primaire Magasin)
-      },
+      }
+    },
+    zone_id: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        references: {         // déclaration FK
+          model: zone1,    // table référencée
+          key: 'zone_id',         // colonne référencée (clé primaire Magasin)
+        },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
-    }
+    },
 }, {
     tableName: 'categories',
     timestamps: true,

@@ -157,6 +157,71 @@ interface CommentsApiResponse {
   utilisateurs: UserInCommentsResponse[]
 }
 
+// Updated types for Planogram APIs
+interface Planogram {
+  planogram_id: number // Changed from 'id' to 'planogram_id' and type to number
+  nom: string // Changed from 'nom_planogram' to 'nom'
+  magasin_id: string
+  zone_id: string
+  description: string
+  date_creation: string
+  update_date: string | null
+  created_by: number
+  statut: string
+  pdfUrl: string | null
+  imageUrl: string | null
+}
+
+interface PlanogramListResponse {
+  count: number
+  rows: Planogram[]
+}
+
+interface PlanogramConversionResponse {
+  idPlanogram: string
+  zoneName: string
+  date_debut: string
+  date_fin: string
+  nombreAchats: number
+  nombreVisites: number
+  tauxConversion: string
+  details: string
+  sommeTotale: number
+}
+
+// New types for Zone Performance APIs
+interface Zone {
+  zone_id: string
+  nom_zone: string
+  description: string | null
+  magasin_id: string
+  date_creation: string
+  date_modification: string
+}
+
+interface ZonePerformanceDetail {
+  produit_id: string
+  nom_produit: string
+  quantite: number
+  montant: number
+}
+
+interface ZonePerformance {
+  zone_id: string
+  nom_zone: string
+  ventes_zone: number
+  performance: string // e.g., "53.30%"
+  details: ZonePerformanceDetail[]
+}
+
+interface ZonePerformanceApiResponse {
+  idMagasin: string
+  date_debut: string
+  date_fin: string
+  total_ventes_magasin: number
+  performances: ZonePerformance[]
+}
+
 export default function MarketingStrategyPage() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
@@ -205,6 +270,25 @@ export default function MarketingStrategyPage() {
   // States for Store Reports (Comments)
   const [storeReportsList, setStoreReportsList] = useState<(Comment & { userName: string; userEmail: string })[]>([])
   const [isStoreReportsLoading, setIsStoreReportsLoading] = useState(false)
+
+  // States for Planograms tab
+  const [planogramStartDate, setPlanogramStartDate] = useState("")
+  const [planogramEndDate, setPlanogramEndDate] = useState("")
+  const [selectedPlanogramMagasinId, setSelectedPlanogramMagasinId] = useState<string>("all")
+  const [availablePlanograms, setAvailablePlanograms] = useState<Planogram[]>([])
+  const [isPlanogramsLoading, setIsPlanogramsLoading] = useState(false)
+  const [planogramConversionDataMap, setPlanogramConversionDataMap] = useState<
+    Map<string, PlanogramConversionResponse>
+  >(new Map())
+  const [isFetchingAllPlanogramConversions, setIsFetchingAllPlanogramConversions] = useState(false)
+  // New state for planogram date validation error
+  const [planogramDateError, setPlanogramDateError] = useState<string | null>(null)
+
+  // States for Zone Performance
+  const [availableZones, setAvailableZones] = useState<Zone[]>([])
+  const [zonePerformanceData, setZonePerformanceData] = useState<ZonePerformance[]>([])
+  const [isZonesLoading, setIsZonesLoading] = useState(false)
+  const [isZonePerformanceLoading, setIsZonePerformanceLoading] = useState(false)
 
   // Function to fetch marketing data (memoized with useCallback)
   const fetchMarketingData = useCallback(async () => {
@@ -370,6 +454,7 @@ export default function MarketingStrategyPage() {
           const storesData: Magasin[] = await storesResponse.json()
           setStores(storesData)
           setSelectedMagasinId("all")
+          setSelectedPlanogramMagasinId("all") // Initialize for Planograms tab
         }
       } catch (error) {
         console.error("Error fetching current user data or stores:", error)
@@ -480,10 +565,7 @@ export default function MarketingStrategyPage() {
       const filteredComments: (Comment & { userName: string; userEmail: string })[] = []
       data.utilisateurs.forEach((userEntry) => {
         userEntry.comments.forEach((comment) => {
-          if (
-            comment.type_commentaire === "retour_magasin" ||
-            comment.type_commentaire === "reclamation"
-          ) {
+          if (comment.type_commentaire === "retour_magasin" || comment.type_commentaire === "reclamation") {
             filteredComments.push({
               ...comment,
               userName: userEntry.utilisateur.name,
@@ -507,6 +589,157 @@ export default function MarketingStrategyPage() {
       fetchStoreReports()
     }
   }, [showStoreReports, idEntreprise, fetchStoreReports])
+
+  // Fetch Planograms based on selected store for Planograms tab
+  useEffect(() => {
+    const fetchPlanograms = async () => {
+      if (selectedPlanogramMagasinId === "all" || idEntreprise === null) {
+        setAvailablePlanograms([])
+        setPlanogramConversionDataMap(new Map()) // Clear stats when store changes or no store selected
+        return
+      }
+      setIsPlanogramsLoading(true)
+      try {
+        const response = await fetch(
+          `http://localhost:8081/api/planogram/fetchPlanogramByStore/${selectedPlanogramMagasinId}`,
+        )
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.warn(`No planograms found for store ${selectedPlanogramMagasinId} (404).`)
+          } else {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+        }
+        // Correctly access the 'rows' array from the response
+        const data: PlanogramListResponse = response.ok ? await response.json() : { count: 0, rows: [] }
+        setAvailablePlanograms(data.rows)
+        setPlanogramConversionDataMap(new Map()) // Clear previous conversion data
+      } catch (error) {
+        console.error("Error fetching planograms:", error)
+        setAvailablePlanograms([])
+      } finally {
+        setIsPlanogramsLoading(false)
+      }
+    }
+    fetchPlanograms()
+  }, [selectedPlanogramMagasinId, idEntreprise]) // Depend on selected store and enterprise ID
+
+  // Fetch Planogram Performance for all displayed planograms when planograms or dates change
+  useEffect(() => {
+    const fetchConversions = async () => {
+      // Validate dates first
+      if (planogramStartDate && planogramEndDate) {
+        const start = new Date(planogramStartDate)
+        const end = new Date(planogramEndDate)
+        if (start > end) {
+          setPlanogramDateError("La date de début ne peut pas être après la date de fin.")
+          setPlanogramConversionDataMap(new Map()) // Clear stats if dates are invalid
+          setIsFetchingAllPlanogramConversions(false) // Ensure loading state is off
+          return
+        } else {
+          setPlanogramDateError(null) // Clear error if dates are valid
+        }
+      } else {
+        setPlanogramDateError(null) // Clear error if dates are empty/not fully selected
+      }
+
+      if (availablePlanograms.length === 0 || !planogramStartDate || !planogramEndDate || planogramDateError) {
+        setPlanogramConversionDataMap(new Map()) // Clear if no planograms or dates missing or dates are invalid
+        return
+      }
+
+      setIsFetchingAllPlanogramConversions(true)
+      const newConversionMap = new Map<string, PlanogramConversionResponse>()
+      const fetchPromises = availablePlanograms.map(async (planogram) => {
+        try {
+          // Use planogram.planogram_id and convert to string if necessary for the API
+          const apiUrl = `http://localhost:8081/api/planogram/conversion?idPlanogram=${planogram.planogram_id}&date_debut=${planogramStartDate}&date_fin=${planogramEndDate}`
+          const response = await fetch(apiUrl)
+          if (!response.ok) {
+            if (response.status === 404) {
+              console.warn(`No performance data found for planogram ${planogram.planogram_id} and dates (404).`)
+            } else {
+              throw new Error(`HTTP error! status: ${response.status}`)
+            }
+          }
+          const data: PlanogramConversionResponse = await response.json()
+          newConversionMap.set(String(planogram.planogram_id), data) // Store by string ID
+        } catch (error) {
+          console.error(`Error fetching conversion for planogram ${planogram.planogram_id}:`, error)
+          // Optionally, set an error state for this specific planogram or just skip it
+        }
+      })
+
+      await Promise.allSettled(fetchPromises) // Wait for all fetches to complete
+      setPlanogramConversionDataMap(newConversionMap)
+      setIsFetchingAllPlanogramConversions(false)
+    }
+
+    fetchConversions()
+  }, [availablePlanograms, planogramStartDate, planogramEndDate, planogramDateError]) // Depend on planograms list and dates, and error state
+
+  // Fetch Zones for the selected store in Planograms tab
+  useEffect(() => {
+    const fetchZones = async () => {
+      if (selectedPlanogramMagasinId === "all") {
+        setAvailableZones([])
+        setZonePerformanceData([]) // Clear performance data when store changes
+        return
+      }
+      setIsZonesLoading(true)
+      try {
+        const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedPlanogramMagasinId}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.warn(`No zones found for store ${selectedPlanogramMagasinId} (404).`)
+          } else {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+        }
+        const data: Zone[] = response.ok ? await response.json() : []
+        setAvailableZones(data)
+        setZonePerformanceData([]) // Clear previous performance data
+      } catch (error) {
+        console.error("Error fetching zones:", error)
+        setAvailableZones([])
+      } finally {
+        setIsZonesLoading(false)
+      }
+    }
+    fetchZones()
+  }, [selectedPlanogramMagasinId])
+
+  // Fetch Zone Performance data
+  useEffect(() => {
+    const fetchZonePerformance = async () => {
+      if (selectedPlanogramMagasinId === "all" || !planogramStartDate || !planogramEndDate || planogramDateError) {
+        setZonePerformanceData([]) // Clear if no store, dates missing, or dates are invalid
+        return
+      }
+
+      setIsZonePerformanceLoading(true)
+      try {
+        const apiUrl = `http://localhost:8081/api/magasins/getPerformanceZones?idMagasin=${selectedPlanogramMagasinId}&date_debut=${planogramStartDate}&date_fin=${planogramEndDate}`
+        const response = await fetch(apiUrl)
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.warn(`No zone performance data found for store ${selectedPlanogramMagasinId} and dates (404).`)
+          } else {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+        }
+        const data: ZonePerformanceApiResponse = response.ok ? await response.json() : { performances: [] }
+        setZonePerformanceData(data.performances)
+      } catch (error) {
+        console.error("Error fetching zone performance:", error)
+        setZonePerformanceData([])
+      } finally {
+        setIsZonePerformanceLoading(false)
+      }
+    }
+
+    fetchZonePerformance()
+  }, [selectedPlanogramMagasinId, planogramStartDate, planogramEndDate, planogramDateError])
 
   const handleTargetStoreChange = (magasin_id: string, isChecked: boolean) => {
     setSelectedTargetStores((prev) => (isChecked ? [...prev, magasin_id] : prev.filter((id) => id !== magasin_id)))
@@ -581,7 +814,7 @@ export default function MarketingStrategyPage() {
 
   const navigationItems = [
     { value: "promotions", label: "Promotions & Offres", icon: Zap },
-    { value: "planograms", label: "Planogrammes", icon: BarChart3 },
+    { value: "planograms", label: "Planogrammes & Zones", icon: BarChart3 },
     { value: "campaigns", label: "Campagnes Ciblées", icon: Target },
     { value: "testing", label: "A/B Testing", icon: TrendingUp },
   ]
@@ -666,7 +899,7 @@ export default function MarketingStrategyPage() {
                 Promotions & Offres
               </TabsTrigger>
               <TabsTrigger value="planograms" className="text-xs sm:text-sm">
-                Planogrammes
+                Planogrammes & Zones
               </TabsTrigger>
               <TabsTrigger value="campaigns" className="text-xs sm:text-sm">
                 Campagnes Ciblées
@@ -1128,7 +1361,6 @@ export default function MarketingStrategyPage() {
                               <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           )}
-                       
                         </div>
                       </div>
                     </div>
@@ -1141,40 +1373,198 @@ export default function MarketingStrategyPage() {
             </Card>
           </TabsContent>
           <TabsContent value="planograms" className="space-y-4 sm:space-y-6">
+            {/* Store Filter for Planograms */}
+            <div className="bg-white/50 backdrop-blur-sm p-3 sm:p-4 rounded-lg border shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="planogram-store-filter" className="block text-sm font-medium text-slate-700 mb-1">
+                    Filtrer par magasin
+                  </Label>
+                  <div className="relative">
+                    <Select value={selectedPlanogramMagasinId} onValueChange={setSelectedPlanogramMagasinId}>
+                      <SelectTrigger className="w-full pl-3 pr-8 py-2 text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder="Sélectionner un magasin" />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 mt-1 w-full bg-white shadow-lg rounded-lg border border-slate-200 py-1 max-h-60 overflow-auto">
+                        <SelectItem
+                          value="all"
+                          className="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center"
+                        >
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4 text-slate-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                              />
+                            </svg>
+                            <span>Tous les magasins</span>
+                          </div>
+                        </SelectItem>
+                        {stores.map((store) => (
+                          <SelectItem
+                            key={store.magasin_id}
+                            value={store.magasin_id}
+                            className="px-4 py-2 hover:bg-slate-50 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="w-4 h-4 text-blue-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                />
+                              </svg>
+                              <span className="truncate">{store.nom_magasin}</span>
+                              <span className="ml-auto text-xs text-slate-500 hidden sm:inline">
+                                {store.adresse.split(",")[0]}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                {selectedPlanogramMagasinId !== "all" && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSelectedPlanogramMagasinId("all")}
+                    className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    Réinitialiser Magasin
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Date Range Selectors for Planograms */}
+            <div className="bg-white/50 backdrop-blur-sm p-3 sm:p-4 rounded-lg border shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="planogram-start-date" className="text-sm">
+                    Date de début
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      id="planogram-start-date"
+                      className="text-sm pr-10"
+                      value={planogramStartDate}
+                      onChange={(e) => setPlanogramStartDate(e.target.value)}
+                    />
+                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="planogram-end-date" className="text-sm">
+                    Date de fin
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      id="planogram-end-date"
+                      className="text-sm pr-10"
+                      value={planogramEndDate}
+                      onChange={(e) => setPlanogramEndDate(e.target.value)}
+                    />
+                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  </div>
+                </div>
+              </div>
+              {planogramDateError && <p className="text-red-500 text-xs mt-2">{planogramDateError}</p>}
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Planogramme Digital - Rayon Électronique</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Optimisation des placements produits</CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Performance par Planogramme</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Analyse des performances de vos planogrammes
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-4">
-                    {Array.from({ length: 16 }, (_, i) => (
-                      <div
-                        key={i}
-                        className={`h-8 sm:h-12 rounded border-2 flex items-center justify-center text-xs font-medium ${
-                          i < 4
-                            ? "bg-red-100 border-red-300 text-red-700"
-                            : i < 8
-                              ? "bg-yellow-100 border-yellow-300 text-yellow-700"
-                              : i < 12
-                                ? "bg-green-100 border-green-300 text-green-700"
-                                : "bg-blue-100 border-blue-300 text-blue-700"
-                        }`}
-                      >
-                        P{i + 1}
+                  <div className="space-y-3 sm:space-y-4 max-h-[300px] overflow-y-auto">
+                    {isPlanogramsLoading ? (
+                      <div className="text-center text-muted-foreground py-4">Chargement des planogrammes...</div>
+                    ) : availablePlanograms.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-4">
+                        Sélectionnez un magasin pour afficher les planogrammes.
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-200 rounded"></div>
-                      <span>Niveau Œil</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-200 rounded"></div>
-                      <span>Cross-selling</span>
-                    </div>
+                    ) : (
+                      availablePlanograms.map((planogram) => {
+                        const conversionData = planogramConversionDataMap.get(String(planogram.planogram_id)) // Use String(planogram.planogram_id) for map key
+                        const showStats =
+                          planogramStartDate && planogramEndDate && conversionData && !planogramDateError
+                         return (
+                            <div key={planogram.planogram_id} className="p-3 border rounded-lg bg-slate-50">
+                              <h4 className="font-medium text-sm sm:text-base mb-1">
+                                {planogram.nom} - Zone: {planogram.zone_id}
+                              </h4>
+                              {isFetchingAllPlanogramConversions ? (
+                                <p className="text-xs text-muted-foreground">Chargement des statistiques...</p>
+                              ) : showStats ? (
+                                <>
+                                  <div className="grid grid-cols-2 gap-2 mb-1">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Taux de conversion</p>
+                                      <p className="text-sm font-medium">{conversionData?.tauxConversion}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Chiffre d'affaires</p>
+                                      <p className="text-sm font-medium text-green-600">
+                                        {conversionData?.sommeTotale ? 
+                                          `${parseFloat(conversionData.sommeTotale).toLocaleString('fr-FR', {
+                                            style: 'currency',
+                                            currency: 'EUR'
+                                          })}` 
+                                          : 'N/A'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Achats</p>
+                                      <p className="text-sm font-medium">{conversionData?.nombreAchats}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Visites</p>
+                                      <p className="text-sm font-medium">{conversionData?.nombreVisites}</p>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">
+                                  {planogramDateError
+                                    ? planogramDateError
+                                    : "Sélectionnez une plage de dates pour voir les performances."}
+                                </p>
+                              )}
+                            </div>
+                          )
+                      })
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1184,21 +1574,52 @@ export default function MarketingStrategyPage() {
                   <CardDescription className="text-xs sm:text-sm">Analyse des ventes par emplacement</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 sm:space-y-4">
-                    {[
-                      { name: "Tête de Gondole", value: 92 },
-                      { name: "Niveau Œil", value: 78 },
-                      { name: "Niveau Bas", value: 45 },
-                      { name: "Niveau Haut", value: 32 },
-                    ].map((item, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-xs sm:text-sm min-w-0 flex-1 truncate">{item.name}</span>
-                        <div className="flex items-center gap-2 ml-2">
-                          <Progress value={item.value} className="w-16 sm:w-20" />
-                          <span className="text-xs sm:text-sm font-medium w-8 text-right">{item.value}%</span>
-                        </div>
+                  <div className="space-y-3 sm:space-y-4 max-h-[300px] overflow-y-auto">
+                    {isZonesLoading ? (
+                      <div className="text-center text-muted-foreground py-4">Chargement des zones...</div>
+                    ) : selectedPlanogramMagasinId === "all" ? (
+                      <div className="text-center text-muted-foreground py-4">
+                        Sélectionnez un magasin pour afficher les zones.
                       </div>
-                    ))}
+                    ) : availableZones.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-4">Aucune zone trouvée pour ce magasin.</div>
+                    ) : isZonePerformanceLoading ? (
+                      <div className="text-center text-muted-foreground py-4">Chargement des performances...</div>
+                    ) : planogramDateError ? (
+                      <div className="text-center text-red-500 py-4">{planogramDateError}</div>
+                    ) : zonePerformanceData.length === 0 && planogramStartDate && planogramEndDate ? (
+                      <div className="text-center text-muted-foreground py-4">
+                        Aucune donnée de performance trouvée pour la période sélectionnée.
+                      </div>
+                    ) : (
+                      availableZones.map((zone) => {
+                        const performance = zonePerformanceData.find((p) => p.zone_id === zone.zone_id)
+                        const performanceValue = performance
+                          ? Number.parseFloat(performance.performance.replace("%", ""))
+                          : 0
+                        const showPerformance = planogramStartDate && planogramEndDate && performance
+
+                        return (
+                          <div key={zone.zone_id} className="flex justify-between items-center">
+                            <span className="text-xs sm:text-sm min-w-0 flex-1 truncate">{zone.nom_zone}</span>
+                            <div className="flex items-center gap-2 ml-2">
+                              {showPerformance ? (
+                                <>
+                                  <Progress value={performanceValue} className="w-16 sm:w-20" />
+                                  <span className="text-xs sm:text-sm font-medium w-12 text-right">
+                                    {performance?.performance}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-muted-foreground w-full text-right">
+                                  {planogramStartDate && planogramEndDate ? "Pas de données" : "Sélectionnez les dates"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1268,54 +1689,6 @@ export default function MarketingStrategyPage() {
                         <p className={`text-xs sm:text-sm text-${item.color}-600`}>{item.desc}</p>
                       </div>
                       <div className={`w-3 h-3 bg-${item.color}-500 rounded-full flex-shrink-0 ml-2`}></div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="testing" className="space-y-4 sm:space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Tests A/B en Cours
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  Optimisation continue des displays et promotions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 sm:space-y-6">
-                  {abTests.map((test, index) => (
-                    <div key={index} className="border rounded-lg p-3 sm:p-4">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-4 gap-2">
-                        <h3 className="font-semibold text-sm sm:text-base">{test.name}</h3>
-                        <Badge variant={test.winner ? "default" : "secondary"} className="text-xs w-fit">
-                          {test.winner ? `Gagnant: Variante ${test.winner}` : "En cours"}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div className="p-3 border rounded-lg">
-                          <h4 className="font-medium mb-2 text-sm sm:text-base">Variante A</h4>
-                          <p className="text-xs sm:text-sm text-slate-600 mb-2">{test.variant_a.name}</p>
-                          <div className="flex items-center gap-2">
-                            <Progress value={test.variant_a.conversion * 20} className="flex-1" />
-                            <span className="text-xs sm:text-sm font-medium">{test.variant_a.conversion}%</span>
-                          </div>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <h4 className="font-medium mb-2 text-sm sm:text-base">Variante B</h4>
-                          <p className="text-xs sm:text-sm text-slate-600 mb-2">{test.variant_b.name}</p>
-                          <div className="flex items-center gap-2">
-                            <Progress value={test.variant_b.conversion * 20} className="flex-1" />
-                            <span className="text-xs sm:text-sm font-medium">{test.variant_b.conversion}%</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-3 text-xs sm:text-sm text-slate-600">
-                        Confiance statistique: {test.confidence}%
-                      </div>
                     </div>
                   ))}
                 </div>
