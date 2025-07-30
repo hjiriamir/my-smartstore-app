@@ -8,6 +8,7 @@ import {
   deleteZone,
   createZonesList,
   getAllZonesMagasin,
+  traficMoyenByZoneController,
 } from '../Controller/zoneUpdateController.js';
 
 const router = express.Router();
@@ -19,6 +20,6 @@ router.get('/getZoneById/:id', getZoneById);
 router.put('/updateZone/:id', updateZone);
 router.delete('/deleteZone/:id', deleteZone);
 router.get('/getZonesMagasin/:idMagasin', getAllZonesMagasin);
-
+router.get("/trafic-moyen", traficMoyenByZoneController);
 
 export default router;

@@ -1,6 +1,5 @@
 "use client"
-
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -12,37 +11,121 @@ import {
   Eye,
   Users,
   TrendingUp,
-  Plus,
-  Edit,
-  Save,
   ChevronDown,
   Menu,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Selecteurs } from "../selecteurs" // Import the new Selecteurs component
+
+// --- Interfaces pour les données API ---
+interface Magasin {
+  magasin_id: string
+  nom_magasin: string
+}
+
+interface Zone {
+  zone_id: string
+  nom_zone: string
+  description: string
+}
+
+interface ZoneProductDetail {
+  produit_id: string
+  nom_produit: string
+  quantite: number
+  montant: number
+}
+
+interface ZonePerformanceDetail {
+  zone_id: string
+  nom_zone: string
+  ventes_zone: number
+  performance: string // Ex: "53.30%"
+  details: ZoneProductDetail[]
+}
+
+interface ZonePerformanceResponse {
+  idMagasin: string
+  date_debut: string
+  date_fin: string
+  total_ventes_magasin: number
+  performances: ZonePerformanceDetail[]
+}
+
+interface ZoneTrafficData {
+  zone_id: string
+  periode: {
+    date_debut: string
+    date_fin: string
+  }
+  visitesActuelles: number
+  moyennePast: number
+  variation: number
+  diffVariation: string
+}
+
+// Nouvelle interface pour les données de performance des produits
+interface ProductDetail {
+  produitId: string
+  nom: string
+  ventesActuelles: number
+  moyennePast: number
+  variation: number
+  diffVariation: string
+  recommendation: string
+}
+
+interface ProductPerformanceResponse {
+  idMagasin: string
+  periode: {
+    date_debut: string
+    date_fin: string
+  }
+  produits: ProductDetail[]
+}
 
 export default function ShopPillarsPage() {
-  const [selectedZone, setSelectedZone] = useState("electronics")
+  const [selectedZone, setSelectedZone] = useState("electronics") // Existing state for static zones data
   const [showNewPillar, setShowNewPillar] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [selectedProducts, setSelectedProducts] = useState([])
   const [activeTab, setActiveTab] = useState("zoning")
+
+  // New states for user, stores, zones, and performance data
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [idEntreprise, setIdEntreprise] = useState<string | null>(null)
+  const [stores, setStores] = useState<Magasin[]>([])
+  const [availableZones, setAvailableZones] = useState<Zone[]>([])
+  const [zonePerformanceData, setZonePerformanceData] = useState<ZonePerformanceResponse | null>(null)
+  const [zoneTrafficDataMap, setZoneTrafficDataMap] = useState<Map<string, ZoneTrafficData>>(new Map()) // Map zone_id to its traffic data
+  const [productPerformanceData, setProductPerformanceData] = useState<ProductPerformanceResponse | null>(null) // New state for product performance
+
+  // Loading and error states
+  const [isLoadingUserAndStores, setIsLoadingUserAndStores] = useState(true)
+  const [isLoadingZones, setIsLoadingZones] = useState(false)
+  const [isLoadingZonePerformance, setIsLoadingZonePerformance] = useState(false)
+  const [isLoadingZoneTraffic, setIsLoadingZoneTraffic] = useState(false)
+  const [isLoadingProductPerformance, setIsLoadingProductPerformance] = useState(false) // New loading state
+  const [errorUserAndStores, setErrorUserAndStores] = useState<string | null>(null)
+  const [errorZones, setErrorZones] = useState<string | null>(null)
+  const [errorZonePerformance, setErrorZonePerformance] = useState<string | null>(null)
+  const [errorZoneTraffic, setErrorZoneTraffic] = useState<string | null>(null)
+  const [errorProductPerformance, setErrorProductPerformance] = useState<string | null>(null) // New error state
+
+  // New states for store and zone filters
+  const [selectedMagasinFilter, setSelectedMagasinFilter] = useState("all")
+  const [selectedZoneTypeFilter, setSelectedZoneTypeFilter] = useState("all")
+
+  // New states for date filters in Zonage Intelligent
+  const [startDateZoning, setStartDateZoning] = useState("")
+  const [endDateZoning, setEndDateZoning] = useState("")
+  const [zoningDateError, setZoningDateError] = useState<string | null>(null)
 
   const navigationItems = [
     { value: "zoning", label: "Zonage Intelligent", icon: MapPin },
@@ -51,12 +134,10 @@ export default function ShopPillarsPage() {
     { value: "gamification", label: "Gamification", icon: Gamepad2 },
     { value: "analytics", label: "Analytics Physiques", icon: Activity },
   ]
-
   const getCurrentNavLabel = () => {
     const current = navigationItems.find((item) => item.value === activeTab)
     return current ? current.label : "Navigation"
   }
-
   const zones = [
     { id: "electronics", name: "Électronique", traffic: 85, revenue: "€25,400", color: "bg-blue-500" },
     { id: "fashion", name: "Mode", traffic: 72, revenue: "€18,900", color: "bg-pink-500" },
@@ -64,7 +145,6 @@ export default function ShopPillarsPage() {
     { id: "beauty", name: "Beauté", traffic: 91, revenue: "€15,600", color: "bg-purple-500" },
     { id: "sports", name: "Sport", traffic: 54, revenue: "€12,800", color: "bg-orange-500" },
   ]
-
   const heatmapData = [
     { zone: "Entrée", intensity: 95, visitors: 1240 },
     { zone: "Caisse", intensity: 88, visitors: 980 },
@@ -72,13 +152,338 @@ export default function ShopPillarsPage() {
     { zone: "Nouveautés", intensity: 76, visitors: 620 },
     { zone: "Fond magasin", intensity: 34, visitors: 280 },
   ]
-
   const interactiveElements = [
     { name: "Bornes tactiles", usage: 78, satisfaction: 4.2 },
     { name: "QR Codes produits", usage: 65, satisfaction: 4.0 },
     { name: "Réalité augmentée", usage: 42, satisfaction: 4.5 },
     { name: "App mobile magasin", usage: 89, satisfaction: 4.3 },
   ]
+
+  // Effect to fetch current user data and stores
+  useEffect(() => {
+    const fetchCurrentUserDataAndStores = async () => {
+      setIsLoadingUserAndStores(true)
+      setErrorUserAndStores(null)
+      try {
+        const token = localStorage.getItem("token")
+        if (!token) {
+          console.error("Token d'authentification manquant")
+          setErrorUserAndStores("Token d'authentification manquant. Veuillez vous connecter.")
+          setIsLoadingUserAndStores(false)
+          return
+        }
+        const userResponse = await fetch(`http://localhost:8081/api/auth/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        })
+        if (!userResponse.ok) {
+          throw new Error("Erreur lors de la récupération des données utilisateur")
+        }
+        const userData = await userResponse.json()
+        const userId = userData.user?.idUtilisateur || userData.idUtilisateur || userData.id
+        const entrepriseId = userData.user?.entreprises_id || userData.entreprises_id
+        console.log("entreprise recuperer", entrepriseId)
+        setCurrentUserId(userId)
+        setIdEntreprise(entrepriseId)
+
+        if (entrepriseId) {
+          const storesResponse = await fetch(
+            `http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${entrepriseId}`,
+          )
+          if (!storesResponse.ok) {
+            console.warn(`HTTP error fetching stores! status: ${storesResponse.status}`)
+            setStores([])
+            setErrorUserAndStores("Erreur lors de la récupération des magasins.")
+            return
+          }
+          const storesData: Magasin[] = await storesResponse.json()
+          setStores(storesData)
+          // Initialize selectedMagasinFilter to the first store if available, otherwise "all"
+          if (storesData.length > 0) {
+            setSelectedMagasinFilter(storesData[0].magasin_id) // Use magasin_id for filter
+          } else {
+            setSelectedMagasinFilter("all")
+          }
+        }
+      } catch (error: any) {
+        console.error("Error fetching current user data or stores:", error)
+        setErrorUserAndStores(error.message || "Une erreur inattendue est survenue.")
+      } finally {
+        setIsLoadingUserAndStores(false)
+      }
+    }
+    fetchCurrentUserDataAndStores()
+  }, [])
+
+  // Effect to fetch zones based on selected store
+  useEffect(() => {
+    const fetchZones = async () => {
+      if (selectedMagasinFilter === "all" || !selectedMagasinFilter) {
+        setAvailableZones([])
+        return
+      }
+      setIsLoadingZones(true)
+      setErrorZones(null)
+      try {
+        const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinFilter}`)
+        if (!response.ok) {
+          throw new Error(`HTTP error fetching zones! status: ${response.status}`)
+        }
+        const data: Zone[] = await response.json()
+        setAvailableZones(data)
+        // Reset zone type filter if the previously selected one is not in the new list
+        if (selectedZoneTypeFilter !== "all" && !data.some((zone) => zone.zone_id === selectedZoneTypeFilter)) {
+          setSelectedZoneTypeFilter("all")
+        }
+      } catch (error: any) {
+        console.error("Error fetching zones:", error)
+        setErrorZones(error.message || "Erreur lors de la récupération des zones.")
+        setAvailableZones([])
+      } finally {
+        setIsLoadingZones(false)
+      }
+    }
+    fetchZones()
+  }, [selectedMagasinFilter])
+
+  // Effect for date validation
+  useEffect(() => {
+    if (startDateZoning && endDateZoning) {
+      const start = new Date(startDateZoning)
+      const end = new Date(endDateZoning)
+      if (start > end) {
+        setZoningDateError("La date de début ne peut pas être après la date de fin.")
+      } else {
+        setZoningDateError(null)
+      }
+    } else {
+      setZoningDateError(null) // Clear error if dates are empty/not fully selected
+    }
+  }, [startDateZoning, endDateZoning])
+
+  // Effect to fetch zone performance and traffic data
+  useEffect(() => {
+    const fetchZonePerformanceAndTraffic = async () => {
+      if (selectedMagasinFilter === "all" || !startDateZoning || !endDateZoning || zoningDateError) {
+        setZonePerformanceData(null)
+        setZoneTrafficDataMap(new Map())
+        return
+      }
+
+      setIsLoadingZonePerformance(true)
+      setErrorZonePerformance(null)
+      setZoneTrafficDataMap(new Map()) // Clear previous traffic data
+
+      try {
+        const performanceResponse = await fetch(
+          `http://localhost:8081/api/magasins/getPerformanceZones?idMagasin=${selectedMagasinFilter}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+        )
+        if (!performanceResponse.ok) {
+          throw new Error(`HTTP error fetching zone performance! status: ${performanceResponse.status}`)
+        }
+        const performanceData: ZonePerformanceResponse = await performanceResponse.json()
+        setZonePerformanceData(performanceData)
+
+        // Fetch traffic data for each zone in the performance data
+        setIsLoadingZoneTraffic(true)
+        setErrorZoneTraffic(null)
+        const newTrafficMap = new Map<string, ZoneTrafficData>()
+        const trafficPromises = performanceData.performances.map(async (zone) => {
+          try {
+            const trafficResponse = await fetch(
+              `http://localhost:8081/api/zones/trafic-moyen?idZone=${zone.zone_id}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+            )
+            if (!trafficResponse.ok) {
+              console.warn(`HTTP error fetching traffic for zone ${zone.zone_id}! status: ${trafficResponse.status}`)
+              return null // Return null for failed traffic fetches
+            }
+            const trafficData: { success: boolean; data: ZoneTrafficData } = await trafficResponse.json()
+            if (trafficData.success) {
+              newTrafficMap.set(zone.zone_id, trafficData.data)
+              console.log("trafic recuperer", trafficData)
+            }
+          } catch (trafficError: any) {
+            console.error(`Error fetching traffic for zone ${zone.zone_id}:`, trafficError)
+            return null
+          }
+        })
+        await Promise.all(trafficPromises)
+        setZoneTrafficDataMap(newTrafficMap)
+      } catch (error: any) {
+        console.error("Error fetching zone performance or traffic:", error)
+        setErrorZonePerformance(error.message || "Erreur lors de la récupération des données de performance des zones.")
+        setZonePerformanceData(null)
+      } finally {
+        setIsLoadingZonePerformance(false)
+        setIsLoadingZoneTraffic(false)
+      }
+    }
+    fetchZonePerformanceAndTraffic()
+  }, [selectedMagasinFilter, startDateZoning, endDateZoning, zoningDateError])
+
+  // New Effect to fetch product performance data
+  useEffect(() => {
+    const fetchProductPerformance = async () => {
+      if (selectedMagasinFilter === "all" || !startDateZoning || !endDateZoning || zoningDateError) {
+        setProductPerformanceData(null)
+        return
+      }
+
+      setIsLoadingProductPerformance(true)
+      setErrorProductPerformance(null)
+
+      try {
+        const response = await fetch(
+          `http://localhost:8081/api/produits/performance/produits?idMagasin=${selectedMagasinFilter}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+        )
+        if (!response.ok) {
+          throw new Error(`HTTP error fetching product performance! status: ${response.status}`)
+        }
+        const data: ProductPerformanceResponse = await response.json()
+        setProductPerformanceData(data)
+      } catch (error: any) {
+        console.error("Error fetching product performance:", error)
+        setErrorProductPerformance(error.message || "Erreur lors de la récupération des recommandations de produits.")
+        setProductPerformanceData(null)
+      } finally {
+        setIsLoadingProductPerformance(false)
+      }
+    }
+    fetchProductPerformance()
+  }, [selectedMagasinFilter, startDateZoning, endDateZoning, zoningDateError])
+
+  const isZoningFiltersActive =
+    selectedMagasinFilter !== "all" &&
+    selectedZoneTypeFilter !== "all" &&
+    startDateZoning !== "" &&
+    endDateZoning !== "" &&
+    !zoningDateError
+
+  // Helper function to format dates for display
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+  }
+
+  // Function to calculate the previous period and determine period type
+  const getPeriodDetails = (start: string, end: string) => {
+    if (!start || !end)
+      return { currentStart: null, currentEnd: null, prevStart: null, prevEnd: null, periodType: "custom" }
+
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
+      return { currentStart: null, currentEnd: null, prevStart: null, prevEnd: null, periodType: "custom" }
+    }
+
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1 to include both start and end day
+
+    let periodType: "week" | "month" | "semester" | "year" | "custom" = "custom"
+
+    const prevEndDate = new Date(startDate)
+    prevEndDate.setDate(startDate.getDate() - 1) // Day before current start
+
+    const prevStartDate = new Date(prevEndDate)
+    prevStartDate.setDate(prevEndDate.getDate() - diffDays + 1) // Subtract duration
+
+    if (diffDays === 7) {
+      periodType = "week"
+    } else if (diffDays >= 28 && diffDays <= 31) {
+      // Approx a month
+      periodType = "month"
+    } else if (diffDays >= 180 && diffDays <= 184) {
+      // Approx 6 months
+      periodType = "semester"
+    } else if (diffDays >= 365 && diffDays <= 366) {
+      // Approx a year
+      periodType = "year"
+    }
+
+    return {
+      currentStart: startDate.toISOString().split("T")[0],
+      currentEnd: endDate.toISOString().split("T")[0],
+      prevStart: prevStartDate.toISOString().split("T")[0],
+      prevEnd: prevEndDate.toISOString().split("T")[0],
+      periodType,
+    }
+  }
+
+  const { currentStart, currentEnd, prevStart, prevEnd, periodType } = getPeriodDetails(startDateZoning, endDateZoning)
+
+  const displayCurrentPeriod = useCallback(() => {
+    if (!currentStart || !currentEnd || zoningDateError) {
+      return "pour la période sélectionnée"
+    }
+
+    switch (periodType) {
+      case "week":
+        return "cette semaine"
+      case "month":
+        return "ce mois-ci"
+      case "semester":
+        return "ce semestre"
+      case "year":
+        return "cette année"
+      default:
+        return `du ${formatDateForDisplay(currentStart)} au ${formatDateForDisplay(currentEnd)}`
+    }
+  }, [currentStart, currentEnd, zoningDateError, periodType])
+
+  const displayPreviousPeriod = useCallback(() => {
+    if (!prevStart || !prevEnd || zoningDateError) {
+      return "la période précédente"
+    }
+
+    switch (periodType) {
+      case "week":
+        return "la semaine dernière"
+      case "month":
+        return "le mois dernier"
+      case "semester":
+        return "le semestre dernier"
+      case "year":
+        return "l'année dernière"
+      default:
+        return `du ${formatDateForDisplay(prevStart)} au ${formatDateForDisplay(prevEnd)}`
+    }
+  }, [prevStart, prevEnd, zoningDateError, periodType])
+
+  // Calculate aggregated stats for cards
+  const totalActiveZones = zonePerformanceData?.performances.length || 0
+  const totalZoneRevenue = zonePerformanceData?.performances.reduce((sum, zone) => sum + zone.ventes_zone, 0) || 0
+
+  const filteredZones =
+    selectedZoneTypeFilter === "all"
+      ? availableZones
+      : availableZones.filter((zone) => zone.zone_id === selectedZoneTypeFilter)
+
+  const relevantTrafficData = filteredZones
+    .map((zone) => zoneTrafficDataMap.get(zone.zone_id))
+    .filter((data): data is ZoneTrafficData => data !== undefined)
+
+  const averageTrafficVariation =
+    relevantTrafficData.length > 0
+      ? relevantTrafficData.reduce((sum, data) => sum + data.variation, 0) / relevantTrafficData.length
+      : 0
+
+  const averageDiffVariation =
+    relevantTrafficData.length > 0
+      ? relevantTrafficData.reduce((sum, data) => {
+          const diff = Number.parseFloat(data.diffVariation.replace("%", "").replace("+", ""))
+          return sum + diff
+        }, 0) / relevantTrafficData.length
+      : 0
+
+  const displayAverageTraffic = relevantTrafficData.length > 0 ? `${averageTrafficVariation.toFixed(2)}%` : "N/A"
+  const displayAverageDiff =
+    relevantTrafficData.length > 0 ? `${averageDiffVariation > 0 ? "+" : ""}${averageDiffVariation.toFixed(2)}%` : "N/A"
 
   return (
     <div className="min-h-screen bg-slate-50 mt-8 sm:mt-12">
@@ -97,7 +502,6 @@ export default function ShopPillarsPage() {
             </p>
           </div>
         </div>
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           {/* Navigation - Dropdown on mobile, tabs on desktop */}
           <div className="block sm:hidden">
@@ -130,7 +534,6 @@ export default function ShopPillarsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
           {/* Desktop Tabs */}
           <div className="hidden sm:block overflow-x-auto">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-w-[600px] sm:min-w-0">
@@ -151,276 +554,191 @@ export default function ShopPillarsPage() {
               </TabsTrigger>
             </TabsList>
           </div>
-
           <TabsContent value="zoning" className="space-y-4 sm:space-y-6">
             {/* Header with responsive buttons */}
             <div className="flex flex-col gap-3 sm:gap-4">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">Gestion des Piliers & Univers</h2>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={() => setEditMode(!editMode)} className="text-sm w-full sm:w-auto">
-                  <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                  {editMode ? "Terminer" : "Modifier Planogramme"}
-                </Button>
-                <Dialog open={showNewPillar} onOpenChange={setShowNewPillar}>
-                  <DialogTrigger asChild>
-                    <Button className="text-sm w-full sm:w-auto">
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                      Nouveau Pilier
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="text-lg sm:text-xl">Créer un Nouveau Pilier/Univers</DialogTitle>
-                      <DialogDescription className="text-sm">
-                        Définissez un nouvel univers produit pour votre magasin
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div>
-                        <Label htmlFor="pillar-name" className="text-sm">
-                          Nom du pilier
-                        </Label>
-                        <Input
-                          id="pillar-name"
-                          placeholder="Ex: Produits Locaux, Spécial Rentrée"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pillar-description" className="text-sm">
-                          Description
-                        </Label>
-                        <Textarea
-                          id="pillar-description"
-                          placeholder="Décrivez l'univers et sa stratégie..."
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="pillar-season" className="text-sm">
-                            Saisonnalité
-                          </Label>
-                          <Select>
-                            <SelectTrigger className="text-sm">
-                              <SelectValue placeholder="Sélectionner" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="permanent">Permanent</SelectItem>
-                              <SelectItem value="spring">Printemps</SelectItem>
-                              <SelectItem value="summer">Été</SelectItem>
-                              <SelectItem value="autumn">Automne</SelectItem>
-                              <SelectItem value="winter">Hiver</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="pillar-priority" className="text-sm">
-                            Priorité
-                          </Label>
-                          <Select>
-                            <SelectTrigger className="text-sm">
-                              <SelectValue placeholder="Sélectionner" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="high">Haute</SelectItem>
-                              <SelectItem value="medium">Moyenne</SelectItem>
-                              <SelectItem value="low">Basse</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm">Produits à associer</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
-                          {[
-                            "Smartphone Galaxy",
-                            "Casque Audio",
-                            "Tablette",
-                            "Montre Connectée",
-                            "Écouteurs",
-                            "Chargeur",
-                            "Coque",
-                            "Support",
-                          ].map((product) => (
-                            <div key={product} className="flex items-center space-x-2 p-2 border rounded">
-                              <input type="checkbox" id={product} />
-                              <Label htmlFor={product} className="text-xs sm:text-sm truncate">
-                                {product}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowNewPillar(false)} className="text-sm">
-                        Annuler
-                      </Button>
-                      <Button onClick={() => setShowNewPillar(false)} className="text-sm">
-                        Créer le Pilier
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">Gestion des Piliers</h2>
+              <div className="flex flex-col sm:flex-row gap-2"></div>
+            </div>
+
+            {/* Store, Zone Type, and Date Selectors */}
+            <Selecteurs
+              stores={stores}
+              availableZones={availableZones}
+              selectedMagasinFilter={selectedMagasinFilter}
+              setSelectedMagasinFilter={setSelectedMagasinFilter}
+              selectedZoneTypeFilter={selectedZoneTypeFilter}
+              setSelectedZoneTypeFilter={setSelectedZoneTypeFilter}
+              startDateZoning={startDateZoning}
+              setStartDateZoning={setStartDateZoning}
+              endDateZoning={endDateZoning}
+              setEndDateZoning={setEndDateZoning}
+              zoningDateError={zoningDateError}
+              isLoadingUserAndStores={isLoadingUserAndStores}
+              errorUserAndStores={errorUserAndStores}
+              isLoadingZones={isLoadingZones}
+              errorZones={errorZones}
+            />
+
+            {/* Conditional content based on selections */}
+            {!isZoningFiltersActive ? (
+              <div className="text-center text-muted-foreground py-8">
+                {isLoadingUserAndStores || isLoadingZones || isLoadingZonePerformance ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                    <p>Chargement des données...</p>
+                  </div>
+                ) : errorUserAndStores || errorZones || errorZonePerformance ? (
+                  <p className="text-red-500">{errorUserAndStores || errorZones || errorZonePerformance}</p>
+                ) : selectedMagasinFilter === "all" &&
+                  selectedZoneTypeFilter === "all" &&
+                  (!startDateZoning || !endDateZoning) ? (
+                  "Veuillez sélectionner un magasin, un type de zone et une plage de dates pour afficher les données de zonage."
+                ) : selectedMagasinFilter === "all" ? (
+                  "Veuillez sélectionner un magasin pour activer les filtres de zone et de date."
+                ) : selectedZoneTypeFilter === "all" ? (
+                  "Veuillez sélectionner un type de zone pour afficher les données de zonage."
+                ) : !startDateZoning || !endDateZoning ? (
+                  "Veuillez sélectionner une plage de dates pour afficher les données de zonage."
+                ) : zoningDateError ? (
+                  zoningDateError
+                ) : (
+                  "Veuillez sélectionner un magasin, un type de zone et une plage de dates pour afficher les données de zonage."
+                )}
               </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Zones Actives</CardTitle>
-                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">8</div>
-                  <p className="text-xs text-muted-foreground">Optimisées cette semaine</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Trafic Moyen</CardTitle>
-                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">74%</div>
-                  <p className="text-xs text-muted-foreground">+12% vs mois dernier</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Revenus Zones</CardTitle>
-                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">€94,800</div>
-                  <p className="text-xs text-muted-foreground">Cette semaine</p>
-                </CardContent>
-              </Card>
-              <Card className="col-span-2 lg:col-span-1">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Temps Séjour</CardTitle>
-                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">18min</div>
-                  <p className="text-xs text-muted-foreground">+3min vs moyenne</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Planogramme Interactif - Rayon Électronique</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    {editMode ? "Mode édition activé - Cliquez pour modifier" : "Visualisation des placements produits"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-4">
-                    {Array.from({ length: 16 }, (_, i) => (
-                      <div
-                        key={i}
-                        className={`h-8 sm:h-12 rounded border-2 flex items-center justify-center text-xs font-medium cursor-pointer transition-all ${
-                          editMode ? "hover:scale-105 hover:shadow-md" : ""
-                        } ${
-                          i < 4
-                            ? "bg-red-100 border-red-300 text-red-700"
-                            : i < 8
-                              ? "bg-yellow-100 border-yellow-300 text-yellow-700"
-                              : i < 12
-                                ? "bg-green-100 border-green-300 text-green-700"
-                                : "bg-blue-100 border-blue-300 text-blue-700"
-                        }`}
-                        onClick={() => editMode && alert(`Édition produit P${i + 1}`)}
-                      >
-                        P{i + 1}
-                      </div>
-                    ))}
-                  </div>
-                  {editMode && (
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-blue-50 rounded-lg gap-2">
-                      <span className="text-xs sm:text-sm text-blue-800">Mode édition actif</span>
-                      <Button size="sm" className="text-xs w-full sm:w-auto">
-                        <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                        Sauvegarder
-                      </Button>
-                    </div>
-                  )}
-                  <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-200 rounded"></div>
-                      <span>Niveau Œil</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-200 rounded"></div>
-                      <span>Cross-selling</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Recommandations d'Assortiment</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Suggestions personnalisées basées sur les données
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 sm:space-y-4">
-                    {[
-                      {
-                        action: "Ajouter",
-                        product: "Écouteurs sans fil",
-                        reason: "Forte demande détectée",
-                        impact: "+15% CA",
-                      },
-                      {
-                        action: "Déplacer",
-                        product: "Chargeur rapide",
-                        reason: "Meilleur emplacement",
-                        impact: "+8% ventes",
-                      },
-                      {
-                        action: "Retirer",
-                        product: "Ancien modèle",
-                        reason: "Faible rotation",
-                        impact: "Libère espace",
-                      },
-                    ].map((rec, index) => (
-                      <div key={index} className="p-3 border rounded-lg">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                          <div className="min-w-0 flex-1">
-                            <Badge
-                              variant={
-                                rec.action === "Ajouter"
-                                  ? "default"
-                                  : rec.action === "Déplacer"
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                              className="text-xs"
-                            >
-                              {rec.action}
-                            </Badge>
-                            <h4 className="font-medium mt-1 text-sm sm:text-base truncate">{rec.product}</h4>
-                          </div>
-                          <Button size="sm" variant="outline" className="text-xs w-full sm:w-auto bg-transparent">
-                            Appliquer
-                          </Button>
+            ) : (
+              <>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm sm:text-base font-semibold">Zones Actives</CardTitle>
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingZonePerformance ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                      ) : (
+                        <div className="text-xl sm:text-3xl font-extrabold">{totalActiveZones}</div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Optimisées {displayCurrentPeriod()}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm sm:text-base font-semibold">Trafic Moyen</CardTitle>
+                      <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingZoneTraffic ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                      ) : (
+                        <div className="text-xl sm:text-3xl font-extrabold">
+                          {relevantTrafficData.length > 0 ? `${relevantTrafficData[0].variation.toFixed(2)}%` : "N/A"}
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-600">{rec.reason}</p>
-                        <p className="text-xs sm:text-sm font-medium text-green-600">{rec.impact}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                      )}
+                      {prevStart && prevEnd && !zoningDateError && (
+                        <p className="text-xs text-purple-600 mt-1">
+                          {relevantTrafficData.length > 0 ? relevantTrafficData[0].diffVariation : "N/A"} vs{" "}
+                          {displayPreviousPeriod()}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm sm:text-base font-semibold">Revenus Zones</CardTitle>
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingZonePerformance ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                      ) : (
+                        <div className="text-xl sm:text-3xl font-extrabold">€{totalZoneRevenue.toFixed(2)}</div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Pour la période {displayCurrentPeriod()}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 sm:gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg sm:text-xl">Recommandations d'Assortiment</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">
+                        Suggestions personnalisées basées sur les données
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingProductPerformance ? (
+                        <div className="flex flex-col items-center justify-center h-32">
+                          <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+                          <p className="text-slate-500 mt-2">Chargement des recommandations de produits...</p>
+                        </div>
+                      ) : errorProductPerformance ? (
+                        <p className="text-red-500 text-center py-8">{errorProductPerformance}</p>
+                      ) : (productPerformanceData?.produits.length || 0) === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">
+                          Aucune recommandation de produit disponible pour la sélection actuelle.
+                        </p>
+                      ) : (
+                        <div className="space-y-3 sm:space-y-4">
+                          {productPerformanceData?.produits.map((product) => {
+                            let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline"
+                            let badgeText = "Action"
 
+                            if (
+                              product.recommendation.toLowerCase().includes("explosion") ||
+                              product.recommendation.toLowerCase().includes("capitaliser") ||
+                              product.recommendation.toLowerCase().includes("ajouter")
+                            ) {
+                              badgeVariant = "default"
+                              badgeText = "Ajouter"
+                            } else if (
+                              product.recommendation.toLowerCase().includes("baisse") ||
+                              product.recommendation.toLowerCase().includes("revoir") ||
+                              product.recommendation.toLowerCase().includes("retirer")
+                            ) {
+                              badgeVariant = "destructive"
+                              badgeText = "Revoir"
+                            } else if (product.recommendation.toLowerCase().includes("déplacer")) {
+                              badgeVariant = "secondary"
+                              badgeText = "Déplacer"
+                            }
+
+                            return (
+                              <div key={product.produitId} className="p-3 border rounded-lg">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <Badge variant={badgeVariant} className="text-xs">
+                                      {badgeText}
+                                    </Badge>
+                                    <h4 className="font-medium mt-1 text-sm sm:text-base truncate">{product.nom}</h4>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs w-full sm:w-auto bg-transparent"
+                                  >
+                                    Appliquer
+                                  </Button>
+                                </div>
+                                <p className="text-xs sm:text-sm text-slate-600 mb-1">
+                                  Variation: {product.diffVariation}
+                                </p>
+                                <p className="text-xs sm:text-sm font-medium text-green-600">
+                                  Recommandation: {product.recommendation}
+                                </p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+          </TabsContent>
           <TabsContent value="branding" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
@@ -487,7 +805,6 @@ export default function ShopPillarsPage() {
               </Card>
             </div>
           </TabsContent>
-
           <TabsContent value="interactive" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
@@ -503,7 +820,7 @@ export default function ShopPillarsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-3 sm:space-y-4">
                     {interactiveElements.map((element, index) => (
-                      <div key={index} className="p-3 sm:p-4 border rounded-lg">
+                      <div key={element.name} className="p-3 sm:p-4 border rounded-lg">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
                           <h4 className="font-medium text-sm sm:text-base truncate">{element.name}</h4>
                           <Badge variant="outline" className="text-xs w-fit">
@@ -551,7 +868,6 @@ export default function ShopPillarsPage() {
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="gamification" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
@@ -623,7 +939,6 @@ export default function ShopPillarsPage() {
               </Card>
             </div>
           </TabsContent>
-
           <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <Card>
@@ -643,7 +958,7 @@ export default function ShopPillarsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-lg sm:text-2xl font-bold">18min</div>
-                  <p className="text-xs text-muted-foreground">+2min vs moyenne</p>
+                  <p className="text-xs text-muted-foreground">vs moyenne sur la période</p>
                 </CardContent>
               </Card>
               <Card className="sm:col-span-2 lg:col-span-1">

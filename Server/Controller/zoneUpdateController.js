@@ -1,7 +1,7 @@
 // Controller/zoneController.js
 import Zone1 from '../Model/zone1.js';
 import Zone from '../Model/zone1.js';
-
+import { getTraficMoyenByZone } from "../Services/zoneService.js";
 // Créer une zone
 export const createZone = async (req, res) => {
   try {
@@ -96,6 +96,33 @@ export const createZonesList = async (req, res) => {
     } catch (error) {
       console.error('Erreur création liste de zones :', error);
       res.status(400).json({ error: error.message });
+    }
+  };
+  
+  export const traficMoyenByZoneController = async (req, res) => {
+    try {
+      const { idZone, date_debut, date_fin } = req.query;
+  
+      if (!idZone || !date_debut || !date_fin) {
+        return res.status(400).json({
+          message: "Les paramètres idZone, date_debut et date_fin sont obligatoires",
+        });
+      }
+  
+      // Enlever parseInt, garder idZone en string
+      const stats = await getTraficMoyenByZone(idZone, date_debut, date_fin);
+  
+      return res.status(200).json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      console.error("Erreur dans traficMoyenByZoneController:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erreur interne du serveur",
+        details: error.message,
+      });
     }
   };
   

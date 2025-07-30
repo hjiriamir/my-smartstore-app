@@ -24,3 +24,25 @@ export const getCategoriesByZone = async(idZone, idMagasin) => {
         throw error;
     }
 }
+
+export const getCategoriesByStore = async(idMagasin) => {
+    try {
+        if (!idMagasin) {
+            throw new Error("Les paramètres idMagasin sont obligatoires");
+        }
+    
+        const categories = await Categorie1.findAll({
+            where: {
+                magasin_id: idMagasin 
+                
+            }
+        });
+
+        console.log(`Catégories pour  magasin ${idMagasin}:`, categories);
+        return categories;
+        
+    } catch (error) {
+        console.error("Erreur dans getCategoriesByZone:", error);
+        throw error;
+    }
+}

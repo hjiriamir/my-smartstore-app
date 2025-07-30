@@ -10,7 +10,8 @@ import {
   getProductIdsByCodes,
   getProductIdsFromCodes,
   getProductsByMagasin,
-  getProduitsByCategorie
+  getProduitsByCategorie,
+  getPerformanceProduitsController
 } from '../Controller/produitController.js';
 
 const router = express.Router();
@@ -24,6 +25,7 @@ router.get('/getProduitsByCategorie/:idCategorie', getProduitsByCategorie);
 
 router.get('/getProductIdsFromCodes', getProductIdsFromCodes);              
 
+router.get('/performance/produits', getPerformanceProduitsController);
 
 router.get('/getProduitById/:id', getProduitById);         
 router.put('/updateProduit/:id', updateProduit);          

@@ -11,6 +11,9 @@ import {
   StockMovement 
 } from '../Model/associations.js';
 import { Op } from 'sequelize';
+
+import {getPerformanceProduitMoyenByStore } from '../Services/produitService.js'
+
 // Créer un produit
 export const createProduit = async (req, res) => {
   try {
@@ -292,3 +295,30 @@ export const getProduitsByCategorie = async (req,res) =>{
     return res.status(500).json({ error: "Erreur serveur" });
   }
 }
+
+
+export const getPerformanceProduitsController = async (req, res) => {
+  try {
+    const { idMagasin, date_debut, date_fin } = req.query;
+
+    if (!idMagasin || !date_debut || !date_fin) {
+      return res.status(400).json({
+        message: "Les paramètres idMagasin, date_debut et date_fin sont obligatoires"
+      });
+    }
+
+    const data = await getPerformanceProduitMoyenByStore(
+      idMagasin,
+      date_debut,
+      date_fin
+    );
+
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error("Erreur dans getPerformanceProduitsController :", error);
+    return res.status(500).json({
+      message: "Erreur serveur lors de la récupération de la performance des produits",
+      error: error.message
+    });
+  }
+};

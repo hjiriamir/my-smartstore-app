@@ -815,8 +815,7 @@ export default function MarketingStrategyPage() {
   const navigationItems = [
     { value: "promotions", label: "Promotions & Offres", icon: Zap },
     { value: "planograms", label: "Planogrammes & Zones", icon: BarChart3 },
-    { value: "campaigns", label: "Campagnes Ciblées", icon: Target },
-    { value: "testing", label: "A/B Testing", icon: TrendingUp },
+  
   ]
 
   const getCurrentNavLabel = () => {
@@ -894,20 +893,14 @@ export default function MarketingStrategyPage() {
           </div>
           {/* Desktop Tabs */}
           <div className="hidden sm:block overflow-x-auto">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 min-w-[600px] sm:min-w-0">
-              <TabsTrigger value="promotions" className="text-xs sm:text-sm">
-                Promotions & Offres
-              </TabsTrigger>
-              <TabsTrigger value="planograms" className="text-xs sm:text-sm">
-                Planogrammes & Zones
-              </TabsTrigger>
-              <TabsTrigger value="campaigns" className="text-xs sm:text-sm">
-                Campagnes Ciblées
-              </TabsTrigger>
-              <TabsTrigger value="testing" className="text-xs sm:text-sm">
-                A/B Testing
-              </TabsTrigger>
-            </TabsList>
+          <TabsList className="flex w-full space-x-2">
+            <TabsTrigger value="promotions" className="flex-1 py-2 text-sm">
+              Promotions & Offres
+            </TabsTrigger>
+            <TabsTrigger value="planograms" className="flex-1 py-2 text-sm">
+              Planogrammes & Zones
+            </TabsTrigger>
+          </TabsList>
           </div>
           <TabsContent value="promotions" className="space-y-4 sm:space-y-6">
             {/* Header with responsive button */}
@@ -1625,76 +1618,7 @@ export default function MarketingStrategyPage() {
               </Card>
             </div>
           </TabsContent>
-          <TabsContent value="campaigns" className="space-y-4 sm:space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Segmentation Clients
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  Campagnes personnalisées par profil client
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="p-3 border rounded-lg">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-                      <h4 className="font-medium text-sm sm:text-base">Clients Fidèles Premium</h4>
-                      <Badge className="text-xs w-fit">2,340 clients</Badge>
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-600 mb-2">Offres exclusives et avant-premières</p>
-                    <div className="flex flex-wrap gap-1 sm:gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        Remise 20%
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        Livraison gratuite
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-                      <h4 className="font-medium text-sm sm:text-base">Nouveaux Clients</h4>
-                      <Badge className="text-xs w-fit">890 clients</Badge>
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-600 mb-2">Offres de bienvenue et découverte</p>
-                    <div className="flex flex-wrap gap-1 sm:gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        Code WELCOME15
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        Guide produits
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Intégration Multicanale</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Cohérence magasin physique et digital</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 sm:space-y-4">
-                  {[
-                    { name: "Synchronisation Prix", desc: "Magasin ↔ E-commerce", color: "green" },
-                    { name: "Promotions Unifiées", desc: "Même offre tous canaux", color: "blue" },
-                    { name: "Stock Temps Réel", desc: "Disponibilité synchronisée", color: "purple" },
-                  ].map((item, index) => (
-                    <div key={index} className={`flex items-center justify-between p-3 bg-${item.color}-50 rounded-lg`}>
-                      <div className="min-w-0 flex-1">
-                        <h4 className={`font-medium text-${item.color}-800 text-sm sm:text-base`}>{item.name}</h4>
-                        <p className={`text-xs sm:text-sm text-${item.color}-600`}>{item.desc}</p>
-                      </div>
-                      <div className={`w-3 h-3 bg-${item.color}-500 rounded-full flex-shrink-0 ml-2`}></div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        
         </Tabs>
         {/* Store Reports Dialog */}
         <Dialog open={showStoreReports} onOpenChange={setShowStoreReports}>
