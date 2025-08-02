@@ -22,6 +22,11 @@ const Leaderboard = sequelize.define('Leaderboard', {
     allowNull: false,
     defaultValue: 0,
   },
+  points_disponible: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
   rang: {
     type: DataTypes.INTEGER,
     allowNull: false,

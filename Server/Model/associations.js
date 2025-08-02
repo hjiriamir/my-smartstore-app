@@ -280,6 +280,18 @@ magasin1.hasMany(GamificationChallenge, {
   as: 'challenges',
 });
 
+// Une vente appartient à un client (optionnel)
+Vente.belongsTo(Client, {
+  foreignKey: 'client_id',
+  as: 'client',
+});
+
+// Un client peut avoir plusieurs ventes
+Client.hasMany(Vente, {
+  foreignKey: 'client_id',
+  as: 'ventes',
+});
+
 export {
   Conversation,
   ConversationParticipant,

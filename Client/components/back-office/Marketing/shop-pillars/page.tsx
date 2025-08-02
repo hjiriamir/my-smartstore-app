@@ -27,6 +27,9 @@ import { ChallengeParticipationManager } from "@/components/back-office/Marketin
 import type { Challenge, Client, Magasin } from "@/lib/gamification"
 import { Selecteurs } from "../selecteurs"
 import { Leaderboard } from "@/components/back-office/Marketing/shop-pillars/gamification/leaderboard"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // --- Interfaces pour les données API ---
 interface Zone {
@@ -90,6 +93,21 @@ interface ProductPerformanceResponse {
   produits: ProductDetail[]
 }
 
+// Ajouter après les autres interfaces
+interface HeatmapStats {
+  magasin_id: string
+  total_visiteurs: number
+  duree_moyenne_globale: number
+  intensite_moyenne: number
+}
+
+interface ZoneHeatmapStats {
+  zone_id: string
+  total_visiteurs: number
+  duree_moyenne_globale: number
+  intensite_moyenne: number
+}
+
 export default function ShopPillarsPage() {
   const [selectedZone, setSelectedZone] = useState("electronics") // Existing state for static zones data
   const [showNewPillar, setShowNewPillar] = useState(false)
@@ -135,6 +153,22 @@ export default function ShopPillarsPage() {
   const [endDateZoning, setEndDateZoning] = useState("")
   const [zoningDateError, setZoningDateError] = useState<string | null>(null)
 
+  // Ajouter après les autres états
+  const [heatmapStats, setHeatmapStats] = useState<HeatmapStats | null>(null)
+  const [zoneHeatmapData, setZoneHeatmapData] = useState<ZoneHeatmapStats[]>([])
+  const [selectedZoneForHeatmap, setSelectedZoneForHeatmap] = useState<string>("all")
+  const [availableZonesForHeatmap, setAvailableZonesForHeatmap] = useState<Zone[]>([])
+  const [isLoadingHeatmapStats, setIsLoadingHeatmapStats] = useState(false)
+  const [isLoadingZoneHeatmap, setIsLoadingZoneHeatmap] = useState(false)
+  const [errorHeatmapStats, setErrorHeatmapStats] = useState<string | null>(null)
+  const [errorZoneHeatmap, setErrorZoneHeatmap] = useState<string | null>(null)
+
+  // États pour les filtres Analytics
+  const [selectedMagasinFilterAnalytics, setSelectedMagasinFilterAnalytics] = useState("all")
+  const [startDateAnalytics, setStartDateAnalytics] = useState("")
+  const [endDateAnalytics, setEndDateAnalytics] = useState("")
+  const [analyticsDateError, setAnalyticsDateError] = useState<string | null>(null)
+
   // Données statiques pour le LeaderBoard
   const navigationItems = [
     { value: "zoning", label: "Zonage Intelligent", icon: MapPin },
@@ -165,7 +199,7 @@ export default function ShopPillarsPage() {
     { id: "sports", name: "Sport", traffic: 54, revenue: "€12,800", color: "bg-orange-500" },
   ]
 
-  const heatmapData = [
+  const heatmapDataStatic = [
     { zone: "Entrée", intensity: 95, visitors: 1240 },
     { zone: "Caisse", intensity: 88, visitors: 980 },
     { zone: "Promo", intensity: 82, visitors: 750 },
@@ -235,9 +269,11 @@ export default function ShopPillarsPage() {
           if (storesData.length > 0) {
             setSelectedMagasinFilterZoning(storesData[0].magasin_id)
             setSelectedMagasinFilterGamification(storesData[0].magasin_id)
+            setSelectedMagasinFilterAnalytics(storesData[0].magasin_id) // Ajouter cette ligne
           } else {
             setSelectedMagasinFilterZoning("all")
             setSelectedMagasinFilterGamification("all")
+            setSelectedMagasinFilterAnalytics("all") // Ajouter cette ligne
           }
         }
       } catch (error: any) {
@@ -404,6 +440,151 @@ export default function ShopPillarsPage() {
 
     fetchProductPerformance()
   }, [selectedMagasinFilterZoning, startDateZoning, endDateZoning, zoningDateError])
+
+  // Ajouter après les autres fonctions de fetch
+  // Fonction pour récupérer les stats globales du magasin
+  const fetchHeatmapStats = async () => {
+    if (selectedMagasinFilterAnalytics === "all" || !startDateAnalytics || !endDateAnalytics || analyticsDateError) {
+      setHeatmapStats(null)
+      return
+    }
+
+    setIsLoadingHeatmapStats(true)
+    setErrorHeatmapStats(null)
+
+    try {
+      const response = await fetch(
+        `http://localhost:8081/api/heatmaps/stats?magasin_id=${selectedMagasinFilterAnalytics}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error fetching heatmap stats! status: ${response.status}`)
+      }
+
+      const data: HeatmapStats = await response.json()
+      setHeatmapStats(data)
+    } catch (error: any) {
+      console.error("Error fetching heatmap stats:", error)
+      setErrorHeatmapStats(error.message || "Erreur lors de la récupération des statistiques heatmap")
+      setHeatmapStats(null)
+    } finally {
+      setIsLoadingHeatmapStats(false)
+    }
+  }
+
+  // Fonction pour récupérer les zones disponibles pour le magasin sélectionné
+  const fetchZonesForHeatmap = async () => {
+    if (selectedMagasinFilterAnalytics === "all" || !selectedMagasinFilterAnalytics) {
+      setAvailableZonesForHeatmap([])
+      return
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinFilterAnalytics}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error fetching zones for heatmap! status: ${response.status}`)
+      }
+
+      const data: Zone[] = await response.json()
+      setAvailableZonesForHeatmap(data)
+
+      // Reset zone selection if the previously selected one is not in the new list
+      if (selectedZoneForHeatmap !== "all" && !data.some((zone) => zone.zone_id === selectedZoneForHeatmap)) {
+        setSelectedZoneForHeatmap("all")
+      }
+    } catch (error: any) {
+      console.error("Error fetching zones for heatmap:", error)
+      setAvailableZonesForHeatmap([])
+    }
+  }
+
+  // Fonction pour récupérer les données heatmap par zone
+  const fetchZoneHeatmapData = async () => {
+    if (selectedMagasinFilterAnalytics === "all" || !startDateAnalytics || !endDateAnalytics || analyticsDateError) {
+      setZoneHeatmapData([])
+      return
+    }
+
+    setIsLoadingZoneHeatmap(true)
+    setErrorZoneHeatmap(null)
+
+    try {
+      let zonesToFetch: Zone[] = []
+
+      if (selectedZoneForHeatmap === "all") {
+        zonesToFetch = availableZonesForHeatmap
+      } else {
+        const selectedZone = availableZonesForHeatmap.find((zone) => zone.zone_id === selectedZoneForHeatmap)
+        if (selectedZone) {
+          zonesToFetch = [selectedZone]
+        }
+      }
+
+      if (zonesToFetch.length === 0) {
+        setZoneHeatmapData([])
+        setIsLoadingZoneHeatmap(false)
+        return
+      }
+
+      const promises = zonesToFetch.map(async (zone) => {
+        try {
+          const response = await fetch(
+            `http://localhost:8081/api/heatmaps/stats/zone?zone_id=${zone.zone_id}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
+          )
+
+          if (!response.ok) {
+            console.warn(`HTTP error fetching zone heatmap for ${zone.zone_id}! status: ${response.status}`)
+            return null
+          }
+
+          const data: ZoneHeatmapStats = await response.json()
+          return { ...data, zone_name: zone.nom_zone }
+        } catch (error: any) {
+          console.error(`Error fetching zone heatmap for ${zone.zone_id}:`, error)
+          return null
+        }
+      })
+
+      const results = await Promise.all(promises)
+      const validResults = results.filter(
+        (result): result is ZoneHeatmapStats & { zone_name: string } => result !== null,
+      )
+
+      // Trier par intensité décroissante
+      validResults.sort((a, b) => b.intensite_moyenne - a.intensite_moyenne)
+
+      setZoneHeatmapData(validResults)
+    } catch (error: any) {
+      console.error("Error fetching zone heatmap data:", error)
+      setErrorZoneHeatmap(error.message || "Erreur lors de la récupération des données heatmap par zone")
+      setZoneHeatmapData([])
+    } finally {
+      setIsLoadingZoneHeatmap(false)
+    }
+  }
+
+  // Effet pour récupérer les stats globales
+  useEffect(() => {
+    fetchHeatmapStats()
+  }, [selectedMagasinFilterAnalytics, startDateAnalytics, endDateAnalytics, analyticsDateError])
+
+  // Effet pour récupérer les zones disponibles
+  useEffect(() => {
+    fetchZonesForHeatmap()
+  }, [selectedMagasinFilterAnalytics])
+
+  // Effet pour récupérer les données heatmap par zone
+  useEffect(() => {
+    fetchZoneHeatmapData()
+  }, [
+    selectedMagasinFilterAnalytics,
+    selectedZoneForHeatmap,
+    startDateAnalytics,
+    endDateAnalytics,
+    analyticsDateError,
+    availableZonesForHeatmap,
+  ])
 
   const isZoningFiltersActive =
     selectedMagasinFilterZoning !== "all" &&
@@ -845,7 +1026,7 @@ export default function ShopPillarsPage() {
               {/* Navigation desktop pour Gamification */}
               <div className="hidden sm:block">
                 <Tabs value={activeGamificationTab} onValueChange={setActiveGamificationTab} className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-2 max-w-md">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="management" className="text-xs sm:text-sm">
                       <Gamepad2 className="w-4 h-4 mr-2" />
                       Gestion
@@ -935,97 +1116,253 @@ export default function ShopPillarsPage() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Visiteurs Uniques</CardTitle>
-                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">3,247</div>
-                  <p className="text-xs text-muted-foreground">+8% vs semaine dernière</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Temps Moyen en Magasin</CardTitle>
-                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">18min</div>
-                  <p className="text-xs text-muted-foreground">vs moyenne sur la période</p>
-                </CardContent>
-              </Card>
-
-              <Card className="sm:col-span-2 lg:col-span-1">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Taux Conversion en Caisse</CardTitle>
-                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-lg sm:text-2xl font-bold">24.5%</div>
-                  <p className="text-xs text-muted-foreground">+3.2% vs mois dernier</p>
-                </CardContent>
-              </Card>
-            </div>
-
+            {/* Filtres pour Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Heatmap du Magasin</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Analyse des zones de forte affluence</CardDescription>
+                <CardTitle>Filtres Analytics Physiques</CardTitle>
+                <CardDescription>Sélectionnez un magasin et une période pour analyser les données</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 sm:space-y-4">
-                  {heatmapData.map((zone, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-2"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-3 h-3 sm:w-4 sm:h-4 rounded flex-shrink-0 ${
-                            zone.intensity > 80
-                              ? "bg-red-500"
-                              : zone.intensity > 60
-                                ? "bg-orange-500"
-                                : zone.intensity > 40
-                                  ? "bg-yellow-500"
-                                  : "bg-green-500"
-                          }`}
-                        ></div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-medium text-sm sm:text-base">{zone.zone}</h4>
-                          <p className="text-xs sm:text-sm text-slate-600">{zone.visitors} visiteurs/jour</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={zone.intensity} className="w-16 sm:w-20" />
-                        <span className="text-xs sm:text-sm font-medium w-8 text-right">{zone.intensity}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded"></div>
-                    <span>Très forte affluence</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Sélecteur de magasin */}
+                  <div>
+                    <Label htmlFor="magasin-analytics">Magasin</Label>
+                    <Select value={selectedMagasinFilterAnalytics} onValueChange={setSelectedMagasinFilterAnalytics}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un magasin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les magasins</SelectItem>
+                        {stores.map((store) => (
+                          <SelectItem key={store.id} value={store.magasin_id}>
+                            {store.nom_magasin}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                    <span>Forte affluence</span>
+
+                  {/* Date de début */}
+                  <div>
+                    <Label htmlFor="start-date-analytics">Date de début</Label>
+                    <Input
+                      id="start-date-analytics"
+                      type="date"
+                      value={startDateAnalytics}
+                      onChange={(e) => setStartDateAnalytics(e.target.value)}
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                    <span>Affluence modérée</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    <span>Faible affluence</span>
+
+                  {/* Date de fin */}
+                  <div>
+                    <Label htmlFor="end-date-analytics">Date de fin</Label>
+                    <Input
+                      id="end-date-analytics"
+                      type="date"
+                      value={endDateAnalytics}
+                      onChange={(e) => setEndDateAnalytics(e.target.value)}
+                    />
                   </div>
                 </div>
+
+                {analyticsDateError && <div className="mt-2 text-sm text-red-600">{analyticsDateError}</div>}
               </CardContent>
             </Card>
+
+            {/* Contenu conditionnel */}
+            {selectedMagasinFilterAnalytics === "all" ||
+            !startDateAnalytics ||
+            !endDateAnalytics ||
+            analyticsDateError ? (
+              <div className="text-center text-muted-foreground py-8">
+                {isLoadingUserAndStores ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                    <p>Chargement des données...</p>
+                  </div>
+                ) : selectedMagasinFilterAnalytics === "all" ? (
+                  "Veuillez sélectionner un magasin pour afficher les analytics."
+                ) : !startDateAnalytics || !endDateAnalytics ? (
+                  "Veuillez sélectionner une période pour afficher les analytics."
+                ) : analyticsDateError ? (
+                  analyticsDateError
+                ) : (
+                  "Veuillez sélectionner un magasin et une période pour afficher les analytics."
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-xs sm:text-sm font-medium">Visiteurs Uniques</CardTitle>
+                      <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingHeatmapStats ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                      ) : errorHeatmapStats ? (
+                        <div className="text-red-500 text-xs">Erreur</div>
+                      ) : (
+                        <div className="text-lg sm:text-2xl font-bold">
+                          {heatmapStats?.total_visiteurs?.toLocaleString() || 0}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Pour la période sélectionnée</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-xs sm:text-sm font-medium">Temps Moyen en Magasin</CardTitle>
+                      <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingHeatmapStats ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                      ) : errorHeatmapStats ? (
+                        <div className="text-red-500 text-xs">Erreur</div>
+                      ) : (
+                        <div className="text-lg sm:text-2xl font-bold">
+                          {heatmapStats?.duree_moyenne_globale
+                            ? `${heatmapStats.duree_moyenne_globale.toFixed(1)}min`
+                            : "N/A"}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Durée moyenne de visite</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="sm:col-span-2 lg:col-span-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-xs sm:text-sm font-medium">Intensité Moyenne</CardTitle>
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingHeatmapStats ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                      ) : errorHeatmapStats ? (
+                        <div className="text-red-500 text-xs">Erreur</div>
+                      ) : (
+                        <div className="text-lg sm:text-2xl font-bold">
+                          {heatmapStats?.intensite_moyenne ? `${heatmapStats.intensite_moyenne.toFixed(1)}%` : "N/A"}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Intensité globale du magasin</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Heatmap du Magasin */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg sm:text-xl">Heatmap du Magasin</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Analyse des zones de forte affluence pour la période sélectionnée
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Sélecteur de zone */}
+                    <div className="mb-4">
+                      <Label htmlFor="zone-heatmap">Filtrer par zone</Label>
+                      <Select value={selectedZoneForHeatmap} onValueChange={setSelectedZoneForHeatmap}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une zone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Toutes les zones</SelectItem>
+                          {availableZonesForHeatmap.map((zone) => (
+                            <SelectItem key={zone.zone_id} value={zone.zone_id}>
+                              {zone.nom_zone}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {isLoadingZoneHeatmap ? (
+                      <div className="flex flex-col items-center justify-center h-32">
+                        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+                        <p className="text-slate-500 mt-2">Chargement des données heatmap...</p>
+                      </div>
+                    ) : errorZoneHeatmap ? (
+                      <p className="text-red-500 text-center py-8">{errorZoneHeatmap}</p>
+                    ) : zoneHeatmapData.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        Aucune donnée heatmap disponible pour la sélection actuelle.
+                      </p>
+                    ) : (
+                      <>
+                        <div className="space-y-3 sm:space-y-4">
+                          {zoneHeatmapData.map((item, index) => {
+                            const intensite = item.intensite_moyenne || 0
+                            const visiteurs = item.total_visiteurs || 0
+                            const duree = item.duree_moyenne_globale || 0
+
+                            return (
+                              <div
+                                key={`${item.zone_id}-${index}`}
+                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-2"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded flex-shrink-0 ${
+                                      intensite > 80
+                                        ? "bg-red-500"
+                                        : intensite > 60
+                                          ? "bg-orange-500"
+                                          : intensite > 40
+                                            ? "bg-yellow-500"
+                                            : "bg-green-500"
+                                    }`}
+                                  ></div>
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-medium text-sm sm:text-base">
+                                      {item.zone_name || `Zone ${item.zone_id}`}
+                                    </h4>
+                                    <p className="text-xs sm:text-sm text-slate-600">
+                                      {visiteurs} visiteurs • {duree.toFixed(1)}min moyenne
+                                    </p>
+                                    <p className="text-xs text-slate-500">Zone ID: {item.zone_id}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Progress value={intensite} className="w-16 sm:w-20" />
+                                  <span className="text-xs sm:text-sm font-medium w-8 text-right">
+                                    {intensite.toFixed(0)}%
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* Légende */}
+                        <div className="mt-4 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-red-500 rounded"></div>
+                            <span>Très forte intensité (&gt;80%)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-orange-500 rounded"></div>
+                            <span>Forte intensité (60-80%)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+                            <span>Intensité modérée (40-60%)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-green-500 rounded"></div>
+                            <span>Faible intensité (&lt;40%)</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </div>

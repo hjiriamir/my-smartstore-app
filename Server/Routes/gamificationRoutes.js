@@ -14,7 +14,8 @@ import {
   getJoueursChallenge,
   getPointsTotaux,
   getChallengeActifs,
-  getTauxParticipationClients
+  getTauxParticipationClients,
+  traiterAchatAvecPoints
 } from '../Controller/gamificationController.js';
 
 const router = express.Router();
@@ -35,7 +36,7 @@ router.get('/getClientOrderer/:idEntreprise', getClientOrderer);
 router.get('/getPointsTotaux/:idEntreprise', getPointsTotaux);
 router.get('/getChallengeActifs/:idEntreprise', getChallengeActifs);
 router.get('/getTauxParticipationClients/:idEntreprise', getTauxParticipationClients);
-
+router.post('/achats', traiterAchatAvecPoints);
 
 router.get('/getJoueursChallenge/:idChallenge', getJoueursChallenge);
 

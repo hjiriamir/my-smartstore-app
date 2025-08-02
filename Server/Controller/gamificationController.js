@@ -5,6 +5,12 @@ import Leaderboard from '../Model/Leaderboard.js';
 import { Sequelize, Op } from "sequelize";
 import magasin1 from '../Model/magasin1.js';
 import { getClientsTotalByEntreprise, getClientsParticipantsByEntreprise } from "../Services/clientService.js";
+import { updateLeaderBoardPointsTotal, 
+        updateLeaderBoardPointsDisponible, 
+        syncLeaderboardAfterProgress, 
+        updateLeaderboardRanks,
+        traiterPointsFidelite,
+        } from "../Services/leaderboardService.js";
 // --- CRUD Challenges --- //
 
 export const createChallenge = async (req, res) => {
@@ -88,11 +94,27 @@ export const updateProgress = async (req, res) => {
     const { id } = req.params; // id de participation
     const { progression, points_gagnes } = req.body;
 
+    // 1. Trouver la participation
     const participation = await GamificationParticipation.findByPk(id);
-    if (!participation) return res.status(404).json({ error: 'Participation introuvable' });
+    if (!participation) {
+      return res.status(404).json({ error: 'Participation introuvable' });
+    }
 
+    // 2. Mettre à jour la participation
     await participation.update({ progression, points_gagnes });
-    res.status(200).json(participation);
+
+    // 3. Mettre à jour le leaderboard après le changement
+    await syncLeaderboardAfterProgress();
+
+    await updateLeaderboardRanks();
+
+
+    // 4. Retourner la réponse
+    res.status(200).json({
+      message: "Progression mise à jour avec succès et leaderboard synchronisé",
+      participation
+    });
+
   } catch (error) {
     console.error('Erreur updateProgress:', error);
     res.status(500).json({ error: 'Erreur lors de la mise à jour de la participation' });
@@ -380,6 +402,37 @@ export const getTauxParticipationClients = async (req, res) => {
     console.error("Erreur getTauxParticipationClients:", error);
     res.status(500).json({
       error: "Erreur lors du calcul du taux de participation",
+    });
+  }
+};
+
+export const traiterAchatAvecPoints = async (req, res) => {
+  try {
+    const { client_id, montant_total, points_utilises } = req.body;
+
+    if (!client_id || !montant_total) {
+      return res.status(400).json({
+        message: "client_id et montant_total sont requis."
+      });
+    }
+
+    // Appel de la méthode combinée
+    const resultat = await traiterPointsFidelite(
+      client_id,
+      montant_total,
+      points_utilises || 0, // si non fourni, 0
+      0.1 // taux de bonus (10%), tu peux aussi le rendre dynamique
+    );
+
+    return res.status(200).json({
+      message: "Achat traité avec succès.",
+      data: resultat
+    });
+
+  } catch (error) {
+    console.error("Erreur dans traiterAchatAvecPoints:", error);
+    return res.status(500).json({
+      message: error.message || "Erreur lors du traitement de l'achat."
     });
   }
 };

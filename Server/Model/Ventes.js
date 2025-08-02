@@ -47,6 +47,11 @@ const Vente = sequelize.define('Vente', {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+  points_utilises: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0,
+  },
 }, {
   tableName: 'ventes',
   timestamps: false,
