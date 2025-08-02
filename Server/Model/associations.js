@@ -21,6 +21,12 @@ import CommandeAchat from './CommandeAchat.js';
 import LigneCommandeAchat from './LigneCommandeAchat.js';
 import EntrepriseFournisseur from './EntrepriseFournisseur.js'
 import Promotion from './Promotion.js';
+import Client from './Client.js';
+import GamificationChallenge from './GamificationChallenge.js';
+import GamificationParticipation from './GamificationParticipation.js';
+import Leaderboard from './Leaderboard.js';
+import PointsProgram from './PointsProgram.js';
+
 //import zone1 from './zone1.js';
 import ZoneVisites from './ZoneVisites.js'
 //import Conversation from './Conversation.js';
@@ -197,6 +203,83 @@ Fournisseur.belongsToMany(Entreprises, {
 Zone1.hasMany(ZoneVisites, { foreignKey: 'zone_id' });
 ZoneVisites.belongsTo(Zone1, { foreignKey: 'zone_id' });
 
+
+// Association many-to-many via GamificationParticipation
+Client.belongsToMany(GamificationChallenge, {
+  through: GamificationParticipation,
+  foreignKey: 'client_id',
+  otherKey: 'challenge_id',
+  as: 'challenges',
+});
+
+GamificationChallenge.belongsToMany(Client, {
+  through: GamificationParticipation,
+  foreignKey: 'challenge_id',
+  otherKey: 'client_id',
+  as: 'participants',
+});
+
+// GamificationParticipation appartient à un Client et un Challenge
+GamificationParticipation.belongsTo(Client, {
+  foreignKey: 'client_id',
+  as: 'client',
+});
+GamificationParticipation.belongsTo(GamificationChallenge, {
+  foreignKey: 'challenge_id',
+  as: 'challenge',
+});
+
+Client.hasMany(GamificationParticipation, {
+  foreignKey: 'client_id',
+  as: 'participations',
+});
+GamificationChallenge.hasMany(GamificationParticipation, {
+  foreignKey: 'challenge_id',
+  as: 'participations',
+});
+
+// Leaderboard appartient à un Client (one-to-one ou one-to-many)
+Leaderboard.belongsTo(Client, {
+  foreignKey: 'client_id',
+  as: 'client',
+});
+Client.hasOne(Leaderboard, {
+  foreignKey: 'client_id',
+  as: 'leaderboard',
+});
+
+// PointsProgram appartient à un Client (one-to-one)
+PointsProgram.belongsTo(Client, {
+  foreignKey: 'client_id',
+  as: 'client',
+});
+Client.hasOne(PointsProgram, {
+  foreignKey: 'client_id',
+  as: 'pointsProgram',
+});
+
+
+// Un Client appartient à une Entreprise (many-to-one)
+Client.belongsTo(Entreprises, {
+  foreignKey: 'entreprise_id',
+  as: 'entreprise',
+});
+
+// Une Entreprise a plusieurs Clients (one-to-many)
+Entreprises.hasMany(Client, {
+  foreignKey: 'entreprise_id',
+  as: 'clients',
+});
+
+GamificationChallenge.belongsTo(magasin1, {
+  foreignKey: 'magasin_id',
+  as: 'magasin',
+});
+magasin1.hasMany(GamificationChallenge, {
+  foreignKey: 'magasin_id',
+  as: 'challenges',
+});
+
 export {
   Conversation,
   ConversationParticipant,
@@ -218,5 +301,10 @@ export {
   Entreprises,
   CommandeAchat,
   LigneCommandeAchat,
-  ZoneVisites
+  ZoneVisites,
+  Client,
+  GamificationChallenge,
+  GamificationParticipation,
+  Leaderboard,
+  PointsProgram,
 };

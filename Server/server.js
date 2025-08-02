@@ -66,6 +66,8 @@ import ConversationParticipantRoutes from './Routes/conversationParticipantRoute
 import sessionRoutes from './Routes/sessionRoutes.js'
 import CommandeAchatRoute from './Routes/commandeAchatRoutes.js'
 import LigneCommandeAchatRoutes from './Routes/ligneCommandeAchatRoutes.js';
+import gamificationRoutes from './Routes/gamificationRoutes.js';
+import clientRoutes from './Routes/clientRoutes.js'
 import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation, CommandeAchat, LigneCommandeAchat} from './Model/associations.js';
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -93,6 +95,8 @@ app.use("/api/emails", emailRoutes);
 app.use("/api/management", ManagementRoute);
 app.use("/api/message", contactMessageRoutes);
 
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/client', clientRoutes);
 
 // Routes pour les règles 
 app.use("/api/conversion", ConversionZoneRoute);
