@@ -68,7 +68,20 @@ import CommandeAchatRoute from './Routes/commandeAchatRoutes.js'
 import LigneCommandeAchatRoutes from './Routes/ligneCommandeAchatRoutes.js';
 import gamificationRoutes from './Routes/gamificationRoutes.js';
 import clientRoutes from './Routes/clientRoutes.js'
-import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation, CommandeAchat, LigneCommandeAchat} from './Model/associations.js';
+import labelTemplateRoutes from "./Routes/labelTemplateRoutes.js";
+import templateFieldRoutes from "./Routes/templateFieldRoutes.js";
+import stockAlertRoutes from "./Routes/stockAlertRoutes.js";
+import priceHistoryRoutes from "./Routes/priceHistoryRoutes.js";
+import generatedLabelRoutes from './Routes/generatedLabelRoutes.js';
+import './Scheduler/stockAlertScheduler.js';
+
+
+import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation, CommandeAchat, LigneCommandeAchat,  PriceHistory,
+    LabelTemplate,
+    TemplateField,
+    StockAlert,
+    GeneratedLabel
+} from './Model/associations.js';
 const app = express();
 const PORT = process.env.PORT || 8081;
 const router = express.Router(); 
@@ -131,7 +144,11 @@ app.use("/api/commande-achat", CommandeAchatRoute);
 app.use("/api/ligne-commande", LigneCommandeAchatRoutes);
 
 
-
+app.use("/api/label-templates", labelTemplateRoutes);
+app.use("/api/template-fields", templateFieldRoutes);
+app.use("/api/stock-alerts", stockAlertRoutes);
+app.use("/api/price-history", priceHistoryRoutes);
+app.use('/api/generated-labels', generatedLabelRoutes);
 
 
 

@@ -26,6 +26,11 @@ import GamificationChallenge from './GamificationChallenge.js';
 import GamificationParticipation from './GamificationParticipation.js';
 import Leaderboard from './Leaderboard.js';
 import PointsProgram from './PointsProgram.js';
+import PriceHistory from "./PriceHistory.js";
+import LabelTemplate from "./LabelTemplate.js";
+import TemplateField from "./TemplateField.js";
+import StockAlert from "./StockAlert.js";
+import GeneratedLabel from './GeneratedLabel.js';
 
 //import zone1 from './zone1.js';
 import ZoneVisites from './ZoneVisites.js'
@@ -292,6 +297,46 @@ Client.hasMany(Vente, {
   as: 'ventes',
 });
 
+
+// Historique des prix
+Produit.hasMany(PriceHistory, {
+  foreignKey: "product_id",
+  sourceKey: "produit_id",
+});
+PriceHistory.belongsTo(Produit, {
+  foreignKey: "product_id",
+  targetKey: "produit_id",
+});
+
+// Templates et champs
+LabelTemplate.hasMany(TemplateField, {
+  foreignKey: "template_id",
+  as: "fields"
+});
+TemplateField.belongsTo(LabelTemplate, {
+  foreignKey: "template_id",
+  as: "template"
+});
+
+
+// Alertes de stock
+Produit.hasMany(StockAlert, {
+  foreignKey: "product_id",
+  sourceKey: "produit_id",
+});
+StockAlert.belongsTo(Produit, {
+  foreignKey: "product_id",
+  targetKey: "produit_id",
+});
+
+
+LabelTemplate.hasMany(GeneratedLabel, { foreignKey: 'template_id', sourceKey: 'id' });
+GeneratedLabel.belongsTo(LabelTemplate, { foreignKey: 'template_id', targetKey: 'id' });
+
+Produit.hasMany(GeneratedLabel, { foreignKey: 'produit_id', sourceKey: 'produit_id' });
+GeneratedLabel.belongsTo(Produit, { foreignKey: 'produit_id', targetKey: 'produit_id' });
+
+
 export {
   Conversation,
   ConversationParticipant,
@@ -319,4 +364,9 @@ export {
   GamificationParticipation,
   Leaderboard,
   PointsProgram,
+  PriceHistory,
+  LabelTemplate,
+  TemplateField,
+  StockAlert,
+  GeneratedLabel
 };
