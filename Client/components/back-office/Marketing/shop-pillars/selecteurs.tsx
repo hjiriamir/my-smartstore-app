@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import type { Magasin, Zone } from "@/lib/gamification"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface SelecteursProps {
   stores: Magasin[]
@@ -39,6 +41,9 @@ export function Selecteurs({
   isLoadingZones,
   errorZones,
 }: SelecteursProps) {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       <div>

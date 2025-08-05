@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import type { Client } from "@/lib/gamification"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface AddClientFormProps {
   onClientAdded: (client: Client) => void
@@ -32,6 +34,39 @@ export function AddClientForm({ onClientAdded, entrepriseId }: AddClientFormProp
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
+  // Classes RTL optimisées
+  const rtlClasses = {
+    container: isRTL ? "rtl" : "ltr",
+    textAlign: isRTL ? "text-right" : "text-left",
+    textAlignOpposite: isRTL ? "text-left" : "text-right",
+    flexRow: isRTL ? "flex-row-reverse" : "flex-row",
+    flexRowReverse: isRTL ? "flex-row" : "flex-row-reverse",
+    marginLeft: isRTL ? "mr-2" : "ml-2",
+    marginRight: isRTL ? "ml-2" : "mr-2",
+    paddingLeft: isRTL ? "pr-3" : "pl-3",
+    paddingRight: isRTL ? "pl-3" : "pr-3",
+    borderLeft: isRTL ? "border-r" : "border-l",
+    borderRight: isRTL ? "border-l" : "border-r",
+    roundedLeft: isRTL ? "rounded-r" : "rounded-l",
+    roundedRight: isRTL ? "rounded-l" : "rounded-r",
+    spaceX: isRTL ? "space-x-reverse space-x-4" : "space-x-4",
+    directionClass: isRTL ? "flex-row-reverse" : "flex-row",
+    inputPadding: isRTL ? "pr-4 pl-10" : "pl-4 pr-10",
+    buttonSpacing: isRTL ? "space-x-reverse space-x-2" : "space-x-2",
+    gridFlow: isRTL ? "grid-flow-col-dense" : "",
+    justifyBetween: "justify-between",
+    itemsCenter: "items-center",
+    formSpacing: "space-y-4",
+    cardPadding: "p-4",
+    labelSpacing: "mb-2",
+    selectTrigger: isRTL ? "text-right" : "text-left",
+    textareaAlign: isRTL ? "text-right" : "text-left",
+    buttonContent: isRTL ? "flex-row-reverse" : "flex-row",
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,102 +158,170 @@ export function AddClientForm({ onClientAdded, entrepriseId }: AddClientFormProp
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg sm:text-xl">Ajouter un Nouveau Client</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">
-          Enregistrez un nouveau client pour la gamification.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className={rtlClasses.container} dir={textDirection}>
+      <Card>
+        <CardHeader className={`${rtlClasses.textAlign} ${rtlClasses.cardPadding}`}>
+          <CardTitle className={`text-lg sm:text-xl ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.ajouterClient")}
+          </CardTitle>
+          <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.masqueClient")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className={rtlClasses.cardPadding}>
+          <form onSubmit={handleSubmit} className={rtlClasses.formSpacing}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${rtlClasses.gridFlow}`}>
+              <div>
+                <Label htmlFor="client-nom" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                  {t("marketing.pilliersMagasins.gamification.gestion.nom")}
+                </Label>
+                <Input
+                  id="client-nom"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  placeholder={t("marketing.pilliersMagasins.gamification.gestion.nomPlaceholder")}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-prenom" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                  {t("marketing.pilliersMagasins.gamification.gestion.prenom")}
+                </Label>
+                <Input
+                  id="client-prenom"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  placeholder={t("marketing.pilliersMagasins.gamification.gestion.prenom")}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="client-nom">Nom</Label>
+              <Label htmlFor="client-email" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.email")}
+              </Label>
               <Input
-                id="client-nom"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                placeholder="Nom de famille"
+                type="email"
+                id="client-email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("marketing.pilliersMagasins.gamification.gestion.emailPlaceholder")}
+                className={rtlClasses.textAlign}
+                dir={textDirection}
               />
             </div>
+
             <div>
-              <Label htmlFor="client-prenom">Prénom</Label>
+              <Label htmlFor="client-telephone" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.telephone")}
+              </Label>
               <Input
-                id="client-prenom"
-                value={prenom}
-                onChange={(e) => setPrenom(e.target.value)}
-                placeholder="Prénom"
+                type="tel"
+                id="client-telephone"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder={t("marketing.pilliersMagasins.gamification.gestion.telephonePlaceholder")}
+                className={rtlClasses.textAlign}
+                dir={textDirection}
               />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="client-email">Email</Label>
-            <Input
-              type="email"
-              id="client-email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-            />
-          </div>
-          <div>
-            <Label htmlFor="client-telephone">Téléphone</Label>
-            <Input
-              type="tel"
-              id="client-telephone"
-              value={telephone}
-              onChange={(e) => setTelephone(e.target.value)}
-              placeholder="06XXXXXXXX"
-            />
-          </div>
-          <div>
-            <Label htmlFor="client-adresse">Adresse</Label>
-            <Input
-              id="client-adresse"
-              value={adresse}
-              onChange={(e) => setAdresse(e.target.value)}
-              placeholder="123 Rue de l'Exemple"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
             <div>
-              <Label htmlFor="client-ville">Ville</Label>
-              <Input id="client-ville" value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Ville" />
-            </div>
-            <div>
-              <Label htmlFor="client-pays">Pays</Label>
-              <Input id="client-pays" value={pays} onChange={(e) => setPays(e.target.value)} placeholder="Pays" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="client-date-naissance">Date de Naissance</Label>
+              <Label htmlFor="client-adresse" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.adresse")}
+              </Label>
               <Input
-                type="date"
-                id="client-date-naissance"
-                value={dateNaissance}
-                onChange={(e) => setDateNaissance(e.target.value)}
+                id="client-adresse"
+                value={adresse}
+                onChange={(e) => setAdresse(e.target.value)}
+                placeholder={t("marketing.pilliersMagasins.gamification.gestion.adressePlaceholder")}
+                className={rtlClasses.textAlign}
+                dir={textDirection}
               />
             </div>
-            <div>
-              <Label htmlFor="client-genre">Genre</Label>
-              <Select value={genre} onValueChange={(value) => setGenre(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un genre" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="homme">Homme</SelectItem>
-                  <SelectItem value="femme">Femme</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${rtlClasses.gridFlow}`}>
+              <div>
+                <Label htmlFor="client-ville" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                  {t("marketing.pilliersMagasins.gamification.gestion.ville")}
+                </Label>
+                <Input
+                  id="client-ville"
+                  value={ville}
+                  onChange={(e) => setVille(e.target.value)}
+                  placeholder={t("marketing.pilliersMagasins.gamification.gestion.ville")}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-pays" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                  {t("marketing.pilliersMagasins.gamification.gestion.pays")}
+                </Label>
+                <Input
+                  id="client-pays"
+                  value={pays}
+                  onChange={(e) => setPays(e.target.value)}
+                  placeholder={t("marketing.pilliersMagasins.gamification.gestion.pays")}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
             </div>
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Ajouter le Client"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${rtlClasses.gridFlow}`}>
+              <div>
+                <Label
+                  htmlFor="client-date-naissance"
+                  className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+                >
+                  {t("marketing.pilliersMagasins.gamification.gestion.dateNaissance")}
+                </Label>
+                <Input
+                  type="date"
+                  id="client-date-naissance"
+                  value={dateNaissance}
+                  onChange={(e) => setDateNaissance(e.target.value)}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-genre" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                  {t("marketing.pilliersMagasins.gamification.gestion.genre")}
+                </Label>
+                <Select value={genre} onValueChange={(value) => setGenre(value)}>
+                  <SelectTrigger className={rtlClasses.selectTrigger}>
+                    <SelectValue placeholder="Sélectionner un genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="homme">{t("marketing.pilliersMagasins.gamification.gestion.homme")}</SelectItem>
+                    <SelectItem value="femme">{t("marketing.pilliersMagasins.gamification.gestion.femme")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className={`w-full flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} ${rtlClasses.justifyBetween}`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className={`flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} gap-2`}>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{t("marketing.pilliersMagasins.gamification.gestion.ajoutClientButton")}</span>
+                </div>
+              ) : (
+                t("marketing.pilliersMagasins.gamification.gestion.ajoutClientButton")
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

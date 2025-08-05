@@ -11,6 +11,15 @@ i18n
     resources: {
       en: {
         translation: {
+          notificationMessage: "{{count}} new notification",
+          notificationMessage_plural: "{{count}} new notifications",
+          notif1: "No new notifications",
+          notification:"notification",
+          s:"s",
+          marqueCommeLu: "Mark all as read",
+          effacerTous: "Clear all",
+          aucuneNotif: "No notifications",
+
           marketing: {
             dashboard: {
               titre: "Platform",
@@ -306,7 +315,7 @@ i18n
                   creerChallengeDescr: "Create a new challenge for your customers.",
                   magasinAssocier: "Associated Store",
                   nomChallenge: "Challenge Name",
-                  nomChallengePlaceholder: "E.g.: Easter Treasure Hunt",
+                  nomChallengePlaceholder: "E.g.: Eid al-Adha Treasure Hunt",
                   desription: "Description",
                   descriptionPlaceholder: "Describe the challenge briefly.",
                   typeChallenge: "Challenge Type",
@@ -381,7 +390,12 @@ i18n
                   participants: "participant(s)",
                   points: "points",
                   ajouterUnClient: "Add a Client",
-                  masqueFormClient: "Hide Client Form"
+                  masqueFormClient: "Hide Client Form",
+                  choisirMag: "Select a store",
+                  haut: "Top",
+                  bas: "Bottom",
+
+
 
                 },
                 classement: {
@@ -405,7 +419,10 @@ i18n
                   selectChallengeClassement: "Select a challenge to view participant rankings.",
                   chargementChallClassement: "Loading challenge ranking...",
                   aucunParticipantParChallenge: "No participant found for this challenge",
-                  participerLe: "Participated on"
+                  participerLe: "Participated on",
+                  pts: "pts",
+                  aucChallenge: "No active challenge available",
+
                 }
               },
               analysePhysique: {
@@ -2143,6 +2160,14 @@ largeur: "Width",
       },
       fr: {
         translation: {
+          notificationMessage: "{{count}} nouvelle notification",
+          notificationMessage_plural: "{{count}} nouvelles notifications",
+          notif1: "Aucune nouvelle notification",
+          notification:"notification",
+          s:"s",
+          marqueCommeLu:"Tout marquer comme lu",
+          effacerTous:"Effacer tout",
+          aucuneNotif:"Aucune notification",
           marketing: {
             dashboard: {
               titre: "Plateforme",
@@ -2449,7 +2474,7 @@ largeur: "Width",
                   creerChallengeDescr: "Créez un nouveau défi pour vos clients.",
                   magasinAssocier:"Magasin Associé",
                   nomChallenge:"Nom du Challenge",
-                  nomChallengePlaceholder:"Ex: Chasse au Trésor de Pâques",
+                  nomChallengePlaceholder:"Exemple : Chasse au trésor de l'Aïd al-Adha",
                   desription:"Description",
                   descriptionPlaceholder:"Décrivez le challenge en quelques mots.",
                   typeChallenge:"Type de Challenge",
@@ -2526,6 +2551,10 @@ largeur: "Width",
                   
                   ajouterUnClient:"Ajouter un Client",
                   masqueFormClient:"Masquer le formulaire Client",
+
+                  choisirMag:"Choisir un magasin",
+                  haut:"Haut",
+                  bas:"Bas",
                 },
                 classement: {
                   totalClients:"Total Clients",
@@ -2549,6 +2578,8 @@ largeur: "Width",
                   chargementChallClassement:"Chargement du classement du challenge...",
                   aucunParticipantParChallenge:"Aucun participant trouvé pour ce challenge",
                   participerLe:"Participé le",
+                  pts:"pts",
+                  aucChallenge:"Aucun challenge actif disponible",
 
                   
                   
@@ -4305,6 +4336,14 @@ largeur: "Width",
       },
       ar: {
         translation: {
+          notificationMessage: "{{count}} إشعار جديد",
+          notificationMessage_plural: "{{count}} إشعارات جديدة",
+          notif1: "لا توجد إشعارات جديدة",
+          notification:"إشعار",
+          marqueCommeLu: "وضع الكل كمقروء",
+          effacerTous: "مسح الكل",
+          aucuneNotif: "لا توجد إشعارات",
+
           marketing: {
             dashboard: {
               titre: "منصة",
@@ -4598,7 +4637,7 @@ largeur: "Width",
                   creerChallengeDescr: "أنشئ تحديًا جديدًا لعملائك.",
                   magasinAssocier: "المتجر المرتبط",
                   nomChallenge: "اسم التحدي",
-                  nomChallengePlaceholder: "مثال: صيد كنز عيد الفصح",
+                  nomChallengePlaceholder: "مثال: البحث عن كنز عيد الأضحى",
                   desription: "الوصف",
                   descriptionPlaceholder: "صف التحدي بكلمات قليلة.",
                   typeChallenge: "نوع التحدي",
@@ -4673,7 +4712,11 @@ largeur: "Width",
                   participants: "مشارك/مشاركين",
                   points: "نقاط",
                   ajouterUnClient: "إضافة عميل",
-                  masqueFormClient: "إخفاء نموذج العميل"
+                  masqueFormClient: "إخفاء نموذج العميل",
+                  choisirMag: "اختر متجرا",
+                  haut: "أعلى",
+                  bas: "أسفل",
+
 
                 },
                 classement: {
@@ -4697,7 +4740,11 @@ largeur: "Width",
                   selectChallengeClassement: "اختر تحديًا لعرض ترتيب المشاركين.",
                   chargementChallClassement: "جارٍ تحميل ترتيب التحدي...",
                   aucunParticipantParChallenge: "لا يوجد مشاركين لهذا التحدي",
-                  participerLe: "شارك في"
+                  participerLe: "شارك في",
+                  pts: "نقطة",
+                  aucChallenge: "لا يوجد أي تحدٍ نشط متاح",
+
+
                 }
               },
               analysePhysique: {

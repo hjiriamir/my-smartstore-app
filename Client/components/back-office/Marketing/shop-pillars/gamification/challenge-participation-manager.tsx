@@ -12,6 +12,8 @@ import { Loader2, Trophy, X, Search, User, RefreshCw } from "lucide-react"
 import type { Challenge, Client, GamificationParticipation, LeaderboardEntry } from "@/lib/gamification"
 import { v4 as uuidv4 } from "uuid"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface ChallengeParticipationManagerProps {
   onNewClientClick: () => void
@@ -55,7 +57,48 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
   const [isLoadingChallengeParticipants, setIsLoadingChallengeParticipants] = useState(false)
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
 
+  // Classes RTL optimisées
+  const rtlClasses = {
+    container: isRTL ? "rtl" : "ltr",
+    textAlign: isRTL ? "text-right" : "text-left",
+    textAlignOpposite: isRTL ? "text-left" : "text-right",
+    flexRow: isRTL ? "flex-row-reverse" : "flex-row",
+    flexRowReverse: isRTL ? "flex-row" : "flex-row-reverse",
+    marginLeft: isRTL ? "mr-2" : "ml-2",
+    marginRight: isRTL ? "ml-2" : "mr-2",
+    paddingLeft: isRTL ? "pr-3" : "pl-3",
+    paddingRight: isRTL ? "pl-3" : "pr-3",
+    borderLeft: isRTL ? "border-r" : "border-l",
+    borderRight: isRTL ? "border-l" : "border-r",
+    roundedLeft: isRTL ? "rounded-r" : "rounded-l",
+    roundedRight: isRTL ? "rounded-l" : "rounded-r",
+    spaceX: isRTL ? "space-x-reverse space-x-4" : "space-x-4",
+    directionClass: isRTL ? "flex-row-reverse" : "flex-row",
+    inputPadding: isRTL ? "pr-4 pl-10" : "pl-4 pr-10",
+    buttonSpacing: isRTL ? "space-x-reverse space-x-2" : "space-x-2",
+    gridFlow: isRTL ? "grid-flow-col-dense" : "",
+    justifyBetween: "justify-between",
+    itemsCenter: "items-center",
+    formSpacing: "space-y-6",
+    cardPadding: "p-4",
+    labelSpacing: "mb-2",
+    selectTrigger: isRTL ? "text-right" : "text-left",
+    textareaAlign: isRTL ? "text-right" : "text-left",
+    buttonContent: isRTL ? "flex-row-reverse" : "flex-row",
+    badgeSpacing: isRTL ? "gap-2 flex-row-reverse" : "gap-2",
+    searchIcon: isRTL ? "right-3" : "left-3",
+    searchPadding: isRTL ? "pr-10 pl-4" : "pl-10 pr-4",
+    dropdownAlign: isRTL ? "text-right" : "text-left",
+    leaderboardItem: isRTL ? "flex-row-reverse" : "flex-row",
+    leaderboardContent: isRTL ? "text-right" : "text-left",
+    participantCard: isRTL ? "flex-col sm:flex-row-reverse" : "flex-col sm:flex-row",
+    participantInfo: isRTL ? "flex-row-reverse" : "flex-row",
+    participantStats: isRTL ? "text-right" : "text-left",
+  }
 
   // Nouvel état pour le bouton d'actualisation du classement
   const [isRefreshingLeaderboard, setIsRefreshingLeaderboard] = useState(false)
@@ -540,35 +583,37 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
   if (overallLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
+      <div className={`flex flex-col items-center justify-center h-64 ${rtlClasses.container}`} dir={textDirection}>
         <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-        <p className="text-slate-500 mt-2">Chargement des données de gamification...</p>
+        <p className={`text-slate-500 mt-2 ${rtlClasses.textAlign}`}>Chargement des données de gamification...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`${rtlClasses.formSpacing} ${rtlClasses.container}`} dir={textDirection}>
       <Card>
-        <CardHeader>
-          <CardTitle>Sélectionner un Magasin</CardTitle>
+        <CardHeader className={`${rtlClasses.textAlign} ${rtlClasses.cardPadding}`}>
+          <CardTitle className={rtlClasses.textAlign}>
+            {t("marketing.pilliersMagasins.gamification.gestion.selectMagasin")}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className={rtlClasses.cardPadding}>
           <Select
             value={selectedMagasinId ? String(selectedMagasinId) : ""}
             onValueChange={(value) => setSelectedMagasinId(value ? Number(value) : null)}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir un magasin" />
+            <SelectTrigger className={rtlClasses.selectTrigger}>
+              <SelectValue placeholder={t("marketing.pilliersMagasins.gamification.gestion.choisirMag")} />
             </SelectTrigger>
             <SelectContent>
               {isLoadingMagasins ? (
                 <SelectItem value="" disabled>
-                  Chargement des magasins...
+                  {t("marketing.pilliersMagasins.gamification.gestion.chargementMagasin")}
                 </SelectItem>
               ) : magasins.length === 0 ? (
                 <SelectItem value="" disabled>
-                  Aucun magasin disponible
+                  {t("marketing.pilliersMagasins.gamification.gestion.aucunMagasin")}
                 </SelectItem>
               ) : (
                 magasins.map((magasin) => (
@@ -584,19 +629,25 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
       {/* Section: Enregistrer une Participation */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Enregistrer des Participations</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Inscrivez un ou plusieurs clients à un challenge actif.
+        <CardHeader className={`${rtlClasses.textAlign} ${rtlClasses.cardPadding}`}>
+          <CardTitle className={`text-lg sm:text-xl ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.enregistrerParticipants")}
+          </CardTitle>
+          <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.enregistrerParticipantsDescr")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleParticipate} className="space-y-4">
+        <CardContent className={rtlClasses.cardPadding}>
+          <form onSubmit={handleParticipate} className={rtlClasses.formSpacing}>
             <div>
-              <Label htmlFor="select-challenge">Sélectionner un Challenge Actif</Label>
+              <Label htmlFor="select-challenge" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.selectChallengeActif")}
+              </Label>
               <Select value={selectedChallengeId || ""} onValueChange={setSelectedChallengeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir un challenge" />
+                <SelectTrigger className={rtlClasses.selectTrigger}>
+                  <SelectValue
+                    placeholder={t("marketing.pilliersMagasins.gamification.gestion.selectionnerChallengePlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {(() => {
@@ -606,7 +657,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                   })()}
                   {activeChallenges.length === 0 ? (
                     <SelectItem value="no-challenges" disabled>
-                      Aucun challenge actif disponible pour le magasin sélectionné
+                      {t("marketing.pilliersMagasins.gamification.gestion.aucunChallengeDispo")}
                     </SelectItem>
                   ) : (
                     activeChallenges.map((challenge) => (
@@ -620,11 +671,14 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
             </div>
 
             <div>
-              <Label htmlFor="select-clients">Sélectionner des Clients</Label>
+              <Label htmlFor="select-clients" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.selectionnerClients")}
+              </Label>
+
               {/* Clients sélectionnés */}
               {selectedClients.length > 0 && (
-                <div className="mb-3 p-3 border rounded-md bg-gray-50">
-                  <div className="flex flex-wrap gap-2">
+                <div className={`mb-3 p-3 border rounded-md bg-gray-50 ${rtlClasses.textAlign}`}>
+                  <div className={`flex flex-wrap ${rtlClasses.badgeSpacing}`}>
                     {selectedClients.map((client) => {
                       const alreadyParticipating = participations.some(
                         (p) => p.clientId === client.id && p.challengeId === Number(selectedChallengeId),
@@ -634,13 +688,17 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                         <Badge
                           key={client.id}
                           variant={alreadyParticipating ? "secondary" : "default"}
-                          className="flex items-center gap-1 px-2 py-1"
+                          className={`flex ${rtlClasses.directionClass} ${rtlClasses.itemsCenter} gap-1 px-2 py-1`}
                         >
                           <User className="w-3 h-3" />
                           <span className="text-xs">
                             {client.prenom} {client.nom} ({client.code_client})
                           </span>
-                          {alreadyParticipating && <span className="text-xs text-orange-600 ml-1">Déjà inscrit</span>}
+                          {alreadyParticipating && (
+                            <span className="text-xs text-orange-600 ml-1">
+                              {t("marketing.pilliersMagasins.gamification.gestion.dejaInscrit")}
+                            </span>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleRemoveSelectedClient(String(client.id))}
@@ -658,17 +716,20 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
               {/* Champ de recherche et liste déroulante */}
               <div className="relative">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Search
+                    className={`absolute ${rtlClasses.searchIcon} top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4`}
+                  />
                   <Input
                     type="text"
-                    placeholder="Rechercher un client (nom, prénom, code)..."
+                    placeholder={t("marketing.pilliersMagasins.gamification.gestion.champRecherchePlaceholder")}
                     value={clientSearchTerm}
                     onChange={(e) => {
                       setClientSearchTerm(e.target.value)
                       setIsClientDropdownOpen(true)
                     }}
                     onFocus={() => setIsClientDropdownOpen(true)}
-                    className="pl-10"
+                    className={`${rtlClasses.searchPadding} ${rtlClasses.textAlign}`}
+                    dir={textDirection}
                   />
                 </div>
 
@@ -676,13 +737,15 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                 {isClientDropdownOpen && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                     {isLoadingClients ? (
-                      <div className="p-3 text-center text-gray-500">
+                      <div className={`p-3 text-center text-gray-500 ${rtlClasses.textAlign}`}>
                         <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1" />
-                        Chargement des clients...
+                        {t("marketing.pilliersMagasins.gamification.gestion.chargementClients")}
                       </div>
                     ) : filteredClients.length === 0 ? (
-                      <div className="p-3 text-center text-gray-500">
-                        {clientSearchTerm.trim() ? "Aucun client trouvé" : "Aucun client disponible"}
+                      <div className={`p-3 text-center text-gray-500 ${rtlClasses.textAlign}`}>
+                        {clientSearchTerm.trim()
+                          ? t("marketing.pilliersMagasins.gamification.gestion.aucunClientTrouve")
+                          : t("marketing.pilliersMagasins.gamification.gestion.aucunClientDispo")}
                       </div>
                     ) : (
                       filteredClients.map((client) => {
@@ -697,26 +760,30 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                             type="button"
                             onClick={() => handleSelectClient(String(client.id))}
                             disabled={isSelected}
-                            className={`w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${
+                            className={`w-full ${rtlClasses.dropdownAlign} p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors ${
                               isSelected ? "bg-blue-50 text-blue-700" : ""
                             } ${alreadyParticipating ? "opacity-60" : ""}`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div>
+                            <div
+                              className={`flex ${rtlClasses.directionClass} ${rtlClasses.itemsCenter} ${rtlClasses.justifyBetween}`}
+                            >
+                              <div className={rtlClasses.textAlign}>
                                 <div className="font-medium text-sm">
                                   {client.prenom} {client.nom}
                                 </div>
-                                <div className="text-xs text-gray-500">Code: {client.code_client}</div>
+                                <div className="text-xs text-gray-500">
+                                  {t("marketing.pilliersMagasins.gamification.gestion.code")} {client.code_client}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className={`flex ${rtlClasses.directionClass} ${rtlClasses.itemsCenter} gap-2`}>
                                 {isSelected && (
                                   <Badge variant="secondary" className="text-xs">
-                                    Sélectionné
+                                    {t("marketing.pilliersMagasins.gamification.gestion.selectionne")}
                                   </Badge>
                                 )}
                                 {alreadyParticipating && (
                                   <Badge variant="outline" className="text-xs text-orange-600">
-                                    Déjà inscrit
+                                    {t("marketing.pilliersMagasins.gamification.gestion.dejaInscrit")}
                                   </Badge>
                                 )}
                               </div>
@@ -734,19 +801,21 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                 <div className="fixed inset-0 z-5" onClick={() => setIsClientDropdownOpen(false)} />
               )}
 
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-sm text-muted-foreground">
-                  {selectedClientIds.length} client(s) sélectionné(s)
+              <div
+                className={`flex ${rtlClasses.directionClass} ${rtlClasses.justifyBetween} ${rtlClasses.itemsCenter} mt-2`}
+              >
+                <span className={`text-sm text-muted-foreground ${rtlClasses.textAlign}`}>
+                  {selectedClientIds.length} {t("marketing.pilliersMagasins.gamification.gestion.clientsSelectionnes")}
                 </span>
                 <Button type="button" variant="outline" onClick={onNewClientClick}>
-                  Nouveau Client
+                  {t("marketing.pilliersMagasins.gamification.gestion.nouvClient")}
                 </Button>
               </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full"
+              className={`w-full flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} ${rtlClasses.justifyBetween}`}
               disabled={
                 overallLoading ||
                 activeChallenges.length === 0 ||
@@ -754,7 +823,14 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                 selectedClientIds.length === 0
               }
             >
-              {overallLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Enregistrer les Participations"}
+              {overallLoading ? (
+                <div className={`flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} gap-2`}>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{t("marketing.pilliersMagasins.gamification.gestion.enregistrerLesParticipants")}</span>
+                </div>
+              ) : (
+                t("marketing.pilliersMagasins.gamification.gestion.enregistrerLesParticipants")
+              )}
             </Button>
           </form>
         </CardContent>
@@ -762,24 +838,33 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
       {/* Section: Mettre à jour la Progression */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Mettre à jour la Progression</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Mettez à jour la progression et les points d'une participation existante.
+        <CardHeader className={`${rtlClasses.textAlign} ${rtlClasses.cardPadding}`}>
+          <CardTitle className={`text-lg sm:text-xl ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.mettreAjourProgression")}
+          </CardTitle>
+          <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.mettreAjourProgressionDescr")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateParticipation} className="space-y-4">
+        <CardContent className={rtlClasses.cardPadding}>
+          <form onSubmit={handleUpdateParticipation} className={rtlClasses.formSpacing}>
             <div>
-              <Label htmlFor="select-challenge-for-update">Sélectionner un Challenge</Label>
+              <Label
+                htmlFor="select-challenge-for-update"
+                className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+              >
+                {t("marketing.pilliersMagasins.gamification.gestion.selectionnerChallenge")}
+              </Label>
               <Select value={selectedLeaderboardChallengeId || ""} onValueChange={setSelectedLeaderboardChallengeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir un challenge" />
+                <SelectTrigger className={rtlClasses.selectTrigger}>
+                  <SelectValue
+                    placeholder={t("marketing.pilliersMagasins.gamification.gestion.selectionnerChallengePlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {challenges.length === 0 ? (
                     <SelectItem value="no-challenges" disabled>
-                      Aucun challenge disponible
+                      {t("marketing.pilliersMagasins.gamification.gestion.aucunChallengeDispo")}
                     </SelectItem>
                   ) : (
                     challenges.map((challenge) => (
@@ -794,19 +879,28 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
             {selectedLeaderboardChallengeId && (
               <div>
-                <Label htmlFor="select-participation-update">Sélectionner une Participation</Label>
+                <Label
+                  htmlFor="select-participation-update"
+                  className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+                >
+                  {t("marketing.pilliersMagasins.gamification.gestion.selectUneParticipation")}
+                </Label>
                 <Select value={selectedParticipationId || ""} onValueChange={handleSelectParticipationToUpdate}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir une participation à modifier" />
+                  <SelectTrigger className={rtlClasses.selectTrigger}>
+                    <SelectValue
+                      placeholder={t(
+                        "marketing.pilliersMagasins.gamification.gestion.selectUneParticipationPlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {isLoadingChallengeParticipants ? (
                       <SelectItem value="loading" disabled>
-                        Chargement des participations...
+                        {t("marketing.pilliersMagasins.gamification.gestion.chargementDesParticipants")}
                       </SelectItem>
                     ) : challengeParticipants.length === 0 ? (
                       <SelectItem value="no-participations" disabled>
-                        Aucune participation trouvée pour ce challenge
+                        {t("marketing.pilliersMagasins.gamification.gestion.aucuParticpationTrouve")}
                       </SelectItem>
                     ) : (
                       challengeParticipants.map((participant) => (
@@ -824,34 +918,49 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
             {selectedParticipationId && (
               <>
                 <div>
-                  <Label htmlFor="progression">Progression (%)</Label>
+                  <Label htmlFor="progression" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                    {t("marketing.pilliersMagasins.gamification.gestion.progressoin")} (%)
+                  </Label>
                   <Input
                     id="progression"
                     type="number"
                     value={participationProgression.replace("%", "")}
                     onChange={(e) => setParticipationProgression(e.target.value + "%")}
-                    placeholder="Ex: 75"
+                    placeholder={t("marketing.pilliersMagasins.gamification.gestion.progressoinPlaceholder")}
                     min="0"
                     max="100"
+                    className={rtlClasses.textAlign}
+                    dir={textDirection}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="points-gained">Points Gagnés</Label>
+                  <Label htmlFor="points-gained" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                    {t("marketing.pilliersMagasins.gamification.gestion.poinstGagnes")}
+                  </Label>
                   <Input
                     type="number"
                     id="points-gained"
                     value={pointsGained}
                     onChange={(e) => setPointsGained(Number(e.target.value))}
                     min="0"
+                    className={rtlClasses.textAlign}
+                    dir={textDirection}
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoadingChallengeParticipants}>
+                <Button
+                  type="submit"
+                  className={`w-full flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} ${rtlClasses.justifyBetween}`}
+                  disabled={isLoadingChallengeParticipants}
+                >
                   {isLoadingChallengeParticipants ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <div className={`flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} gap-2`}>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{t("marketing.pilliersMagasins.gamification.gestion.mettreAjourProgressoin")}</span>
+                    </div>
                   ) : (
-                    "Mettre à jour la Progression"
+                    t("marketing.pilliersMagasins.gamification.gestion.mettreAjourProgressoin")
                   )}
                 </Button>
               </>
@@ -862,29 +971,38 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
       {/* Section: Leaderboard */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+        <CardHeader className={`${rtlClasses.textAlign} ${rtlClasses.cardPadding}`}>
+          <CardTitle
+            className={`flex ${rtlClasses.directionClass} ${rtlClasses.itemsCenter} gap-2 text-lg sm:text-xl ${rtlClasses.textAlign}`}
+          >
             <Trophy className="w-5 h-5" />
-            Classement des Joueurs par Challenge
+            {t("marketing.pilliersMagasins.gamification.gestion.classementJoueurs")}
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Sélectionnez un challenge pour voir le classement des participants par progression.
+          <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.classementJoueursDescr")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className={rtlClasses.cardPadding}>
+          <div className={rtlClasses.formSpacing}>
             {/* Sélecteur de challenge pour le classement */}
-            <div className="flex gap-2">
+            <div className={`flex ${rtlClasses.directionClass} gap-2`}>
               <div className="flex-1">
-                <Label htmlFor="select-leaderboard-challenge">Sélectionner un Challenge</Label>
+                <Label
+                  htmlFor="select-leaderboard-challenge"
+                  className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+                >
+                  {t("marketing.pilliersMagasins.gamification.gestion.selectionnerChallenge")}
+                </Label>
                 <Select value={selectedLeaderboardChallengeId || ""} onValueChange={setSelectedLeaderboardChallengeId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un challenge pour voir le classement" />
+                  <SelectTrigger className={rtlClasses.selectTrigger}>
+                    <SelectValue
+                      placeholder={t("marketing.pilliersMagasins.gamification.gestion.selectChallengeParticipant")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {challenges.length === 0 ? (
                       <SelectItem value="no-challenges" disabled>
-                        Aucun challenge disponible
+                        {t("marketing.pilliersMagasins.gamification.gestion.aucunChallengeDispo")}
                       </SelectItem>
                     ) : (
                       challenges.map((challenge) => (
@@ -906,10 +1024,12 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                     size="sm"
                     onClick={handleRefreshLeaderboard}
                     disabled={isRefreshingLeaderboard}
-                    className="flex items-center gap-2 bg-transparent"
+                    className={`flex ${rtlClasses.directionClass} ${rtlClasses.itemsCenter} gap-2 bg-transparent`}
                   >
                     <RefreshCw className={`w-4 h-4 ${isRefreshingLeaderboard ? "animate-spin" : ""}`} />
-                    {isRefreshingLeaderboard ? "Actualisation..." : "Actualiser"}
+                    {isRefreshingLeaderboard
+                      ? t("marketing.pilliersMagasins.gamification.gestion.actualisation")
+                      : t("marketing.pilliersMagasins.gamification.gestion.actualiser")}
                   </Button>
                 </div>
               )}
@@ -917,23 +1037,29 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
             {/* Affichage du classement */}
             {!selectedLeaderboardChallengeId ? (
-              <p className="text-center text-muted-foreground py-8">
-                Sélectionnez un challenge pour voir le classement des participants.
+              <p className={`text-center text-muted-foreground py-8 ${rtlClasses.textAlign}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.selectChallengeParticipant")}
               </p>
             ) : isLoadingChallengeParticipants ? (
               <div className="flex flex-col items-center justify-center h-32">
                 <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-                <p className="text-slate-500 mt-2">Chargement du classement...</p>
+                <p className={`text-slate-500 mt-2 ${rtlClasses.textAlign}`}>
+                  {t("marketing.pilliersMagasins.gamification.gestion.chargementClassement")}
+                </p>
               </div>
             ) : challengeParticipants.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">Aucun participant trouvé pour ce challenge.</p>
+              <p className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.aucunParticipantChallenge")}
+              </p>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto border rounded-lg p-2">
-                <div className="flex justify-between items-center mb-2 sticky top-0 bg-white z-10 pb-2">
-                  <span className="text-sm font-medium text-gray-600">
-                    {challengeParticipants.length} participant(s)
+                <div
+                  className={`flex ${rtlClasses.directionClass} ${rtlClasses.justifyBetween} ${rtlClasses.itemsCenter} mb-2 sticky top-0 bg-white z-10 pb-2`}
+                >
+                  <span className={`text-sm font-medium text-gray-600 ${rtlClasses.textAlign}`}>
+                    {challengeParticipants.length} {t("marketing.pilliersMagasins.gamification.gestion.participants")}
                   </span>
-                  <div className="flex gap-2">
+                  <div className={`flex ${rtlClasses.directionClass} gap-2`}>
                     <Button
                       type="button"
                       variant="outline"
@@ -943,7 +1069,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                         if (container) container.scrollTo({ top: 0, behavior: "smooth" })
                       }}
                     >
-                      ↑ Haut
+                      ↑ {t("marketing.pilliersMagasins.gamification.gestion.haut")}
                     </Button>
                     <Button
                       type="button"
@@ -954,7 +1080,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                         if (container) container.scrollTo({ top: container.scrollHeight, behavior: "smooth" })
                       }}
                     >
-                      ↓ Bas
+                      ↓ {t("marketing.pilliersMagasins.gamification.gestion.bas")}
                     </Button>
                   </div>
                 </div>
@@ -966,24 +1092,26 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
                   return (
                     <div
                       key={`${participant.client_id}-${participant.id}`}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-2 hover:bg-gray-50 transition-colors bg-white"
+                      className={`flex ${rtlClasses.participantCard} sm:${rtlClasses.itemsCenter} sm:${rtlClasses.justifyBetween} p-3 border rounded-lg gap-2 hover:bg-gray-50 transition-colors bg-white`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className={`flex ${rtlClasses.participantInfo} ${rtlClasses.itemsCenter} gap-3`}>
                         <span className="text-xl sm:text-2xl">
                           {rank === 1 ? "🏆" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "⭐"}
                         </span>
-                        <div>
+                        <div className={rtlClasses.textAlign}>
                           <h4 className="font-medium text-sm sm:text-base">
                             {participant.client.prenom} {participant.client.nom}
                           </h4>
                           <p className="text-xs sm:text-sm text-slate-600">#{rank}</p>
                         </div>
                       </div>
-                      <div className="text-left sm:text-right">
+                      <div className={`${rtlClasses.participantStats} sm:${rtlClasses.textAlignOpposite}`}>
                         <div className="font-semibold text-purple-600 text-sm sm:text-base">
                           {participant.progression}
                         </div>
-                        <div className="text-xs sm:text-sm text-slate-600">{participant.points_gagnes} points</div>
+                        <div className="text-xs sm:text-sm text-slate-600">
+                          {participant.points_gagnes} {t("marketing.pilliersMagasins.gamification.gestion.points")}
+                        </div>
                         <div className="text-xs text-slate-500">
                           {new Date(participant.date_participation).toLocaleDateString("fr-FR")}
                         </div>

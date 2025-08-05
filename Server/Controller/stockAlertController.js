@@ -22,8 +22,11 @@ export const getAllStockAlerts = async (req, res) => {
     // Extraire les IDs des produits
     const produitsIds = produits.map((p) => p.produit_id);
 
-    // Récupérer uniquement les alertes pour ces produits
+    // Récupérer uniquement les alertes actives pour ces produits
     const alerts = await StockAlert.findAll({
+      where: {
+        is_active: true // ✅ Seulement les alertes actives
+      },
       include: [
         {
           model: Produit,
@@ -43,6 +46,7 @@ export const getAllStockAlerts = async (req, res) => {
       .json({ error: "Erreur lors de la récupération des alertes." });
   }
 };
+
 
 // Créer une alerte
 export const createStockAlert = async (req, res) => {

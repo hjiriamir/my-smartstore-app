@@ -111,7 +111,6 @@ interface ZoneHeatmapStats {
 }
 
 export default function ShopPillarsPage() {
-
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
@@ -156,7 +155,6 @@ export default function ShopPillarsPage() {
   const [selectedZoneTypeFilter, setSelectedZoneTypeFilter] = useState("all")
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-
 
   // New states for date filters in Zonage Intelligent
   const [startDateZoning, setStartDateZoning] = useState("")
@@ -261,9 +259,7 @@ export default function ShopPillarsPage() {
         setIdEntreprise(entrepriseId)
 
         if (entrepriseId) {
-          const storesResponse = await fetch(
-            `${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`,
-          )
+          const storesResponse = await fetch(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`)
 
           if (!storesResponse.ok) {
             console.warn(`HTTP error fetching stores! status: ${storesResponse.status}`)
@@ -430,7 +426,7 @@ export default function ShopPillarsPage() {
 
       try {
         const response = await fetch(
-         `${API_BASE_URL}/produits/performance/produits?idMagasin=${selectedMagasinFilterZoning}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+          `${API_BASE_URL}/produits/performance/produits?idMagasin=${selectedMagasinFilterZoning}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
         )
 
         if (!response.ok) {
@@ -464,7 +460,7 @@ export default function ShopPillarsPage() {
 
     try {
       const response = await fetch(
-       `${API_BASE_URL}/heatmaps/stats?magasin_id=${selectedMagasinFilterAnalytics}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
+        `${API_BASE_URL}/heatmaps/stats?magasin_id=${selectedMagasinFilterAnalytics}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
       )
 
       if (!response.ok) {
@@ -490,8 +486,7 @@ export default function ShopPillarsPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedMagasinFilterAnalytics}`
-)
+      const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedMagasinFilterAnalytics}`)
 
       if (!response.ok) {
         throw new Error(`HTTP error fetching zones for heatmap! status: ${response.status}`)
@@ -745,19 +740,21 @@ export default function ShopPillarsPage() {
     selectedMagasinFilterGamification !== "all" ? selectedMagasinFilterGamification : null
 
   return (
-    <div className="min-h-screen bg-slate-50 mt-8 sm:mt-12">
+    <div className="min-h-screen bg-slate-50 mt-8 sm:mt-12" dir={textDirection}>
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className={`flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
           <Link href="/marketing">
             <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 bg-transparent">
               <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 truncate">{t("marketing.pilliersMagasins.zonageIntelliget.pilliersTitle")}</h1>
+          <div className={`min-w-0 flex-1 ${isRTL ? "text-right" : "text-left"}`}>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 truncate">
+              {t("marketing.pilliersMagasins.zonageIntelliget.pilliersTitle")}
+            </h1>
             <p className="text-slate-600 text-xs sm:text-sm lg:text-base">
-            {t("marketing.pilliersMagasins.zonageIntelliget.pilliersTitleDescr")}
+              {t("marketing.pilliersMagasins.zonageIntelliget.pilliersTitleDescr")}
             </p>
           </div>
         </div>
@@ -799,13 +796,13 @@ export default function ShopPillarsPage() {
           <div className="hidden sm:block overflow-x-auto">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 min-w-[600px] sm:min-w-0">
               <TabsTrigger value="zoning" className="text-xs sm:text-sm">
-              {t("marketing.pilliersMagasins.zonageIntelliget.zonageIntel")}
+                {t("marketing.pilliersMagasins.zonageIntelliget.zonageIntel")}
               </TabsTrigger>
               <TabsTrigger value="gamification" className="text-xs sm:text-sm">
-              {t("marketing.pilliersMagasins.gamification.gamificationAndPoints")}
+                {t("marketing.pilliersMagasins.gamification.gamificationAndPoints")}
               </TabsTrigger>
               <TabsTrigger value="analytics" className="text-xs sm:text-sm">
-              {t("marketing.pilliersMagasins.analysePhysique.analysePhysiq")}
+                {t("marketing.pilliersMagasins.analysePhysique.analysePhysiq")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -813,7 +810,9 @@ export default function ShopPillarsPage() {
           <TabsContent value="zoning" className="space-y-4 sm:space-y-6">
             {/* Header with responsive buttons */}
             <div className="flex flex-col gap-3 sm:gap-4">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">{t("marketing.pilliersMagasins.zonageIntelliget.gestoinPilliers")}</h2>
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">
+                {t("marketing.pilliersMagasins.zonageIntelliget.gestoinPilliers")}
+              </h2>
               <div className="flex flex-col sm:flex-row gap-2"></div>
             </div>
 
@@ -849,7 +848,7 @@ export default function ShopPillarsPage() {
                 ) : selectedMagasinFilterZoning === "all" &&
                   selectedZoneTypeFilter === "all" &&
                   (!startDateZoning || !endDateZoning) ? (
-                    t("marketing.pilliersMagasins.zonageIntelliget.selectMagZonDat")
+                  t("marketing.pilliersMagasins.zonageIntelliget.selectMagZonDat")
                 ) : selectedMagasinFilterZoning === "all" ? (
                   t("marketing.pilliersMagasins.zonageIntelliget.selectMagActiveFiltre")
                 ) : selectedZoneTypeFilter === "all" ? (
@@ -867,23 +866,31 @@ export default function ShopPillarsPage() {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm sm:text-base font-semibold">{t("marketing.pilliersMagasins.zonageIntelliget.zonesActives")}</CardTitle>
+                    <CardHeader
+                      className={`flex ${isRTL ? "flex-row-reverse" : "flex-row"} items-center justify-between space-y-0 pb-2`}
+                    >
+                      <CardTitle className={`text-sm sm:text-base font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+                        {t("marketing.pilliersMagasins.zonageIntelliget.zonesActives")}
+                      </CardTitle>
                       <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className={isRTL ? "text-right" : "text-left"}>
                       {isLoadingZonePerformance ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : (
                         <div className="text-xl sm:text-3xl font-extrabold">{totalActiveZones}</div>
                       )}
-                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.zonageIntelliget.optimise")} {displayCurrentPeriod()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("marketing.pilliersMagasins.zonageIntelliget.optimise")} {displayCurrentPeriod()}
+                      </p>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm sm:text-base font-semibold">{t("marketing.pilliersMagasins.zonageIntelliget.traficMoyen")}</CardTitle>
+                      <CardTitle className="text-sm sm:text-base font-semibold">
+                        {t("marketing.pilliersMagasins.zonageIntelliget.traficMoyen")}
+                      </CardTitle>
                       <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -896,8 +903,8 @@ export default function ShopPillarsPage() {
                       )}
                       {prevStart && prevEnd && !zoningDateError && (
                         <p className="text-xs text-purple-600 mt-1">
-                          {relevantTrafficData.length > 0 ? relevantTrafficData[0].diffVariation : "N/A"} {t("marketing.pilliersMagasins.zonageIntelliget.vs")}{" "}
-                          {displayPreviousPeriod()}
+                          {relevantTrafficData.length > 0 ? relevantTrafficData[0].diffVariation : "N/A"}{" "}
+                          {t("marketing.pilliersMagasins.zonageIntelliget.vs")} {displayPreviousPeriod()}
                         </p>
                       )}
                     </CardContent>
@@ -905,7 +912,9 @@ export default function ShopPillarsPage() {
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm sm:text-base font-semibold">{t("marketing.pilliersMagasins.zonageIntelliget.revenuZoes")}</CardTitle>
+                      <CardTitle className="text-sm sm:text-base font-semibold">
+                        {t("marketing.pilliersMagasins.zonageIntelliget.revenuZoes")}
+                      </CardTitle>
                       <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -914,7 +923,9 @@ export default function ShopPillarsPage() {
                       ) : (
                         <div className="text-xl sm:text-3xl font-extrabold">€{totalZoneRevenue.toFixed(2)}</div>
                       )}
-                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.zonageIntelliget.pourLaPeriode")} {displayCurrentPeriod()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("marketing.pilliersMagasins.zonageIntelliget.pourLaPeriode")} {displayCurrentPeriod()}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
@@ -922,22 +933,26 @@ export default function ShopPillarsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 sm:gap-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg sm:text-xl">{t("marketing.pilliersMagasins.zonageIntelliget.recommandation")}</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl">
+                        {t("marketing.pilliersMagasins.zonageIntelliget.recommandation")}
+                      </CardTitle>
                       <CardDescription className="text-xs sm:text-sm">
-                      {t("marketing.pilliersMagasins.zonageIntelliget.recommandationDescr")}
+                        {t("marketing.pilliersMagasins.zonageIntelliget.recommandationDescr")}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {isLoadingProductPerformance ? (
                         <div className="flex flex-col items-center justify-center h-32">
                           <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-                          <p className="text-slate-500 mt-2">{t("marketing.pilliersMagasins.zonageIntelliget.chargementRecommandation")}</p>
+                          <p className="text-slate-500 mt-2">
+                            {t("marketing.pilliersMagasins.zonageIntelliget.chargementRecommandation")}
+                          </p>
                         </div>
                       ) : errorProductPerformance ? (
                         <p className="text-red-500 text-center py-8">{errorProductPerformance}</p>
                       ) : (productPerformanceData?.produits.length || 0) === 0 ? (
                         <p className="text-center text-muted-foreground py-8">
-                         {t("marketing.pilliersMagasins.zonageIntelliget.aucuneRecomTrouve")}
+                          {t("marketing.pilliersMagasins.zonageIntelliget.aucuneRecomTrouve")}
                         </p>
                       ) : (
                         <div className="space-y-3 sm:space-y-4">
@@ -966,8 +981,10 @@ export default function ShopPillarsPage() {
 
                             return (
                               <div key={product.produitId} className="p-3 border rounded-lg">
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                                  <div className="min-w-0 flex-1">
+                                <div
+                                  className={`flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2 ${isRTL ? "sm:flex-row-reverse" : ""}`}
+                                >
+                                  <div className={`min-w-0 flex-1 ${isRTL ? "text-right" : "text-left"}`}>
                                     <Badge variant={badgeVariant} className="text-xs">
                                       {badgeText}
                                     </Badge>
@@ -976,16 +993,17 @@ export default function ShopPillarsPage() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="text-xs w-full sm:w-auto bg-transparent"
+                                    className={`text-xs w-full sm:w-auto bg-transparent ${isRTL ? "text-right" : "text-left"}`}
                                   >
                                     {t("marketing.pilliersMagasins.zonageIntelliget.appliquer")}
                                   </Button>
                                 </div>
                                 <p className="text-xs sm:text-sm text-slate-600 mb-1">
-                                {t("marketing.pilliersMagasins.zonageIntelliget.variation")} {product.diffVariation}
+                                  {t("marketing.pilliersMagasins.zonageIntelliget.variation")} {product.diffVariation}
                                 </p>
                                 <p className="text-xs sm:text-sm font-medium text-green-600">
-                                {t("marketing.pilliersMagasins.zonageIntelliget.recommandation1")} {product.recommendation}
+                                  {t("marketing.pilliersMagasins.zonageIntelliget.recommandation1")}{" "}
+                                  {product.recommendation}
                                 </p>
                               </div>
                             )
@@ -1049,21 +1067,21 @@ export default function ShopPillarsPage() {
                   </TabsList>
 
                   <TabsContent value="management" className="space-y-4 sm:space-y-6">
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+                    <div
+                      className={`flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 ${isRTL ? "sm:flex-row-reverse" : ""}`}
+                    >
                       <Button
                         onClick={() => setShowAddChallengeForm(!showAddChallengeForm)}
-                        className="w-full sm:w-auto"
+                        className={`w-full sm:w-auto flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}
                       >
-                        {showAddChallengeForm 
-                          ? t("marketing.pilliersMagasins.gamification.gestion.masqueChallenge") 
+                        {showAddChallengeForm
+                          ? t("marketing.pilliersMagasins.gamification.gestion.masqueChallenge")
                           : t("marketing.pilliersMagasins.gamification.gestion.ajouterChallenge")}
-
                       </Button>
                       <Button onClick={() => setShowAddClientForm(!showAddClientForm)} className="w-full sm:w-auto">
-                      {showAddClientForm 
-                        ? t("marketing.pilliersMagasins.gamification.gestion.masqueFormClient") 
-                        : t("marketing.pilliersMagasins.gamification.gestion.ajouterUnClient")}
-
+                        {showAddClientForm
+                          ? t("marketing.pilliersMagasins.gamification.gestion.masqueFormClient")
+                          : t("marketing.pilliersMagasins.gamification.gestion.ajouterUnClient")}
                       </Button>
                     </div>
 
@@ -1097,16 +1115,14 @@ export default function ShopPillarsPage() {
                   <div className="space-y-4">
                     <div className="flex flex-col gap-3 mb-4">
                       <Button onClick={() => setShowAddChallengeForm(!showAddChallengeForm)} className="w-full">
-                      {showAddChallengeForm 
-                        ? t("marketing.pilliersMagasins.gamification.gestion.masqueChallenge") 
-                        : t("marketing.pilliersMagasins.gamification.gestion.ajouterChallenge")}
-
+                        {showAddChallengeForm
+                          ? t("marketing.pilliersMagasins.gamification.gestion.masqueChallenge")
+                          : t("marketing.pilliersMagasins.gamification.gestion.ajouterChallenge")}
                       </Button>
                       <Button onClick={() => setShowAddClientForm(!showAddClientForm)} className="w-full">
-                      {showAddClientForm 
-                        ? t("marketing.pilliersMagasins.gamification.gestion.masqueFormClient") 
-                        : t("marketing.pilliersMagasins.gamification.gestion.ajouterUnClient")}
-
+                        {showAddClientForm
+                          ? t("marketing.pilliersMagasins.gamification.gestion.masqueFormClient")
+                          : t("marketing.pilliersMagasins.gamification.gestion.ajouterUnClient")}
                       </Button>
                     </div>
 
@@ -1138,12 +1154,14 @@ export default function ShopPillarsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+          <TabsContent value="analytics" className="space-y-4 sm:space-y-6" dir={textDirection}>
             {/* Filtres pour Analytics */}
             <Card>
               <CardHeader>
                 <CardTitle>{t("marketing.pilliersMagasins.analysePhysique.filtreAnalysePhysiqe")} </CardTitle>
-                <CardDescription>{t("marketing.pilliersMagasins.analysePhysique.filtreAnalysePhysiqeDescr")} </CardDescription>
+                <CardDescription>
+                  {t("marketing.pilliersMagasins.analysePhysique.filtreAnalysePhysiqeDescr")}{" "}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1155,7 +1173,9 @@ export default function ShopPillarsPage() {
                         <SelectValue placeholder={t("marketing.pilliersMagasins.analysePhysique.tousMagasins")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">{t("marketing.pilliersMagasins.analysePhysique.tousMagasins")}</SelectItem>
+                        <SelectItem value="all">
+                          {t("marketing.pilliersMagasins.analysePhysique.tousMagasins")}
+                        </SelectItem>
                         {stores.map((store) => (
                           <SelectItem key={store.id} value={store.magasin_id}>
                             {store.nom_magasin}
@@ -1167,7 +1187,9 @@ export default function ShopPillarsPage() {
 
                   {/* Date de début */}
                   <div>
-                    <Label htmlFor="start-date-analytics">{t("marketing.pilliersMagasins.analysePhysique.dateDebut")}</Label>
+                    <Label htmlFor="start-date-analytics">
+                      {t("marketing.pilliersMagasins.analysePhysique.dateDebut")}
+                    </Label>
                     <Input
                       id="start-date-analytics"
                       type="date"
@@ -1178,7 +1200,9 @@ export default function ShopPillarsPage() {
 
                   {/* Date de fin */}
                   <div>
-                    <Label htmlFor="end-date-analytics">{t("marketing.pilliersMagasins.analysePhysique.dateFin")}</Label>
+                    <Label htmlFor="end-date-analytics">
+                      {t("marketing.pilliersMagasins.analysePhysique.dateFin")}
+                    </Label>
                     <Input
                       id="end-date-analytics"
                       type="date"
@@ -1219,33 +1243,43 @@ export default function ShopPillarsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">{t("marketing.pilliersMagasins.analysePhysique.visiteursUniques")}</CardTitle>
+                      <CardTitle className="text-xs sm:text-sm font-medium">
+                        {t("marketing.pilliersMagasins.analysePhysique.visiteursUniques")}
+                      </CardTitle>
                       <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       {isLoadingHeatmapStats ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : errorHeatmapStats ? (
-                        <div className="text-red-500 text-xs">{t("marketing.pilliersMagasins.analysePhysique.pourLaPeriodeSelectionne")}</div>
+                        <div className="text-red-500 text-xs">
+                          {t("marketing.pilliersMagasins.analysePhysique.pourLaPeriodeSelectionne")}
+                        </div>
                       ) : (
                         <div className="text-lg sm:text-2xl font-bold">
                           {heatmapStats?.total_visiteurs?.toLocaleString() || 0}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.analysePhysique.pourLaPeriodeSelectionne")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("marketing.pilliersMagasins.analysePhysique.pourLaPeriodeSelectionne")}
+                      </p>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">{t("marketing.pilliersMagasins.analysePhysique.tempsMoyenEnMagasin")}</CardTitle>
+                      <CardTitle className="text-xs sm:text-sm font-medium">
+                        {t("marketing.pilliersMagasins.analysePhysique.tempsMoyenEnMagasin")}
+                      </CardTitle>
                       <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       {isLoadingHeatmapStats ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : errorHeatmapStats ? (
-                        <div className="text-red-500 text-xs">{t("marketing.pilliersMagasins.analysePhysique.erreur")}</div>
+                        <div className="text-red-500 text-xs">
+                          {t("marketing.pilliersMagasins.analysePhysique.erreur")}
+                        </div>
                       ) : (
                         <div className="text-lg sm:text-2xl font-bold">
                           {heatmapStats?.duree_moyenne_globale
@@ -1253,137 +1287,199 @@ export default function ShopPillarsPage() {
                             : "N/A"}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.analysePhysique.dureeMoyenneVisite")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("marketing.pilliersMagasins.analysePhysique.dureeMoyenneVisite")}
+                      </p>
                     </CardContent>
                   </Card>
 
                   <Card className="sm:col-span-2 lg:col-span-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">{t("marketing.pilliersMagasins.analysePhysique.intensiteMoyenne")}</CardTitle>
+                      <CardTitle className="text-xs sm:text-sm font-medium">
+                        {t("marketing.pilliersMagasins.analysePhysique.intensiteMoyenne")}
+                      </CardTitle>
                       <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       {isLoadingHeatmapStats ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : errorHeatmapStats ? (
-                        <div className="text-red-500 text-xs">{t("marketing.pilliersMagasins.analysePhysique.erreur")}</div>
+                        <div className="text-red-500 text-xs">
+                          {t("marketing.pilliersMagasins.analysePhysique.erreur")}
+                        </div>
                       ) : (
                         <div className="text-lg sm:text-2xl font-bold">
                           {heatmapStats?.intensite_moyenne ? `${heatmapStats.intensite_moyenne.toFixed(1)}%` : "N/A"}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.analysePhysique.intenisteGlobalMagasin")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("marketing.pilliersMagasins.analysePhysique.intenisteGlobalMagasin")}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Heatmap du Magasin */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg sm:text-xl">{t("marketing.pilliersMagasins.analysePhysique.heatmapMagasin")}</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                    {t("marketing.pilliersMagasins.analysePhysique.heatmapMagasinDescr")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Sélecteur de zone */}
-                    <div className="mb-4">
-                      <Label htmlFor="zone-heatmap">{t("marketing.pilliersMagasins.analysePhysique.filtrerParZone")}</Label>
-                      <Select value={selectedZoneForHeatmap} onValueChange={setSelectedZoneForHeatmap}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("marketing.pilliersMagasins.analysePhysique.selectZonePlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">{t("marketing.pilliersMagasins.analysePhysique.tousLesZones")}</SelectItem>
-                          {availableZonesForHeatmap.map((zone) => (
-                            <SelectItem key={zone.zone_id} value={zone.zone_id}>
-                              {zone.nom_zone}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+<Card>
+  <CardHeader className={isRTL ? "text-right" : "text-left"}>
+    <CardTitle className="text-lg sm:text-xl">
+      {t("marketing.pilliersMagasins.analysePhysique.heatmapMagasin")}
+    </CardTitle>
+    <CardDescription className="text-xs sm:text-sm">
+      {t("marketing.pilliersMagasins.analysePhysique.heatmapMagasinDescr")}
+    </CardDescription>
+  </CardHeader>
+  <CardContent className={isRTL ? "text-right" : "text-left"}>
+    {/* Sélecteur de zone */}
+    <div className="mb-4">
+      <Label htmlFor="zone-heatmap" className={isRTL ? "text-right" : "text-left"}>
+        {t("marketing.pilliersMagasins.analysePhysique.filtrerParZone")}
+      </Label>
+      <Select value={selectedZoneForHeatmap} onValueChange={setSelectedZoneForHeatmap}>
+        <SelectTrigger className={isRTL ? "text-right" : "text-left"}>
+          <SelectValue
+            placeholder={t("marketing.pilliersMagasins.analysePhysique.selectZonePlaceholder")}
+          />
+        </SelectTrigger>
+        <SelectContent className={isRTL ? "text-right" : "text-left"}>
+          <SelectItem value="all" className={isRTL ? "text-right" : "text-left"}>
+            {t("marketing.pilliersMagasins.analysePhysique.tousLesZones")}
+          </SelectItem>
+          {availableZonesForHeatmap.map((zone) => (
+            <SelectItem key={zone.zone_id} value={zone.zone_id} className={isRTL ? "text-right" : "text-left"}>
+              {zone.nom_zone}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+
+    {isLoadingZoneHeatmap ? (
+      <div className={`flex flex-col items-center justify-center h-32 ${isRTL ? "text-right" : "text-left"}`}>
+        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+        <p className="text-slate-500 mt-2">
+          {t("marketing.pilliersMagasins.analysePhysique.chargementDonneesHeatmap")}
+        </p>
+      </div>
+    ) : errorZoneHeatmap ? (
+      <p className={`text-red-500 text-center py-8 ${isRTL ? "text-right" : "text-left"}`}>{errorZoneHeatmap}</p>
+    ) : zoneHeatmapData.length === 0 ? (
+      <p className={`text-center text-muted-foreground py-8 ${isRTL ? "text-right" : "text-left"}`}>
+        {t("marketing.pilliersMagasins.analysePhysique.aucuneDonneesHeatmap")}
+      </p>
+    ) : (
+      <>
+        <div className="space-y-3 sm:space-y-4">
+          {zoneHeatmapData.map((item, index) => {
+            const intensite = item.intensite_moyenne || 0
+            const visiteurs = item.total_visiteurs || 0
+            const duree = item.duree_moyenne_globale || 0
+
+            return (
+              <div
+                key={`${item.zone_id}-${index}`}
+                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-2 ${isRTL ? "flex-row-reverse" : ""}`}
+              >
+                {/* Inversion de l'ordre des éléments en RTL */}
+                {isRTL ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-medium w-8 text-left">
+                        {intensite.toFixed(0)}%
+                      </span>
+                      <Progress value={intensite} className="w-16 sm:w-20" />
                     </div>
-
-                    {isLoadingZoneHeatmap ? (
-                      <div className="flex flex-col items-center justify-center h-32">
-                        <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-                        <p className="text-slate-500 mt-2">{t("marketing.pilliersMagasins.analysePhysique.chargementDonneesHeatmap")}</p>
+                    <div className="flex items-center gap-3 flex-row-reverse">
+                      <div
+                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded flex-shrink-0 ${
+                          intensite > 80
+                            ? "bg-red-500"
+                            : intensite > 60
+                              ? "bg-orange-500"
+                              : intensite > 40
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                        }`}
+                      ></div>
+                      <div className="min-w-0 flex-1 text-right">
+                        <h4 className="font-medium text-sm sm:text-base">
+                          {item.zone_name || `Zone ${item.zone_id}`}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-600">
+                          {visiteurs} {t("marketing.pilliersMagasins.analysePhysique.visiteurs")} •{" "}
+                          {duree.toFixed(1)}
+                          {t("marketing.pilliersMagasins.analysePhysique.minMoyenne")}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {t("marketing.pilliersMagasins.analysePhysique.zoneId")} {item.zone_id}
+                        </p>
                       </div>
-                    ) : errorZoneHeatmap ? (
-                      <p className="text-red-500 text-center py-8">{errorZoneHeatmap}</p>
-                    ) : zoneHeatmapData.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">
-                       {t("marketing.pilliersMagasins.analysePhysique.aucuneDonneesHeatmap")}
-                      </p>
-                    ) : (
-                      <>
-                        <div className="space-y-3 sm:space-y-4">
-                          {zoneHeatmapData.map((item, index) => {
-                            const intensite = item.intensite_moyenne || 0
-                            const visiteurs = item.total_visiteurs || 0
-                            const duree = item.duree_moyenne_globale || 0
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded flex-shrink-0 ${
+                          intensite > 80
+                            ? "bg-red-500"
+                            : intensite > 60
+                              ? "bg-orange-500"
+                              : intensite > 40
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                        }`}
+                      ></div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-medium text-sm sm:text-base">
+                          {item.zone_name || `Zone ${item.zone_id}`}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-600">
+                          {visiteurs} {t("marketing.pilliersMagasins.analysePhysique.visiteurs")} •{" "}
+                          {duree.toFixed(1)}
+                          {t("marketing.pilliersMagasins.analysePhysique.minMoyenne")}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {t("marketing.pilliersMagasins.analysePhysique.zoneId")} {item.zone_id}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Progress value={intensite} className="w-16 sm:w-20" />
+                      <span className="text-xs sm:text-sm font-medium w-8 text-right">
+                        {intensite.toFixed(0)}%
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
 
-                            return (
-                              <div
-                                key={`${item.zone_id}-${index}`}
-                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-2"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded flex-shrink-0 ${
-                                      intensite > 80
-                                        ? "bg-red-500"
-                                        : intensite > 60
-                                          ? "bg-orange-500"
-                                          : intensite > 40
-                                            ? "bg-yellow-500"
-                                            : "bg-green-500"
-                                    }`}
-                                  ></div>
-                                  <div className="min-w-0 flex-1">
-                                    <h4 className="font-medium text-sm sm:text-base">
-                                      {item.zone_name || `Zone ${item.zone_id}`}
-                                    </h4>
-                                    <p className="text-xs sm:text-sm text-slate-600">
-                                      {visiteurs} {t("marketing.pilliersMagasins.analysePhysique.visiteurs")} • {duree.toFixed(1)}{t("marketing.pilliersMagasins.analysePhysique.minMoyenne")}
-                                    </p>
-                                    <p className="text-xs text-slate-500">{t("marketing.pilliersMagasins.analysePhysique.zoneId")} {item.zone_id}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Progress value={intensite} className="w-16 sm:w-20" />
-                                  <span className="text-xs sm:text-sm font-medium w-8 text-right">
-                                    {intensite.toFixed(0)}%
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-
-                        {/* Légende */}
-                        <div className="mt-4 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-red-500 rounded"></div>
-                            <span>{t("marketing.pilliersMagasins.analysePhysique.tresForteIntensite")} (&gt;80%)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                            <span>{t("marketing.pilliersMagasins.analysePhysique.forteIntensite")} (60-80%)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                            <span>{t("marketing.pilliersMagasins.analysePhysique.inetnsiteModere")} (40-60%)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-green-500 rounded"></div>
-                            <span>{t("marketing.pilliersMagasins.analysePhysique.faibleIntensite")}(&lt;40%)</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+        {/* Légende */}
+        <div className={`mt-4 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm ${isRTL ? "flex-row-reverse" : ""}`}>
+          <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className="w-3 h-3 bg-red-500 rounded"></div>
+            <span>{t("marketing.pilliersMagasins.analysePhysique.tresForteIntensite")} (&gt;80%)</span>
+          </div>
+          <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className="w-3 h-3 bg-orange-500 rounded"></div>
+            <span>{t("marketing.pilliersMagasins.analysePhysique.forteIntensite")} (60-80%)</span>
+          </div>
+          <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+            <span>{t("marketing.pilliersMagasins.analysePhysique.inetnsiteModere")} (40-60%)</span>
+          </div>
+          <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className="w-3 h-3 bg-green-500 rounded"></div>
+            <span>{t("marketing.pilliersMagasins.analysePhysique.faibleIntensite")}(&lt;40%)</span>
+          </div>
+        </div>
+      </>
+    )}
+  </CardContent>
+</Card>
               </>
             )}
           </TabsContent>

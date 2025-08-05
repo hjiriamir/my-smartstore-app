@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import type { Challenge, Magasin } from "@/lib/gamification"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 interface AddChallengeFormProps {
   onChallengeAdded: (challenge: Challenge) => void
@@ -29,6 +31,40 @@ export function AddChallengeForm({ onChallengeAdded, stores, initialSelectedMaga
   const [recompense, setRecompense] = useState("")
   const [selectedMagasinId, setSelectedMagasinId] = useState<string>(initialSelectedMagasinId || "")
   const [isLoading, setIsLoading] = useState(false)
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
+  // Classes RTL optimisées
+  const rtlClasses = {
+    container: isRTL ? "rtl" : "ltr",
+    textAlign: isRTL ? "text-right" : "text-left",
+    textAlignOpposite: isRTL ? "text-left" : "text-right",
+    flexRow: isRTL ? "flex-row-reverse" : "flex-row",
+    flexRowReverse: isRTL ? "flex-row" : "flex-row-reverse",
+    marginLeft: isRTL ? "mr-2" : "ml-2",
+    marginRight: isRTL ? "ml-2" : "mr-2",
+    paddingLeft: isRTL ? "pr-3" : "pl-3",
+    paddingRight: isRTL ? "pl-3" : "pr-3",
+    borderLeft: isRTL ? "border-r" : "border-l",
+    borderRight: isRTL ? "border-l" : "border-r",
+    roundedLeft: isRTL ? "rounded-r" : "rounded-l",
+    roundedRight: isRTL ? "rounded-l" : "rounded-r",
+    spaceX: isRTL ? "space-x-reverse space-x-4" : "space-x-4",
+    directionClass: isRTL ? "flex-row-reverse" : "flex-row",
+    inputPadding: isRTL ? "pr-4 pl-10" : "pl-4 pr-10",
+    buttonSpacing: isRTL ? "space-x-reverse space-x-2" : "space-x-2",
+    gridFlow: isRTL ? "grid-flow-col-dense" : "",
+    justifyBetween: "justify-between",
+    itemsCenter: "items-center",
+    formSpacing: "space-y-4",
+    cardPadding: "p-4",
+    labelSpacing: "mb-2",
+    selectTrigger: isRTL ? "text-right" : "text-left",
+    textareaAlign: isRTL ? "text-right" : "text-left",
+    buttonContent: isRTL ? "flex-row-reverse" : "flex-row",
+  }
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -131,95 +167,165 @@ export function AddChallengeForm({ onChallengeAdded, stores, initialSelectedMaga
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg sm:text-xl">Ajouter un Nouveau Challenge</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">Créez un nouveau défi pour vos clients.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="challenge-magasin">Magasin Associé</Label>
-            <Select value={selectedMagasinId} onValueChange={setSelectedMagasinId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un magasin" />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.length === 0 ? (
-                  <SelectItem value="no-stores" disabled>
-                    Aucun magasin disponible
-                  </SelectItem>
-                ) : (
-                  stores.map((store) => (
-                    <SelectItem key={store.magasin_id} value={store.magasin_id}>
-                      {store.nom_magasin}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="challenge-nom">Nom du Challenge</Label>
-            <Input
-              id="challenge-nom"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              placeholder="Ex: Chasse au Trésor de Pâques"
-            />
-          </div>
-          <div>
-            <Label htmlFor="challenge-description">Description</Label>
-            <Textarea
-              id="challenge-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez le challenge en quelques mots."
-            />
-          </div>
-          <div>
-            <Label htmlFor="challenge-type">Type de Challenge</Label>
-            <Select value={type} onValueChange={(value) => setType(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="chasse_tresor">Chasse au Trésor</SelectItem>
-                <SelectItem value="points">Points</SelectItem>
-                <SelectItem value="quiz">Quiz</SelectItem>
-                <SelectItem value="mission">Mission</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className={rtlClasses.container} dir={textDirection}>
+      <Card>
+        <CardHeader className={`${rtlClasses.textAlign} ${rtlClasses.cardPadding}`}>
+          <CardTitle className={`text-lg sm:text-xl ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.creerChallenge")}
+          </CardTitle>
+          <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+            {t("marketing.pilliersMagasins.gamification.gestion.creerChallengeDescr")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className={rtlClasses.cardPadding}>
+          <form onSubmit={handleSubmit} className={rtlClasses.formSpacing}>
             <div>
-              <Label htmlFor="challenge-date-debut">Date de Début</Label>
+              <Label htmlFor="challenge-magasin" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.magasinAssocier")}
+              </Label>
+              <Select value={selectedMagasinId} onValueChange={setSelectedMagasinId}>
+                <SelectTrigger className={rtlClasses.selectTrigger}>
+                  <SelectValue placeholder="Sélectionner un magasin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.length === 0 ? (
+                    <SelectItem value="no-stores" disabled>
+                      {t("marketing.pilliersMagasins.gamification.gestion.aucunMagasin")}
+                    </SelectItem>
+                  ) : (
+                    stores.map((store) => (
+                      <SelectItem key={store.magasin_id} value={store.magasin_id}>
+                        {store.nom_magasin}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="challenge-nom" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.nomChallenge")}
+              </Label>
               <Input
-                type="date"
-                id="challenge-date-debut"
-                value={dateDebut}
-                onChange={(e) => setDateDebut(e.target.value)}
+                id="challenge-nom"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                placeholder={t("marketing.pilliersMagasins.gamification.gestion.nomChallengePlaceholder")}
+                className={rtlClasses.textAlign}
+                dir={textDirection}
               />
             </div>
+
             <div>
-              <Label htmlFor="challenge-date-fin">Date de Fin</Label>
-              <Input type="date" id="challenge-date-fin" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+              <Label
+                htmlFor="challenge-description"
+                className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+              >
+                {t("marketing.pilliersMagasins.gamification.gestion.desription")}
+              </Label>
+              <Textarea
+                id="challenge-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t("marketing.pilliersMagasins.gamification.gestion.descriptionPlaceholder")}
+                className={`${rtlClasses.textareaAlign} min-h-[80px]`}
+                dir={textDirection}
+              />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="challenge-recompense">Récompense</Label>
-            <Input
-              id="challenge-recompense"
-              value={recompense}
-              onChange={(e) => setRecompense(e.target.value)}
-              placeholder="Ex: Bon d'achat de 10€"
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Ajouter le Challenge"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+
+            <div>
+              <Label htmlFor="challenge-type" className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}>
+                {t("marketing.pilliersMagasins.gamification.gestion.typeChallenge")}
+              </Label>
+              <Select value={type} onValueChange={(value) => setType(value)}>
+                <SelectTrigger className={rtlClasses.selectTrigger}>
+                  <SelectValue
+                    placeholder={t("marketing.pilliersMagasins.gamification.gestion.typeChallengePlaceholder")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="chasse_tresor">
+                    {t("marketing.pilliersMagasins.gamification.gestion.chase")}
+                  </SelectItem>
+                  <SelectItem value="points">{t("marketing.pilliersMagasins.gamification.gestion.points")}</SelectItem>
+                  <SelectItem value="quiz">{t("marketing.pilliersMagasins.gamification.gestion.quiz")}</SelectItem>
+                  <SelectItem value="mission">
+                    {t("marketing.pilliersMagasins.gamification.gestion.mission")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${rtlClasses.gridFlow}`}>
+              <div>
+                <Label
+                  htmlFor="challenge-date-debut"
+                  className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+                >
+                  {t("marketing.pilliersMagasins.gamification.gestion.dateDebur")}
+                </Label>
+                <Input
+                  type="date"
+                  id="challenge-date-debut"
+                  value={dateDebut}
+                  onChange={(e) => setDateDebut(e.target.value)}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="challenge-date-fin"
+                  className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+                >
+                  {t("marketing.pilliersMagasins.gamification.gestion.dateFin")}
+                </Label>
+                <Input
+                  type="date"
+                  id="challenge-date-fin"
+                  value={dateFin}
+                  onChange={(e) => setDateFin(e.target.value)}
+                  className={rtlClasses.textAlign}
+                  dir={textDirection}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label
+                htmlFor="challenge-recompense"
+                className={`block ${rtlClasses.textAlign} ${rtlClasses.labelSpacing}`}
+              >
+                {t("marketing.pilliersMagasins.gamification.gestion.recompense")}
+              </Label>
+              <Input
+                id="challenge-recompense"
+                value={recompense}
+                onChange={(e) => setRecompense(e.target.value)}
+                placeholder={t("marketing.pilliersMagasins.gamification.gestion.recompensePlaceholder")}
+                className={rtlClasses.textAlign}
+                dir={textDirection}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className={`w-full flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} ${rtlClasses.justifyBetween}`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className={`flex ${rtlClasses.buttonContent} ${rtlClasses.itemsCenter} gap-2`}>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{t("marketing.pilliersMagasins.gamification.gestion.ajoutChallengeButton")}</span>
+                </div>
+              ) : (
+                t("marketing.pilliersMagasins.gamification.gestion.ajoutChallengeButton")
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Trophy, Medal, Star, Crown, Users, TrendingUp, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 // Interfaces pour les données API
 interface Client {
@@ -90,6 +92,9 @@ interface LeaderboardProps {
 
 export function Leaderboard({ entrepriseId }: LeaderboardProps) {
   const { toast } = useToast()
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
 
   // États pour les données
   const [clients, setClients] = useState<Client[]>([])
@@ -118,7 +123,6 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
   const [errorChallengeParticipants, setErrorChallengeParticipants] = useState<string | null>(null)
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-
 
   // Fonction pour récupérer les clients
   const fetchClients = async () => {
@@ -349,91 +353,126 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
 
   if (!entrepriseId) {
     return (
-      <div className="text-center text-muted-foreground py-8">
-        <p>Aucune entreprise sélectionnée pour afficher les classements.</p>
+      <div
+        className={`text-center text-muted-foreground py-8 ${isRTL ? "text-right" : "text-left"}`}
+        dir={textDirection}
+      >
+        <p>{t("marketing.pilliersMagasins.gamification.classement.aucuneEntrepriseSelectionnee")}</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6" dir={textDirection}>
       {/* Bouton d'actualisation */}
-      <div className="flex justify-end">
+      <div className={`flex ${isRTL ? "justify-start" : "justify-end"}`}>
         <Button
           onClick={refreshAllData}
           disabled={isRefreshing}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 bg-transparent"
+          className={`flex items-center gap-2 bg-transparent ${isRTL ? "flex-row-reverse" : "flex-row"}`}
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          {isRefreshing ? "Actualisation..." : "Actualiser"}
+          {isRefreshing
+            ? t("marketing.pilliersMagasins.gamification.gestion.actualisation")
+            : t("marketing.pilliersMagasins.gamification.gestion.actualiser")}
         </Button>
       </div>
 
       {/* Stats Cards pour LeaderBoard */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold">Total Clients</CardTitle>
+          <CardHeader
+            className={`flex ${isRTL ? "flex-row-reverse" : "flex-row"} items-center justify-between space-y-0 pb-2`}
+          >
+            <CardTitle className={`text-sm font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+              {t("marketing.pilliersMagasins.gamification.classement.totalClients")}
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className={isRTL ? "text-right" : "text-left"}>
             {isLoadingClients ? (
               <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
             ) : errorClients ? (
-              <div className="text-red-500 text-xs">Erreur</div>
+              <div className="text-red-500 text-xs">
+                {t("marketing.pilliersMagasins.gamification.classement.erreur")}
+              </div>
             ) : (
               <div className="text-2xl font-bold">{clients.length}</div>
             )}
-            <p className="text-xs text-muted-foreground">Clients actifs</p>
+            <p className="text-xs text-muted-foreground">
+              {t("marketing.pilliersMagasins.gamification.classement.clientsActifs")}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold">Points Totaux</CardTitle>
+          <CardHeader
+            className={`flex ${isRTL ? "flex-row-reverse" : "flex-row"} items-center justify-between space-y-0 pb-2`}
+          >
+            <CardTitle className={`text-sm font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+              {t("marketing.pilliersMagasins.gamification.classement.pointsTotaux")}
+            </CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className={isRTL ? "text-right" : "text-left"}>
             {isLoadingPointsTotaux ? (
               <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
             ) : errorPointsTotaux ? (
-              <div className="text-red-500 text-xs">Erreur</div>
+              <div className="text-red-500 text-xs">
+                {t("marketing.pilliersMagasins.gamification.classement.erreur")}
+              </div>
             ) : (
               <div className="text-2xl font-bold">{pointsTotaux?.totalPoints?.toLocaleString() || 0}</div>
             )}
-            <p className="text-xs text-muted-foreground">Points distribués</p>
+            <p className="text-xs text-muted-foreground">
+              {t("marketing.pilliersMagasins.gamification.classement.pointsDistribuer")}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold">Challenges Actifs</CardTitle>
+          <CardHeader
+            className={`flex ${isRTL ? "flex-row-reverse" : "flex-row"} items-center justify-between space-y-0 pb-2`}
+          >
+            <CardTitle className={`text-sm font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+              {t("marketing.pilliersMagasins.gamification.classement.challengeActifs")}
+            </CardTitle>
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className={isRTL ? "text-right" : "text-left"}>
             {isLoadingChallengesActifs ? (
               <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
             ) : errorChallengesActifs ? (
-              <div className="text-red-500 text-xs">Erreur</div>
+              <div className="text-red-500 text-xs">
+                {t("marketing.pilliersMagasins.gamification.classement.erreur")}
+              </div>
             ) : (
               <div className="text-2xl font-bold">{challengesActifs?.totalChallenges || 0}</div>
             )}
-            <p className="text-xs text-muted-foreground">En cours</p>
+            <p className="text-xs text-muted-foreground">
+              {t("marketing.pilliersMagasins.gamification.classement.enCours")}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold">Taux Participation</CardTitle>
+          <CardHeader
+            className={`flex ${isRTL ? "flex-row-reverse" : "flex-row"} items-center justify-between space-y-0 pb-2`}
+          >
+            <CardTitle className={`text-sm font-semibold ${isRTL ? "text-right" : "text-left"}`}>
+              {t("marketing.pilliersMagasins.gamification.classement.tauxParticipatoin")}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className={isRTL ? "text-right" : "text-left"}>
             {isLoadingTauxParticipation ? (
               <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
             ) : errorTauxParticipation ? (
-              <div className="text-red-500 text-xs">Erreur</div>
+              <div className="text-red-500 text-xs">
+                {t("marketing.pilliersMagasins.gamification.classement.erreur")}
+              </div>
             ) : (
               <div className="text-2xl font-bold">
                 {tauxParticipation?.tauxParticipation
@@ -441,54 +480,67 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
                   : "0%"}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">Clients engagés</p>
+            <p className="text-xs text-muted-foreground">
+              {t("marketing.pilliersMagasins.gamification.classement.clientsEngages")}
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Classement Général des Clients */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className={isRTL ? "text-right" : "text-left"}>
+          <CardTitle className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
             <Crown className="w-5 h-5 text-yellow-500" />
-            Classement Général des Clients
+            {t("marketing.pilliersMagasins.gamification.classement.classementGeneralClients")}
           </CardTitle>
-          <CardDescription>Classement basé sur les points totaux cumulés</CardDescription>
+          <CardDescription>
+            {t("marketing.pilliersMagasins.gamification.classement.classementGeneralClientsDescr")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoadingClientsOrdered ? (
             <div className="flex flex-col items-center justify-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-              <p className="text-slate-500 mt-2">Chargement du classement...</p>
+              <p className="text-slate-500 mt-2">
+                {t("marketing.pilliersMagasins.gamification.classement.chargementClassement")}
+              </p>
             </div>
           ) : errorClientsOrdered ? (
-            <p className="text-red-500 text-center py-8">{errorClientsOrdered}</p>
+            <p className={`text-red-500 text-center py-8 ${isRTL ? "text-right" : "text-left"}`}>
+              {errorClientsOrdered}
+            </p>
           ) : clientsOrdered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Aucun classement disponible pour le moment.</p>
+            <p className={`text-center text-muted-foreground py-8 ${isRTL ? "text-right" : "text-left"}`}>
+              {t("marketing.pilliersMagasins.gamification.classement.aucunClassementDispo")}
+            </p>
           ) : (
             <div className="space-y-4">
               {clientsOrdered.map((clientData) => (
                 <div
                   key={clientData.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors ${isRTL ? "flex-row-reverse" : "flex-row"}`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-4 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
+                    <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
                       {getRankIcon(clientData.rang)}
                       <Badge variant={getRankBadgeVariant(clientData.rang)} className="text-xs">
                         #{clientData.rang}
                       </Badge>
                     </div>
-                    <div>
+                    <div className={isRTL ? "text-right" : "text-left"}>
                       <h4 className="font-semibold text-sm sm:text-base">
                         {clientData.client.prenom} {clientData.client.nom}
                       </h4>
-                      <p className="text-xs text-muted-foreground">Code: {clientData.client.code_client}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("marketing.pilliersMagasins.gamification.gestion.code")} {clientData.client.code_client}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className={isRTL ? "text-left" : "text-right"}>
                     <div className="text-lg font-bold text-purple-600">
-                      {clientData.points_total.toLocaleString()} pts
+                      {clientData.points_total.toLocaleString()}{" "}
+                      {t("marketing.pilliersMagasins.gamification.classement.pts")}
                     </div>
                   </div>
                 </div>
@@ -500,29 +552,35 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
 
       {/* Classements par Challenge */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className={isRTL ? "text-right" : "text-left"}>
+          <CardTitle className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
             <Trophy className="w-5 h-5 text-blue-500" />
-            Classements par Challenge
+            {t("marketing.pilliersMagasins.gamification.classement.classementParChallenge")}
           </CardTitle>
-          <CardDescription>Performance des participants dans chaque challenge</CardDescription>
+          <CardDescription>
+            {t("marketing.pilliersMagasins.gamification.classement.classementParChallengeDescr")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {/* Sélecteur de challenge */}
             <div>
               <Select value={selectedChallengeId || ""} onValueChange={setSelectedChallengeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un challenge pour voir le classement" />
+                <SelectTrigger className={isRTL ? "text-right" : "text-left"}>
+                  <SelectValue
+                    placeholder={t(
+                      "marketing.pilliersMagasins.gamification.classement.classementParChallengePlaceholder",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {isLoadingChallengesActifs ? (
                     <SelectItem value="loading" disabled>
-                      Chargement des challenges...
+                      {t("marketing.pilliersMagasins.gamification.classement.chargementChallenge")}
                     </SelectItem>
                   ) : challengesActifs?.details.length === 0 ? (
                     <SelectItem value="no-challenges" disabled>
-                      Aucun challenge actif disponible
+                      {t("marketing.pilliersMagasins.gamification.classement.aucChallenge")}
                     </SelectItem>
                   ) : (
                     challengesActifs?.details.map((challenge) => (
@@ -537,43 +595,55 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
 
             {/* Affichage du classement du challenge sélectionné */}
             {!selectedChallengeId ? (
-              <p className="text-center text-muted-foreground py-8">
-                Sélectionnez un challenge pour voir le classement des participants.
+              <p className={`text-center text-muted-foreground py-8 ${isRTL ? "text-right" : "text-left"}`}>
+                {t("marketing.pilliersMagasins.gamification.classement.selectChallengeClassement")}
               </p>
             ) : isLoadingChallengeParticipants ? (
               <div className="flex flex-col items-center justify-center h-32">
                 <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-                <p className="text-slate-500 mt-2">Chargement du classement du challenge...</p>
+                <p className="text-slate-500 mt-2">
+                  {t("marketing.pilliersMagasins.gamification.classement.chargementChallClassement")}
+                </p>
               </div>
             ) : errorChallengeParticipants ? (
-              <p className="text-red-500 text-center py-8">{errorChallengeParticipants}</p>
+              <p className={`text-red-500 text-center py-8 ${isRTL ? "text-right" : "text-left"}`}>
+                {errorChallengeParticipants}
+              </p>
             ) : challengeParticipants.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Aucun participant trouvé pour ce challenge.</p>
+              <p className={`text-center text-muted-foreground py-8 ${isRTL ? "text-right" : "text-left"}`}>
+                {t("marketing.pilliersMagasins.gamification.classement.aucunParticipantParChallenge")}
+              </p>
             ) : (
               <div className="space-y-3">
                 {challengeParticipants.map((participant, index) => {
                   const rank = index + 1
                   return (
-                    <div key={participant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
+                    <div
+                      key={participant.id}
+                      className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg ${isRTL ? "flex-row-reverse" : "flex-row"}`}
+                    >
+                      <div className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
+                        <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
                           {getRankIcon(rank)}
                           <Badge variant={getRankBadgeVariant(rank)} className="text-xs">
                             #{rank}
                           </Badge>
                         </div>
-                        <div>
+                        <div className={isRTL ? "text-right" : "text-left"}>
                           <h4 className="font-medium text-sm">
                             {participant.client.prenom} {participant.client.nom}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            Participé le {new Date(participant.date_participation).toLocaleDateString("fr-FR")}
+                            {t("marketing.pilliersMagasins.gamification.classement.participerLe")}{" "}
+                            {new Date(participant.date_participation).toLocaleDateString("fr-FR")}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className={isRTL ? "text-left" : "text-right"}>
                         <div className="font-semibold text-purple-600">{participant.progression}</div>
-                        <div className="text-xs text-muted-foreground">{participant.points_gagnes} points</div>
+                        <div className="text-xs text-muted-foreground">
+                          {participant.points_gagnes} {t("marketing.pilliersMagasins.gamification.gestion.points")}
+                        </div>
                       </div>
                     </div>
                   )
