@@ -30,6 +30,9 @@ export function AddClientForm({ onClientAdded, entrepriseId }: AddClientFormProp
   const [genre, setGenre] = useState("homme")
   const [isLoading, setIsLoading] = useState(false)
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -72,7 +75,7 @@ export function AddClientForm({ onClientAdded, entrepriseId }: AddClientFormProp
         date_creation: new Date().toISOString(), // ISO 8601
       }
 
-      const response = await fetch("http://localhost:8081/api/client/createClient", {
+      const response = await fetch(`${API_BASE_URL}/client/createClient`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

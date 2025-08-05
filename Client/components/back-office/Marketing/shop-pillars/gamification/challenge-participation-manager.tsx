@@ -54,6 +54,9 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
   const [challengeParticipants, setChallengeParticipants] = useState<any[]>([])
   const [isLoadingChallengeParticipants, setIsLoadingChallengeParticipants] = useState(false)
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+
   // Nouvel état pour le bouton d'actualisation du classement
   const [isRefreshingLeaderboard, setIsRefreshingLeaderboard] = useState(false)
 
@@ -67,7 +70,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
       setIsLoadingMagasins(true)
       try {
-        const response = await fetch(`http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${entrepriseId}`)
+        const response = await fetch(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`)
         if (!response.ok) throw new Error("Erreur lors du chargement des magasins")
         const data: Magasin[] = await response.json()
         setMagasins(data)
@@ -101,7 +104,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
       setError(null)
 
       try {
-        const apiUrl = `http://localhost:8081/api/gamification/getChallengeByStore/${selectedMagasinId}`
+        const apiUrl = `${API_BASE_URL}/gamification/getChallengeByStore/${selectedMagasinId}`
         console.log("URL API appelée:", apiUrl)
         const response = await fetch(apiUrl)
 
@@ -174,7 +177,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
           return
         }
 
-        const response = await fetch(`http://localhost:8081/api/client/getClientByEntreprise/${entrepriseIdNum}`)
+        const response = await fetch(`${API_BASE_URL}/client/getClientByEntreprise/${entrepriseIdNum}`)
         if (!response.ok) {
           throw new Error(`HTTP error fetching clients! status: ${response.status}`)
         }
@@ -201,7 +204,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
   const fetchChallengeParticipants = async (challengeId: string) => {
     setIsLoadingChallengeParticipants(true)
     try {
-      const response = await fetch(`http://localhost:8081/api/gamification/getJoueursChallenge/${challengeId}`)
+      const response = await fetch(`${API_BASE_URL}/gamification/getJoueursChallenge/${challengeId}`)
       if (!response.ok) {
         throw new Error(`HTTP error fetching challenge participants! status: ${response.status}`)
       }
@@ -411,7 +414,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
 
       console.log("Envoi de la requête:", requestBody)
 
-      const response = await fetch("http://localhost:8081/api/gamification/addMultipleParticipations", {
+      const response = await fetch(`${API_BASE_URL}/gamification/addMultipleParticipations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -494,7 +497,7 @@ export function ChallengeParticipationManager({ onNewClientClick, entrepriseId }
       }
 
       // Utilisation de la nouvelle API avec l'ID de la participation
-      const response = await fetch(`http://localhost:8081/api/gamification/participations/${selectedParticipationId}`, {
+      const response = await fetch(`${API_BASE_URL}/gamification/participations/${selectedParticipationId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

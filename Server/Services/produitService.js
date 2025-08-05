@@ -4,6 +4,11 @@ import Vente from "../Model/Ventes.js";
 import {getCategoriesByStore} from "./categorieService.js"
 import { getPastPeriods } from "./zoneService.js";
 import { fn, col, Op } from 'sequelize';
+import Categorie1 from "../Model/Categorie1.js";
+import magasin1 from "../Model/magasin1.js";
+import PriceHistory from "../Model/PriceHistory.js";
+import GeneratedLabel from "../Model/GeneratedLabel.js";
+import zone1 from "../Model/zone1.js";
 
 export const getProduitsByCategorie = async(idCategorie) => {
     try {
@@ -200,4 +205,119 @@ export const getPerformanceProduitMoyenByStore = async (idMagasin, date_debut, d
   };
   
 
+
+
+export const getProductsByEntreprise = async (idEntreprise) => {
+  try {
+    if (!idEntreprise) {
+      throw new Error("Le paramètre idEntreprise est obligatoire");
+    }
+
+    const magasins = await magasin1.findAll({
+      where: { entreprise_id: idEntreprise },
+    });
+
+    if (magasins.length === 0) {
+      return [];
+    }
+
+    const magasinsIds = magasins.map((m) => m.magasin_id);
+
+    const categories = await Categorie1.findAll({
+      where: {
+        magasin_id: {
+          [Op.in]: magasinsIds,
+        },
+      },
+    });
+
+    if (categories.length === 0) {
+      return [];
+    }
+
+    const categoriesIds = categories.map((c) => c.categorie_id);
+
+    const produits = await Produit.findAll({
+      where: {
+        categorie_id: {
+          [Op.in]: categoriesIds,
+        },
+      },
+    });
+
+    return produits;
+  } catch (error) {
+    console.error("Erreur getProductsByEntreprise :", error);
+    throw error;
+  }
+};
+
+
+
+  export const getHistoryPriceProduct = async(idProduit) => {
+    try {
+        if (!idProduit) {
+            throw new Error("Le paramètre idProduit est obligatoire");
+          }
+    
+    const historyProduit = await PriceHistory.findAll({
+      where: {product_id: idProduit}
+    })
+
+    
+    return historyProduit;
+        
+    } catch (error) {
+        console.error("Erreur dans getHistoryPriceProduct:", error);
+      throw error;
+    }
+}
+export const verifyAvailableTicketProduct = async(idProduit) => {
+  try {
+      if (!idProduit) {
+          throw new Error("Le paramètre idProduit est obligatoire");
+        }
+  
+  const availableTicket = await GeneratedLabel.findAll({
+    where: {produit_id: idProduit}
+  })
+
+  return availableTicket;
+      
+  } catch (error) {
+      console.error("Erreur dans verifyAvailableTicketProduct:", error);
+    throw error;
+  }
+}
+
+export const getZoneProduit = async(idProduit) => {
+  try {
+      if (!idProduit) {
+          throw new Error("Le paramètre idProduit est obligatoire");
+        }
+        const produit = await Produit.findOne({
+          where: {produit_id: idProduit}
+        })
+  
+        if (!produit) {
+          throw new Error("Produit introuvable");
+        }
+        const categorieProduit = await Categorie1.findOne({
+            where: {categorie_id: produit.categorie_id}
+        })
+        if (!categorieProduit) {
+          throw new Error("Catégorie introuvable");
+        }
+
+        const zone = await zone1.findOne({
+          where: {zone_id: categorieProduit.zone_id}
+        })
+        
+        return zone;
+            
+        } catch (error) {
+            console.error("Erreur dans getZoneProduit:", error);
+          throw error;
+        }
+}
 

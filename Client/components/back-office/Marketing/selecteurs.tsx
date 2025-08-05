@@ -4,7 +4,8 @@ import { Calendar, Loader2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 // Interfaces (doit être les mêmes que dans shop-pillars-page.tsx ou importées)
 interface Magasin {
   magasin_id: string
@@ -52,13 +53,16 @@ export function Selecteurs({
   isLoadingZones,
   errorZones,
 }: SelecteursProps) {
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
   return (
     <div className="bg-white/50 backdrop-blur-sm p-3 sm:p-4 rounded-lg border shadow-sm">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Store Selector */}
         <div>
           <Label htmlFor="store-selector" className="block text-sm font-medium text-slate-700 mb-1">
-            Sélectionner un Magasin
+          {t("marketing.pilliersMagasins.selecteur.selectMagsin")}
           </Label>
           {isLoadingUserAndStores ? (
             <div className="flex items-center justify-center h-10 w-full bg-white border border-slate-300 rounded-lg">
@@ -69,11 +73,11 @@ export function Selecteurs({
           ) : (
             <Select value={selectedMagasinFilter} onValueChange={setSelectedMagasinFilter}>
               <SelectTrigger className="w-full pl-3 pr-8 py-2 text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <SelectValue placeholder="Tous les magasins" />
+                <SelectValue placeholder={t("marketing.pilliersMagasins.selecteur.selectZone")}/>
               </SelectTrigger>
               <SelectContent className="z-50 mt-1 w-full bg-white shadow-lg rounded-lg border border-slate-200 py-1 max-h-60 overflow-auto">
                 <SelectItem value="all" className="px-4 py-2 hover:bg-slate-50 cursor-pointer">
-                  Tous les magasins
+                {t("marketing.pilliersMagasins.selecteur.tousMagasins")}
                 </SelectItem>
                 {stores.map((store) => (
                   <SelectItem
@@ -92,7 +96,7 @@ export function Selecteurs({
         {/* Zone Type Selector */}
         <div>
           <Label htmlFor="zone-type-selector" className="block text-sm font-medium text-slate-700 mb-1">
-            Sélectionner un Type de Zone
+          {t("marketing.pilliersMagasins.selecteur.tousMagasins")}
           </Label>
           {isLoadingZones ? (
             <div className="flex items-center justify-center h-10 w-full bg-white border border-slate-300 rounded-lg">
@@ -107,11 +111,11 @@ export function Selecteurs({
               disabled={selectedMagasinFilter === "all" || availableZones.length === 0}
             >
               <SelectTrigger className="w-full pl-3 pr-8 py-2 text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <SelectValue placeholder="Tous les types de zones" />
+                <SelectValue placeholder= {t("marketing.pilliersMagasins.selecteur.tousZone")} />
               </SelectTrigger>
               <SelectContent className="z-50 mt-1 w-full bg-white shadow-lg rounded-lg border border-slate-200 py-1 max-h-60 overflow-auto">
                 <SelectItem value="all" className="px-4 py-2 hover:bg-slate-50 cursor-pointer">
-                  Tous les types de zones
+                {t("marketing.pilliersMagasins.selecteur.tousZone")}
                 </SelectItem>
                 {/* Extract unique zone types from availableZones */}
                 {[...new Set(availableZones.map((zone) => zone.zone_id))].map((zone_id) => {
@@ -134,7 +138,7 @@ export function Selecteurs({
         {/* Date de début */}
         <div>
           <Label htmlFor="zoning-start-date" className="text-sm">
-            Date de début
+          {t("marketing.pilliersMagasins.selecteur.dateDebut")}
           </Label>
           <div className="relative">
             <Input
@@ -150,7 +154,7 @@ export function Selecteurs({
         {/* Date de fin */}
         <div>
           <Label htmlFor="zoning-end-date" className="text-sm">
-            Date de fin
+          {t("marketing.pilliersMagasins.selecteur.dateFin")}
           </Label>
           <div className="relative">
             <Input

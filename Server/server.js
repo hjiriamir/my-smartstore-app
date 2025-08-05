@@ -75,6 +75,8 @@ import priceHistoryRoutes from "./Routes/priceHistoryRoutes.js";
 import generatedLabelRoutes from './Routes/generatedLabelRoutes.js';
 import './Scheduler/stockAlertScheduler.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Vente, StockMovement, magasin1, Categorie1, Produit, Entreprises, Formation, CommandeAchat, LigneCommandeAchat,  PriceHistory,
     LabelTemplate,
@@ -155,6 +157,15 @@ app.use('/api/generated-labels', generatedLabelRoutes);
 app.use('/api/categories', categorieRoutes);
 app.use('/api/magasins', magasinRoutes);
 app.use('/api/zones', zoneRoutes);
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Rendre le dossier "uploads" accessible publiquement
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 // Synchroniser Sequelize avec la base
 sequelize.sync({  force : false }) // force: true -> recrée les tables à chaque démarrage alter: true force : false
     .then(() => {

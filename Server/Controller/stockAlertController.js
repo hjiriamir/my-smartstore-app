@@ -1,21 +1,46 @@
 import StockAlert from "../Model/StockAlert.js";
 import Produit from "../Model/Produit.js";
-
+import {getProductsByEntreprise} from '../Services/produitService.js'
 // Liste des alertes
 export const getAllStockAlerts = async (req, res) => {
   try {
+    const { idEntreprise } = req.params;
+
+    if (!idEntreprise) {
+      return res
+        .status(400)
+        .json({ error: "Le paramètre idEntreprise est obligatoire." });
+    }
+
+    // Récupérer tous les produits de l'entreprise
+    const produits = await getProductsByEntreprise(idEntreprise);
+
+    if (!produits || produits.length === 0) {
+      return res.json([]); // Pas de produits, pas d'alertes
+    }
+
+    // Extraire les IDs des produits
+    const produitsIds = produits.map((p) => p.produit_id);
+
+    // Récupérer uniquement les alertes pour ces produits
     const alerts = await StockAlert.findAll({
       include: [
         {
           model: Produit,
           attributes: ["produit_id", "nom", "stock"],
+          where: {
+            produit_id: produitsIds,
+          },
         },
       ],
     });
+
     res.json(alerts);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erreur lors de la récupération des alertes" });
+    console.error("Erreur dans getAllStockAlerts :", error);
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération des alertes." });
   }
 };
 

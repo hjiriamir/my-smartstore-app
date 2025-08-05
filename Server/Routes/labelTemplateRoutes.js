@@ -8,9 +8,9 @@ import {
 
 const router = express.Router();
 
-router.get("/", getAllLabelTemplates);
-router.post("/", createLabelTemplate);
-router.put("/:id", updateLabelTemplate);
-router.delete("/:id", deleteLabelTemplate);
+router.get("/getAllLabelTemplates", getAllLabelTemplates);
+router.post("/createLabelTemplate", createLabelTemplate);
+router.put("/updateLabelTemplate/:id", updateLabelTemplate);
+router.delete("/deleteLabelTemplate/:id", deleteLabelTemplate);
 
 export default router;

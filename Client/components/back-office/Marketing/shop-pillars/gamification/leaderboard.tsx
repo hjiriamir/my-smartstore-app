@@ -117,6 +117,9 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
   const [errorClientsOrdered, setErrorClientsOrdered] = useState<string | null>(null)
   const [errorChallengeParticipants, setErrorChallengeParticipants] = useState<string | null>(null)
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+
   // Fonction pour récupérer les clients
   const fetchClients = async () => {
     if (!entrepriseId) return
@@ -125,7 +128,7 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
     setErrorClients(null)
 
     try {
-      const response = await fetch(`http://localhost:8081/api/client/getClientByEntreprise/${entrepriseId}`)
+      const response = await fetch(`${API_BASE_URL}/client/getClientByEntreprise/${entrepriseId}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -148,7 +151,7 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
     setErrorPointsTotaux(null)
 
     try {
-      const response = await fetch(`http://localhost:8081/api/gamification/getPointsTotaux/${entrepriseId}`)
+      const response = await fetch(`${API_BASE_URL}/gamification/getPointsTotaux/${entrepriseId}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -171,7 +174,7 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
     setErrorChallengesActifs(null)
 
     try {
-      const response = await fetch(`http://localhost:8081/api/gamification/getChallengeActifs/${entrepriseId}`)
+      const response = await fetch(`${API_BASE_URL}/gamification/getChallengeActifs/${entrepriseId}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -194,7 +197,7 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
     setErrorTauxParticipation(null)
 
     try {
-      const response = await fetch(`http://localhost:8081/api/gamification/getTauxParticipationClients/${entrepriseId}`)
+      const response = await fetch(`${API_BASE_URL}/gamification/getTauxParticipationClients/${entrepriseId}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -217,7 +220,7 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
     setErrorClientsOrdered(null)
 
     try {
-      const response = await fetch(`http://localhost:8081/api/gamification/getClientOrderer/${entrepriseId}`)
+      const response = await fetch(`${API_BASE_URL}/gamification/getClientOrderer/${entrepriseId}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -238,7 +241,7 @@ export function Leaderboard({ entrepriseId }: LeaderboardProps) {
     setErrorChallengeParticipants(null)
 
     try {
-      const response = await fetch(`http://localhost:8081/api/gamification/getJoueursChallenge/${challengeId}`)
+      const response = await fetch(`${API_BASE_URL}/gamification/getJoueursChallenge/${challengeId}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }

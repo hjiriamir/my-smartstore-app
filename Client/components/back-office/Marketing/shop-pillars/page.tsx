@@ -30,6 +30,8 @@ import { Leaderboard } from "@/components/back-office/Marketing/shop-pillars/gam
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useTranslation } from "react-i18next"
+import "@/components/multilingue/i18n.js"
 
 // --- Interfaces pour les données API ---
 interface Zone {
@@ -109,6 +111,11 @@ interface ZoneHeatmapStats {
 }
 
 export default function ShopPillarsPage() {
+
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.language === "ar"
+  const textDirection = isRTL ? "rtl" : "ltr"
+
   const [selectedZone, setSelectedZone] = useState("electronics") // Existing state for static zones data
   const [showNewPillar, setShowNewPillar] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -147,6 +154,9 @@ export default function ShopPillarsPage() {
   const [selectedMagasinFilterZoning, setSelectedMagasinFilterZoning] = useState("all")
   const [selectedMagasinFilterGamification, setSelectedMagasinFilterGamification] = useState("all")
   const [selectedZoneTypeFilter, setSelectedZoneTypeFilter] = useState("all")
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
 
   // New states for date filters in Zonage Intelligent
   const [startDateZoning, setStartDateZoning] = useState("")
@@ -229,7 +239,7 @@ export default function ShopPillarsPage() {
           return
         }
 
-        const userResponse = await fetch(`http://localhost:8081/api/auth/me`, {
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -252,7 +262,7 @@ export default function ShopPillarsPage() {
 
         if (entrepriseId) {
           const storesResponse = await fetch(
-            `http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${entrepriseId}`,
+            `${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`,
           )
 
           if (!storesResponse.ok) {
@@ -299,7 +309,7 @@ export default function ShopPillarsPage() {
       setErrorZones(null)
 
       try {
-        const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinFilterZoning}`)
+        const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedMagasinFilterZoning}`)
 
         if (!response.ok) {
           throw new Error(`HTTP error fetching zones! status: ${response.status}`)
@@ -354,7 +364,7 @@ export default function ShopPillarsPage() {
 
       try {
         const performanceResponse = await fetch(
-          `http://localhost:8081/api/magasins/getPerformanceZones?idMagasin=${selectedMagasinFilterZoning}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+          `${API_BASE_URL}/magasins/getPerformanceZones?idMagasin=${selectedMagasinFilterZoning}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
         )
 
         if (!performanceResponse.ok) {
@@ -373,7 +383,7 @@ export default function ShopPillarsPage() {
         const trafficPromises = performanceData.performances.map(async (zone) => {
           try {
             const trafficResponse = await fetch(
-              `http://localhost:8081/api/zones/trafic-moyen?idZone=${zone.zone_id}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+              `${API_BASE_URL}/zones/trafic-moyen?idZone=${zone.zone_id}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
             )
 
             if (!trafficResponse.ok) {
@@ -420,7 +430,7 @@ export default function ShopPillarsPage() {
 
       try {
         const response = await fetch(
-          `http://localhost:8081/api/produits/performance/produits?idMagasin=${selectedMagasinFilterZoning}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
+         `${API_BASE_URL}/produits/performance/produits?idMagasin=${selectedMagasinFilterZoning}&date_debut=${startDateZoning}&date_fin=${endDateZoning}`,
         )
 
         if (!response.ok) {
@@ -454,7 +464,7 @@ export default function ShopPillarsPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8081/api/heatmaps/stats?magasin_id=${selectedMagasinFilterAnalytics}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
+       `${API_BASE_URL}/heatmaps/stats?magasin_id=${selectedMagasinFilterAnalytics}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
       )
 
       if (!response.ok) {
@@ -480,7 +490,8 @@ export default function ShopPillarsPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedMagasinFilterAnalytics}`)
+      const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedMagasinFilterAnalytics}`
+)
 
       if (!response.ok) {
         throw new Error(`HTTP error fetching zones for heatmap! status: ${response.status}`)
@@ -530,7 +541,7 @@ export default function ShopPillarsPage() {
       const promises = zonesToFetch.map(async (zone) => {
         try {
           const response = await fetch(
-            `http://localhost:8081/api/heatmaps/stats/zone?zone_id=${zone.zone_id}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
+            `${API_BASE_URL}/heatmaps/stats/zone?zone_id=${zone.zone_id}&date_debut=${startDateAnalytics}&date_fin=${endDateAnalytics}`,
           )
 
           if (!response.ok) {
@@ -744,9 +755,9 @@ export default function ShopPillarsPage() {
             </Button>
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 truncate">Shop Pillars</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 truncate">{t("marketing.pilliersMagasins.zonageIntelliget.pilliersTitle")}</h1>
             <p className="text-slate-600 text-xs sm:text-sm lg:text-base">
-              Piliers structurants de l'expérience magasin
+            {t("marketing.pilliersMagasins.zonageIntelliget.pilliersTitleDescr")}
             </p>
           </div>
         </div>
@@ -788,13 +799,13 @@ export default function ShopPillarsPage() {
           <div className="hidden sm:block overflow-x-auto">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 min-w-[600px] sm:min-w-0">
               <TabsTrigger value="zoning" className="text-xs sm:text-sm">
-                Zonage Intelligent
+              {t("marketing.pilliersMagasins.zonageIntelliget.zonageIntel")}
               </TabsTrigger>
               <TabsTrigger value="gamification" className="text-xs sm:text-sm">
-                Gamification & Points
+              {t("marketing.pilliersMagasins.gamification.gamificationAndPoints")}
               </TabsTrigger>
               <TabsTrigger value="analytics" className="text-xs sm:text-sm">
-                Analytics Physiques
+              {t("marketing.pilliersMagasins.analysePhysique.analysePhysiq")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -802,7 +813,7 @@ export default function ShopPillarsPage() {
           <TabsContent value="zoning" className="space-y-4 sm:space-y-6">
             {/* Header with responsive buttons */}
             <div className="flex flex-col gap-3 sm:gap-4">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">Gestion des Piliers</h2>
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">{t("marketing.pilliersMagasins.zonageIntelliget.gestoinPilliers")}</h2>
               <div className="flex flex-col sm:flex-row gap-2"></div>
             </div>
 
@@ -831,24 +842,24 @@ export default function ShopPillarsPage() {
                 {isLoadingUserAndStores || isLoadingZones || isLoadingZonePerformance ? (
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
-                    <p>Chargement des données...</p>
+                    <p>{t("marketing.pilliersMagasins.analysePhysique.chargementDonnees")}</p>
                   </div>
                 ) : errorUserAndStores || errorZones || errorZonePerformance ? (
                   <p className="text-red-500">{errorUserAndStores || errorZones || errorZonePerformance}</p>
                 ) : selectedMagasinFilterZoning === "all" &&
                   selectedZoneTypeFilter === "all" &&
                   (!startDateZoning || !endDateZoning) ? (
-                  "Veuillez sélectionner un magasin, un type de zone et une plage de dates pour afficher les données de zonage."
+                    t("marketing.pilliersMagasins.zonageIntelliget.selectMagZonDat")
                 ) : selectedMagasinFilterZoning === "all" ? (
-                  "Veuillez sélectionner un magasin pour activer les filtres de zone et de date."
+                  t("marketing.pilliersMagasins.zonageIntelliget.selectMagActiveFiltre")
                 ) : selectedZoneTypeFilter === "all" ? (
-                  "Veuillez sélectionner un type de zone pour afficher les données de zonage."
+                  t("marketing.pilliersMagasins.zonageIntelliget.selectionnerZone")
                 ) : !startDateZoning || !endDateZoning ? (
-                  "Veuillez sélectionner une plage de dates pour afficher les données de zonage."
+                  t("marketing.pilliersMagasins.zonageIntelliget.selectionnerPlageDate")
                 ) : zoningDateError ? (
                   zoningDateError
                 ) : (
-                  "Veuillez sélectionner un magasin, un type de zone et une plage de dates pour afficher les données de zonage."
+                  t("marketing.pilliersMagasins.zonageIntelliget.selectMagZonDat")
                 )}
               </div>
             ) : (
@@ -857,7 +868,7 @@ export default function ShopPillarsPage() {
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm sm:text-base font-semibold">Zones Actives</CardTitle>
+                      <CardTitle className="text-sm sm:text-base font-semibold">{t("marketing.pilliersMagasins.zonageIntelliget.zonesActives")}</CardTitle>
                       <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -866,13 +877,13 @@ export default function ShopPillarsPage() {
                       ) : (
                         <div className="text-xl sm:text-3xl font-extrabold">{totalActiveZones}</div>
                       )}
-                      <p className="text-xs text-muted-foreground">Optimisées {displayCurrentPeriod()}</p>
+                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.zonageIntelliget.optimise")} {displayCurrentPeriod()}</p>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm sm:text-base font-semibold">Trafic Moyen</CardTitle>
+                      <CardTitle className="text-sm sm:text-base font-semibold">{t("marketing.pilliersMagasins.zonageIntelliget.traficMoyen")}</CardTitle>
                       <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -885,7 +896,7 @@ export default function ShopPillarsPage() {
                       )}
                       {prevStart && prevEnd && !zoningDateError && (
                         <p className="text-xs text-purple-600 mt-1">
-                          {relevantTrafficData.length > 0 ? relevantTrafficData[0].diffVariation : "N/A"} vs{" "}
+                          {relevantTrafficData.length > 0 ? relevantTrafficData[0].diffVariation : "N/A"} {t("marketing.pilliersMagasins.zonageIntelliget.vs")}{" "}
                           {displayPreviousPeriod()}
                         </p>
                       )}
@@ -894,7 +905,7 @@ export default function ShopPillarsPage() {
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm sm:text-base font-semibold">Revenus Zones</CardTitle>
+                      <CardTitle className="text-sm sm:text-base font-semibold">{t("marketing.pilliersMagasins.zonageIntelliget.revenuZoes")}</CardTitle>
                       <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -903,7 +914,7 @@ export default function ShopPillarsPage() {
                       ) : (
                         <div className="text-xl sm:text-3xl font-extrabold">€{totalZoneRevenue.toFixed(2)}</div>
                       )}
-                      <p className="text-xs text-muted-foreground">Pour la période {displayCurrentPeriod()}</p>
+                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.zonageIntelliget.pourLaPeriode")} {displayCurrentPeriod()}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -911,28 +922,28 @@ export default function ShopPillarsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 sm:gap-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg sm:text-xl">Recommandations d'Assortiment</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl">{t("marketing.pilliersMagasins.zonageIntelliget.recommandation")}</CardTitle>
                       <CardDescription className="text-xs sm:text-sm">
-                        Suggestions personnalisées basées sur les données
+                      {t("marketing.pilliersMagasins.zonageIntelliget.recommandationDescr")}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {isLoadingProductPerformance ? (
                         <div className="flex flex-col items-center justify-center h-32">
                           <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-                          <p className="text-slate-500 mt-2">Chargement des recommandations de produits...</p>
+                          <p className="text-slate-500 mt-2">{t("marketing.pilliersMagasins.zonageIntelliget.chargementRecommandation")}</p>
                         </div>
                       ) : errorProductPerformance ? (
                         <p className="text-red-500 text-center py-8">{errorProductPerformance}</p>
                       ) : (productPerformanceData?.produits.length || 0) === 0 ? (
                         <p className="text-center text-muted-foreground py-8">
-                          Aucune recommandation de produit disponible pour la sélection actuelle.
+                         {t("marketing.pilliersMagasins.zonageIntelliget.aucuneRecomTrouve")}
                         </p>
                       ) : (
                         <div className="space-y-3 sm:space-y-4">
                           {productPerformanceData?.produits.map((product) => {
                             let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline"
-                            let badgeText = "Action"
+                            let badgeText = t("marketing.pilliersMagasins.zonageIntelliget.action")
 
                             if (
                               product.recommendation.toLowerCase().includes("explosion") ||
@@ -940,17 +951,17 @@ export default function ShopPillarsPage() {
                               product.recommendation.toLowerCase().includes("ajouter")
                             ) {
                               badgeVariant = "default"
-                              badgeText = "Ajouter"
+                              badgeText = t("marketing.pilliersMagasins.zonageIntelliget.ajouter")
                             } else if (
                               product.recommendation.toLowerCase().includes("baisse") ||
                               product.recommendation.toLowerCase().includes("revoir") ||
                               product.recommendation.toLowerCase().includes("retirer")
                             ) {
                               badgeVariant = "destructive"
-                              badgeText = "Revoir"
+                              badgeText = t("marketing.pilliersMagasins.zonageIntelliget.revoir")
                             } else if (product.recommendation.toLowerCase().includes("déplacer")) {
                               badgeVariant = "secondary"
-                              badgeText = "Déplacer"
+                              badgeText = t("marketing.pilliersMagasins.zonageIntelliget.deplacer")
                             }
 
                             return (
@@ -967,14 +978,14 @@ export default function ShopPillarsPage() {
                                     variant="outline"
                                     className="text-xs w-full sm:w-auto bg-transparent"
                                   >
-                                    Appliquer
+                                    {t("marketing.pilliersMagasins.zonageIntelliget.appliquer")}
                                   </Button>
                                 </div>
                                 <p className="text-xs sm:text-sm text-slate-600 mb-1">
-                                  Variation: {product.diffVariation}
+                                {t("marketing.pilliersMagasins.zonageIntelliget.variation")} {product.diffVariation}
                                 </p>
                                 <p className="text-xs sm:text-sm font-medium text-green-600">
-                                  Recommandation: {product.recommendation}
+                                {t("marketing.pilliersMagasins.zonageIntelliget.recommandation1")} {product.recommendation}
                                 </p>
                               </div>
                             )
@@ -1029,11 +1040,11 @@ export default function ShopPillarsPage() {
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="management" className="text-xs sm:text-sm">
                       <Gamepad2 className="w-4 h-4 mr-2" />
-                      Gestion
+                      {t("marketing.pilliersMagasins.gamification.gest")}
                     </TabsTrigger>
                     <TabsTrigger value="leaderboard" className="text-xs sm:text-sm">
                       <Trophy className="w-4 h-4 mr-2" />
-                      Classements
+                      {t("marketing.pilliersMagasins.gamification.class")}
                     </TabsTrigger>
                   </TabsList>
 
@@ -1043,10 +1054,16 @@ export default function ShopPillarsPage() {
                         onClick={() => setShowAddChallengeForm(!showAddChallengeForm)}
                         className="w-full sm:w-auto"
                       >
-                        {showAddChallengeForm ? "Masquer le formulaire Challenge" : "Ajouter un Challenge"}
+                        {showAddChallengeForm 
+                          ? t("marketing.pilliersMagasins.gamification.gestion.masqueChallenge") 
+                          : t("marketing.pilliersMagasins.gamification.gestion.ajouterChallenge")}
+
                       </Button>
                       <Button onClick={() => setShowAddClientForm(!showAddClientForm)} className="w-full sm:w-auto">
-                        {showAddClientForm ? "Masquer le formulaire Client" : "Ajouter un Client"}
+                      {showAddClientForm 
+                        ? t("marketing.pilliersMagasins.gamification.gestion.masqueFormClient") 
+                        : t("marketing.pilliersMagasins.gamification.gestion.ajouterUnClient")}
+
                       </Button>
                     </div>
 
@@ -1080,10 +1097,16 @@ export default function ShopPillarsPage() {
                   <div className="space-y-4">
                     <div className="flex flex-col gap-3 mb-4">
                       <Button onClick={() => setShowAddChallengeForm(!showAddChallengeForm)} className="w-full">
-                        {showAddChallengeForm ? "Masquer le formulaire Challenge" : "Ajouter un Challenge"}
+                      {showAddChallengeForm 
+                        ? t("marketing.pilliersMagasins.gamification.gestion.masqueChallenge") 
+                        : t("marketing.pilliersMagasins.gamification.gestion.ajouterChallenge")}
+
                       </Button>
                       <Button onClick={() => setShowAddClientForm(!showAddClientForm)} className="w-full">
-                        {showAddClientForm ? "Masquer le formulaire Client" : "Ajouter un Client"}
+                      {showAddClientForm 
+                        ? t("marketing.pilliersMagasins.gamification.gestion.masqueFormClient") 
+                        : t("marketing.pilliersMagasins.gamification.gestion.ajouterUnClient")}
+
                       </Button>
                     </div>
 
@@ -1119,20 +1142,20 @@ export default function ShopPillarsPage() {
             {/* Filtres pour Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle>Filtres Analytics Physiques</CardTitle>
-                <CardDescription>Sélectionnez un magasin et une période pour analyser les données</CardDescription>
+                <CardTitle>{t("marketing.pilliersMagasins.analysePhysique.filtreAnalysePhysiqe")} </CardTitle>
+                <CardDescription>{t("marketing.pilliersMagasins.analysePhysique.filtreAnalysePhysiqeDescr")} </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Sélecteur de magasin */}
                   <div>
-                    <Label htmlFor="magasin-analytics">Magasin</Label>
+                    <Label htmlFor="magasin-analytics">{t("marketing.pilliersMagasins.analysePhysique.magasin")}</Label>
                     <Select value={selectedMagasinFilterAnalytics} onValueChange={setSelectedMagasinFilterAnalytics}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un magasin" />
+                        <SelectValue placeholder={t("marketing.pilliersMagasins.analysePhysique.tousMagasins")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Tous les magasins</SelectItem>
+                        <SelectItem value="all">{t("marketing.pilliersMagasins.analysePhysique.tousMagasins")}</SelectItem>
                         {stores.map((store) => (
                           <SelectItem key={store.id} value={store.magasin_id}>
                             {store.nom_magasin}
@@ -1144,7 +1167,7 @@ export default function ShopPillarsPage() {
 
                   {/* Date de début */}
                   <div>
-                    <Label htmlFor="start-date-analytics">Date de début</Label>
+                    <Label htmlFor="start-date-analytics">{t("marketing.pilliersMagasins.analysePhysique.dateDebut")}</Label>
                     <Input
                       id="start-date-analytics"
                       type="date"
@@ -1155,7 +1178,7 @@ export default function ShopPillarsPage() {
 
                   {/* Date de fin */}
                   <div>
-                    <Label htmlFor="end-date-analytics">Date de fin</Label>
+                    <Label htmlFor="end-date-analytics">{t("marketing.pilliersMagasins.analysePhysique.dateFin")}</Label>
                     <Input
                       id="end-date-analytics"
                       type="date"
@@ -1178,16 +1201,16 @@ export default function ShopPillarsPage() {
                 {isLoadingUserAndStores ? (
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
-                    <p>Chargement des données...</p>
+                    <p>{t("marketing.pilliersMagasins.analysePhysique.chargementDonnees")}</p>
                   </div>
                 ) : selectedMagasinFilterAnalytics === "all" ? (
-                  "Veuillez sélectionner un magasin pour afficher les analytics."
+                  t("marketing.pilliersMagasins.analysePhysique.selectionnerMagasin")
                 ) : !startDateAnalytics || !endDateAnalytics ? (
-                  "Veuillez sélectionner une période pour afficher les analytics."
+                  t("marketing.pilliersMagasins.analysePhysique.selectionnerPeriode")
                 ) : analyticsDateError ? (
                   analyticsDateError
                 ) : (
-                  "Veuillez sélectionner un magasin et une période pour afficher les analytics."
+                  t("marketing.pilliersMagasins.analysePhysique.selectionnerMagasinAndPeriode")
                 )}
               </div>
             ) : (
@@ -1196,60 +1219,60 @@ export default function ShopPillarsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Visiteurs Uniques</CardTitle>
+                      <CardTitle className="text-xs sm:text-sm font-medium">{t("marketing.pilliersMagasins.analysePhysique.visiteursUniques")}</CardTitle>
                       <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       {isLoadingHeatmapStats ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : errorHeatmapStats ? (
-                        <div className="text-red-500 text-xs">Erreur</div>
+                        <div className="text-red-500 text-xs">{t("marketing.pilliersMagasins.analysePhysique.pourLaPeriodeSelectionne")}</div>
                       ) : (
                         <div className="text-lg sm:text-2xl font-bold">
                           {heatmapStats?.total_visiteurs?.toLocaleString() || 0}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">Pour la période sélectionnée</p>
+                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.analysePhysique.pourLaPeriodeSelectionne")}</p>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Temps Moyen en Magasin</CardTitle>
+                      <CardTitle className="text-xs sm:text-sm font-medium">{t("marketing.pilliersMagasins.analysePhysique.tempsMoyenEnMagasin")}</CardTitle>
                       <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       {isLoadingHeatmapStats ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : errorHeatmapStats ? (
-                        <div className="text-red-500 text-xs">Erreur</div>
+                        <div className="text-red-500 text-xs">{t("marketing.pilliersMagasins.analysePhysique.erreur")}</div>
                       ) : (
                         <div className="text-lg sm:text-2xl font-bold">
                           {heatmapStats?.duree_moyenne_globale
-                            ? `${heatmapStats.duree_moyenne_globale.toFixed(1)}min`
+                            ? `${heatmapStats.duree_moyenne_globale.toFixed(1)}${t("marketing.pilliersMagasins.analysePhysique.min")}`
                             : "N/A"}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">Durée moyenne de visite</p>
+                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.analysePhysique.dureeMoyenneVisite")}</p>
                     </CardContent>
                   </Card>
 
                   <Card className="sm:col-span-2 lg:col-span-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Intensité Moyenne</CardTitle>
+                      <CardTitle className="text-xs sm:text-sm font-medium">{t("marketing.pilliersMagasins.analysePhysique.intensiteMoyenne")}</CardTitle>
                       <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       {isLoadingHeatmapStats ? (
                         <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
                       ) : errorHeatmapStats ? (
-                        <div className="text-red-500 text-xs">Erreur</div>
+                        <div className="text-red-500 text-xs">{t("marketing.pilliersMagasins.analysePhysique.erreur")}</div>
                       ) : (
                         <div className="text-lg sm:text-2xl font-bold">
                           {heatmapStats?.intensite_moyenne ? `${heatmapStats.intensite_moyenne.toFixed(1)}%` : "N/A"}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">Intensité globale du magasin</p>
+                      <p className="text-xs text-muted-foreground">{t("marketing.pilliersMagasins.analysePhysique.intenisteGlobalMagasin")}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -1257,21 +1280,21 @@ export default function ShopPillarsPage() {
                 {/* Heatmap du Magasin */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg sm:text-xl">Heatmap du Magasin</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl">{t("marketing.pilliersMagasins.analysePhysique.heatmapMagasin")}</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">
-                      Analyse des zones de forte affluence pour la période sélectionnée
+                    {t("marketing.pilliersMagasins.analysePhysique.heatmapMagasinDescr")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {/* Sélecteur de zone */}
                     <div className="mb-4">
-                      <Label htmlFor="zone-heatmap">Filtrer par zone</Label>
+                      <Label htmlFor="zone-heatmap">{t("marketing.pilliersMagasins.analysePhysique.filtrerParZone")}</Label>
                       <Select value={selectedZoneForHeatmap} onValueChange={setSelectedZoneForHeatmap}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une zone" />
+                          <SelectValue placeholder={t("marketing.pilliersMagasins.analysePhysique.selectZonePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Toutes les zones</SelectItem>
+                          <SelectItem value="all">{t("marketing.pilliersMagasins.analysePhysique.tousLesZones")}</SelectItem>
                           {availableZonesForHeatmap.map((zone) => (
                             <SelectItem key={zone.zone_id} value={zone.zone_id}>
                               {zone.nom_zone}
@@ -1284,13 +1307,13 @@ export default function ShopPillarsPage() {
                     {isLoadingZoneHeatmap ? (
                       <div className="flex flex-col items-center justify-center h-32">
                         <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
-                        <p className="text-slate-500 mt-2">Chargement des données heatmap...</p>
+                        <p className="text-slate-500 mt-2">{t("marketing.pilliersMagasins.analysePhysique.chargementDonneesHeatmap")}</p>
                       </div>
                     ) : errorZoneHeatmap ? (
                       <p className="text-red-500 text-center py-8">{errorZoneHeatmap}</p>
                     ) : zoneHeatmapData.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
-                        Aucune donnée heatmap disponible pour la sélection actuelle.
+                       {t("marketing.pilliersMagasins.analysePhysique.aucuneDonneesHeatmap")}
                       </p>
                     ) : (
                       <>
@@ -1322,9 +1345,9 @@ export default function ShopPillarsPage() {
                                       {item.zone_name || `Zone ${item.zone_id}`}
                                     </h4>
                                     <p className="text-xs sm:text-sm text-slate-600">
-                                      {visiteurs} visiteurs • {duree.toFixed(1)}min moyenne
+                                      {visiteurs} {t("marketing.pilliersMagasins.analysePhysique.visiteurs")} • {duree.toFixed(1)}{t("marketing.pilliersMagasins.analysePhysique.minMoyenne")}
                                     </p>
-                                    <p className="text-xs text-slate-500">Zone ID: {item.zone_id}</p>
+                                    <p className="text-xs text-slate-500">{t("marketing.pilliersMagasins.analysePhysique.zoneId")} {item.zone_id}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1342,19 +1365,19 @@ export default function ShopPillarsPage() {
                         <div className="mt-4 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-red-500 rounded"></div>
-                            <span>Très forte intensité (&gt;80%)</span>
+                            <span>{t("marketing.pilliersMagasins.analysePhysique.tresForteIntensite")} (&gt;80%)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                            <span>Forte intensité (60-80%)</span>
+                            <span>{t("marketing.pilliersMagasins.analysePhysique.forteIntensite")} (60-80%)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                            <span>Intensité modérée (40-60%)</span>
+                            <span>{t("marketing.pilliersMagasins.analysePhysique.inetnsiteModere")} (40-60%)</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded"></div>
-                            <span>Faible intensité (&lt;40%)</span>
+                            <span>{t("marketing.pilliersMagasins.analysePhysique.faibleIntensite")}(&lt;40%)</span>
                           </div>
                         </div>
                       </>

@@ -1,14 +1,13 @@
 "use client"
+
 import { useState, useEffect, useCallback } from "react"
 import type React from "react"
-
 import Link from "next/link"
 import {
   ArrowLeft,
   BarChart3,
   Target,
   TrendingUp,
-  Users,
   Zap,
   Plus,
   Calendar,
@@ -37,7 +36,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea" // Import Textarea
+import { Textarea } from "@/components/ui/textarea"
 import { useTranslation } from "react-i18next"
 import "@/components/multilingue/i18n.js"
 
@@ -210,7 +209,7 @@ interface ZonePerformance {
   zone_id: string
   nom_zone: string
   ventes_zone: number
-  performance: string // e.g., "53.30%"
+  performance: string
   details: ZonePerformanceDetail[]
 }
 
@@ -227,8 +226,22 @@ export default function MarketingStrategyPage() {
   const isRTL = i18n.language === "ar"
   const textDirection = isRTL ? "rtl" : "ltr"
 
+  // RTL utility classes
+  const rtlClasses = {
+    textAlign: isRTL ? "text-right" : "text-left",
+    flexDirection: isRTL ? "flex-row-reverse" : "flex-row",
+    marginLeft: isRTL ? "mr-auto" : "ml-auto",
+    marginRight: isRTL ? "ml-auto" : "mr-auto",
+    paddingLeft: isRTL ? "pr-3" : "pl-3",
+    paddingRight: isRTL ? "pl-3" : "pr-3",
+    borderRadius: isRTL ? "rounded-r-lg" : "rounded-l-lg",
+    justifyContent: isRTL ? "justify-end" : "justify-start",
+    itemsStart: isRTL ? "items-end" : "items-start",
+    spaceReverse: isRTL ? "space-x-reverse" : "",
+  }
+
   const DirectionalArrow = ({ className }: { className?: string }) => {
-    return isRTL ? <ArrowLeft className={className} /> : <ArrowRight className={className} />
+    return isRTL ? <ArrowRight className={className} /> : <ArrowLeft className={className} />
   }
 
   const [showNewCampaign, setShowNewCampaign] = useState(false)
@@ -245,7 +258,6 @@ export default function MarketingStrategyPage() {
   // States for store filtering (main page)
   const [stores, setStores] = useState<Magasin[]>([])
   const [selectedMagasinId, setSelectedMagasinId] = useState<string>("all")
-
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // New Campaign Form States
@@ -260,7 +272,6 @@ export default function MarketingStrategyPage() {
   const [selectedCategory, setSelectedCategory] = useState("")
   const [availableProducts, setAvailableProducts] = useState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useState("")
-
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(false)
   const [isProductsLoading, setIsProductsLoading] = useState(false)
   const [isSubmittingCampaign, setIsSubmittingCampaign] = useState(false)
@@ -281,6 +292,7 @@ export default function MarketingStrategyPage() {
     Map<string, PlanogramConversionResponse>
   >(new Map())
   const [isFetchingAllPlanogramConversions, setIsFetchingAllPlanogramConversions] = useState(false)
+
   // New state for planogram date validation error
   const [planogramDateError, setPlanogramDateError] = useState<string | null>(null)
 
@@ -289,6 +301,8 @@ export default function MarketingStrategyPage() {
   const [zonePerformanceData, setZonePerformanceData] = useState<ZonePerformance[]>([])
   const [isZonesLoading, setIsZonesLoading] = useState(false)
   const [isZonePerformanceLoading, setIsZonePerformanceLoading] = useState(false)
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   // Function to fetch marketing data (memoized with useCallback)
   const fetchMarketingData = useCallback(async () => {
@@ -300,9 +314,7 @@ export default function MarketingStrategyPage() {
 
     // Fetch Promotions Actives count
     try {
-      const response = await fetch(
-        `http://localhost:8081/api/promotions/active?idEntreprise=${idEntreprise}${magasinQueryParam}`,
-      )
+      const response = await fetch(`${API_BASE_URL}/promotions/active?idEntreprise=${idEntreprise}${magasinQueryParam}`)
       if (!response.ok) {
         if (response.status === 404) {
           console.warn("No active promotions found for the selected criteria (404).")
@@ -319,9 +331,7 @@ export default function MarketingStrategyPage() {
 
     // Fetch ALL Promotions for the list
     try {
-      const response = await fetch(
-        `http://localhost:8081/api/promotions/promos?idEntreprise=${idEntreprise}${magasinQueryParam}`,
-      )
+      const response = await fetch(`${API_BASE_URL}/promotions/promos?idEntreprise=${idEntreprise}${magasinQueryParam}`)
       if (!response.ok) {
         if (response.status === 404) {
           console.warn("No promotions found for the selected criteria (404).")
@@ -339,7 +349,7 @@ export default function MarketingStrategyPage() {
     // Fetch Revenus Promo
     try {
       const response = await fetch(
-        `http://localhost:8081/api/promotions/revenu-promo?idEntreprise=${idEntreprise}${magasinQueryParam}`,
+        `${API_BASE_URL}/promotions/revenu-promo?idEntreprise=${idEntreprise}${magasinQueryParam}`,
       )
       if (!response.ok) {
         if (response.status === 404) {
@@ -359,7 +369,7 @@ export default function MarketingStrategyPage() {
     if (selectedMagasinId !== "all") {
       try {
         const response = await fetch(
-          `http://localhost:8081/api/promotions/cout-total?idEntreprise=${idEntreprise}&idMagasin=${selectedMagasinId}`,
+          `${API_BASE_URL}/promotions/cout-total?idEntreprise=${idEntreprise}&idMagasin=${selectedMagasinId}`,
         )
         if (!response.ok) {
           if (response.status === 404) {
@@ -381,7 +391,7 @@ export default function MarketingStrategyPage() {
           const fetchPromises = stores.map(async (store) => {
             try {
               const response = await fetch(
-                `http://localhost:8081/api/promotions/cout-total?idEntreprise=${idEntreprise}&idMagasin=${store.magasin_id}`,
+                `${API_BASE_URL}/promotions/cout-total?idEntreprise=${idEntreprise}&idMagasin=${store.magasin_id}`,
               )
               if (!response.ok) {
                 if (response.status === 404) {
@@ -425,7 +435,8 @@ export default function MarketingStrategyPage() {
           console.error("Token d'authentification manquant")
           return
         }
-        const userResponse = await fetch(`http://localhost:8081/api/auth/me`, {
+
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -433,19 +444,20 @@ export default function MarketingStrategyPage() {
           },
           credentials: "include",
         })
+
         if (!userResponse.ok) {
           throw new Error("Erreur lors de la récupération des données utilisateur")
         }
+
         const userData = await userResponse.json()
         const userId = userData.user?.idUtilisateur || userData.idUtilisateur || userData.id
         const entrepriseId = userData.user?.entreprises_id || userData.entreprises_id
+
         setCurrentUserId(userId)
         setIdEntreprise(entrepriseId)
 
         if (entrepriseId) {
-          const storesResponse = await fetch(
-            `http://localhost:8081/api/magasins/getMagasinsByEntrepriseId/${entrepriseId}`,
-          )
+          const storesResponse = await fetch(`${API_BASE_URL}/magasins/getMagasinsByEntrepriseId/${entrepriseId}`)
           if (!storesResponse.ok) {
             console.warn(`HTTP error fetching stores! status: ${storesResponse.status}`)
             setStores([])
@@ -460,6 +472,7 @@ export default function MarketingStrategyPage() {
         console.error("Error fetching current user data or stores:", error)
       }
     }
+
     fetchCurrentUserDataAndStores()
   }, [])
 
@@ -475,12 +488,11 @@ export default function MarketingStrategyPage() {
         setSelectedCategory("")
         return
       }
+
       setIsCategoriesLoading(true)
       try {
         const storeIds = selectedTargetStores.join(",")
-        const response = await fetch(
-          `http://localhost:8081/api/categories/getCategoriesByMagasins?idMagasin=${storeIds}`,
-        )
+        const response = await fetch(`${API_BASE_URL}/categories/getCategoriesByMagasins?idMagasin=${storeIds}`)
         if (!response.ok) {
           if (response.status === 404) {
             console.warn("No categories found for selected stores (404).")
@@ -498,6 +510,7 @@ export default function MarketingStrategyPage() {
         setIsCategoriesLoading(false)
       }
     }
+
     fetchCategories()
   }, [selectedTargetStores])
 
@@ -509,9 +522,10 @@ export default function MarketingStrategyPage() {
         setSelectedProduct("")
         return
       }
+
       setIsProductsLoading(true)
       try {
-        const apiUrl = `http://localhost:8081/api/produits/getProduitsByCategorie/${selectedCategory}`
+        const apiUrl = `${API_BASE_URL}/produits/getProduitsByCategorie/${selectedCategory}`
         console.log("Fetching products for category:", selectedCategory, "from URL:", apiUrl) // Added log
         const response = await fetch(apiUrl)
         if (!response.ok) {
@@ -531,6 +545,7 @@ export default function MarketingStrategyPage() {
         setIsProductsLoading(false)
       }
     }
+
     fetchProducts()
   }, [selectedCategory])
 
@@ -539,20 +554,19 @@ export default function MarketingStrategyPage() {
     if (idEntreprise === null) {
       return
     }
+
     setIsStoreReportsLoading(true)
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch(
-        `http://localhost:8081/api/commentaireRoutes/getCommentsByEntreprise/${idEntreprise}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
+      const response = await fetch(`${API_BASE_URL}/commentaireRoutes/getCommentsByEntreprise/${idEntreprise}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      )
+        credentials: "include",
+      })
+
       if (!response.ok) {
         if (response.status === 404) {
           console.warn("No comments found for this enterprise (404).")
@@ -560,9 +574,10 @@ export default function MarketingStrategyPage() {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
       }
-      const data: CommentsApiResponse = response.ok ? await response.json() : { utilisateurs: [] }
 
+      const data: CommentsApiResponse = response.ok ? await response.json() : { utilisateurs: [] }
       const filteredComments: (Comment & { userName: string; userEmail: string })[] = []
+
       data.utilisateurs.forEach((userEntry) => {
         userEntry.comments.forEach((comment) => {
           if (comment.type_commentaire === "retour_magasin" || comment.type_commentaire === "reclamation") {
@@ -574,6 +589,7 @@ export default function MarketingStrategyPage() {
           }
         })
       })
+
       setStoreReportsList(filteredComments)
     } catch (error) {
       console.error("Error fetching store reports:", error)
@@ -598,11 +614,10 @@ export default function MarketingStrategyPage() {
         setPlanogramConversionDataMap(new Map()) // Clear stats when store changes or no store selected
         return
       }
+
       setIsPlanogramsLoading(true)
       try {
-        const response = await fetch(
-          `http://localhost:8081/api/planogram/fetchPlanogramByStore/${selectedPlanogramMagasinId}`,
-        )
+        const response = await fetch(`${API_BASE_URL}/planogram/fetchPlanogramByStore/${selectedPlanogramMagasinId}`)
         if (!response.ok) {
           if (response.status === 404) {
             console.warn(`No planograms found for store ${selectedPlanogramMagasinId} (404).`)
@@ -621,6 +636,7 @@ export default function MarketingStrategyPage() {
         setIsPlanogramsLoading(false)
       }
     }
+
     fetchPlanograms()
   }, [selectedPlanogramMagasinId, idEntreprise]) // Depend on selected store and enterprise ID
 
@@ -650,10 +666,11 @@ export default function MarketingStrategyPage() {
 
       setIsFetchingAllPlanogramConversions(true)
       const newConversionMap = new Map<string, PlanogramConversionResponse>()
+
       const fetchPromises = availablePlanograms.map(async (planogram) => {
         try {
           // Use planogram.planogram_id and convert to string if necessary for the API
-          const apiUrl = `http://localhost:8081/api/planogram/conversion?idPlanogram=${planogram.planogram_id}&date_debut=${planogramStartDate}&date_fin=${planogramEndDate}`
+          const apiUrl = `${API_BASE_URL}/planogram/conversion?idPlanogram=${planogram.planogram_id}&date_debut=${planogramStartDate}&date_fin=${planogramEndDate}`
           const response = await fetch(apiUrl)
           if (!response.ok) {
             if (response.status === 404) {
@@ -686,9 +703,10 @@ export default function MarketingStrategyPage() {
         setZonePerformanceData([]) // Clear performance data when store changes
         return
       }
+
       setIsZonesLoading(true)
       try {
-        const response = await fetch(`http://localhost:8081/api/zones/getZonesMagasin/${selectedPlanogramMagasinId}`)
+        const response = await fetch(`${API_BASE_URL}/zones/getZonesMagasin/${selectedPlanogramMagasinId}`)
         if (!response.ok) {
           if (response.status === 404) {
             console.warn(`No zones found for store ${selectedPlanogramMagasinId} (404).`)
@@ -706,6 +724,7 @@ export default function MarketingStrategyPage() {
         setIsZonesLoading(false)
       }
     }
+
     fetchZones()
   }, [selectedPlanogramMagasinId])
 
@@ -719,7 +738,7 @@ export default function MarketingStrategyPage() {
 
       setIsZonePerformanceLoading(true)
       try {
-        const apiUrl = `http://localhost:8081/api/magasins/getPerformanceZones?idMagasin=${selectedPlanogramMagasinId}&date_debut=${planogramStartDate}&date_fin=${planogramEndDate}`
+        const apiUrl = `${API_BASE_URL}/magasins/getPerformanceZones?idMagasin=${selectedPlanogramMagasinId}&date_debut=${planogramStartDate}&date_fin=${planogramEndDate}`
         const response = await fetch(apiUrl)
         if (!response.ok) {
           if (response.status === 404) {
@@ -771,7 +790,7 @@ export default function MarketingStrategyPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8081/api/promotions/createPromotion`, {
+      const response = await fetch(`${API_BASE_URL}/promotions/createPromotion`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -815,7 +834,6 @@ export default function MarketingStrategyPage() {
   const navigationItems = [
     { value: "promotions", label: "Promotions & Offres", icon: Zap },
     { value: "planograms", label: "Planogrammes & Zones", icon: BarChart3 },
-  
   ]
 
   const getCurrentNavLabel = () => {
@@ -844,42 +862,46 @@ export default function MarketingStrategyPage() {
     <div className="min-h-screen bg-slate-50 mt-8 sm:mt-12 lg:mt-16" dir={textDirection}>
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className={`flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 ${rtlClasses.flexDirection}`}>
           <Link href="/marketing">
             <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 bg-transparent">
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+              <DirectionalArrow className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </Link>
-          <div className="min-w-0 flex-1">
+          <div className={`min-w-0 flex-1 ${rtlClasses.textAlign}`}>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 truncate">
-              Marketing Strategy Display
+              {t("marketing.marketingStrategy.promoAndOffres.grandTitle")}
             </h1>
             <p className="text-slate-600 text-xs sm:text-sm lg:text-base">
-              Gestion avancée des stratégies marketing et promotions
+              {t("marketing.marketingStrategy.promoAndOffres.grandTitleDescr")}
             </p>
           </div>
         </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           {/* Navigation - Dropdown on mobile, tabs on desktop */}
           <div className="block sm:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between bg-transparent">
-                  <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className={`w-full justify-between bg-transparent ${rtlClasses.flexDirection}`}
+                >
+                  <div className={`flex items-center gap-2 ${rtlClasses.flexDirection}`}>
                     <Menu className="w-4 h-4" />
                     <span className="truncate">{getCurrentNavLabel()}</span>
                   </div>
-                  <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
+                  <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isRTL ? "mr-2" : "ml-2"}`} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[280px]">
+              <DropdownMenuContent align={isRTL ? "end" : "start"} className="w-[280px]">
                 {navigationItems.map((item) => {
                   const Icon = item.icon
                   return (
                     <DropdownMenuItem
                       key={item.value}
                       onClick={() => setActiveTab(item.value)}
-                      className={`flex items-center gap-2 cursor-pointer ${
+                      className={`flex items-center gap-2 cursor-pointer ${rtlClasses.flexDirection} ${
                         activeTab === item.value ? "bg-slate-100" : ""
                       }`}
                     >
@@ -891,46 +913,58 @@ export default function MarketingStrategyPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
           {/* Desktop Tabs */}
           <div className="hidden sm:block overflow-x-auto">
-          <TabsList className="flex w-full space-x-2">
-            <TabsTrigger value="promotions" className="flex-1 py-2 text-sm">
-              Promotions & Offres
-            </TabsTrigger>
-            <TabsTrigger value="planograms" className="flex-1 py-2 text-sm">
-              Planogrammes & Zones
-            </TabsTrigger>
-          </TabsList>
+            <TabsList className={`flex w-full space-x-2 ${rtlClasses.spaceReverse}`}>
+              <TabsTrigger value="promotions" className="flex-1 py-2 text-sm">
+                {t("marketing.marketingStrategy.promoAndOffres.promoOffre")}
+              </TabsTrigger>
+              <TabsTrigger value="planograms" className="flex-1 py-2 text-sm">
+                {t("marketing.marketingStrategy.promoAndOffres.planogZone")}
+              </TabsTrigger>
+            </TabsList>
           </div>
+
           <TabsContent value="promotions" className="space-y-4 sm:space-y-6">
             {/* Header with responsive button */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">Gestion des Promotions</h2>
+            <div
+              className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 ${isRTL ? "sm:flex-row-reverse" : ""}`}
+            >
+              <h2 className={`text-lg sm:text-xl lg:text-2xl font-bold ${rtlClasses.textAlign}`}>
+                {t("marketing.marketingStrategy.promoAndOffres.gestionPromo")}
+              </h2>
               <Dialog open={showNewCampaign} onOpenChange={setShowNewCampaign}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2 w-full sm:w-auto text-sm">
+                  <Button className={`flex items-center gap-2 w-full sm:w-auto text-sm ${rtlClasses.flexDirection}`}>
                     <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span>Nouvelle Campagne</span>
+                    <span>{t("marketing.marketingStrategy.promoAndOffres.nouvCompagneButton")}</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg sm:text-xl">Créer une Campagne Promotionnelle</DialogTitle>
+                <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto" dir={textDirection}>
+                  <DialogHeader className={rtlClasses.textAlign}>
+                    <DialogTitle className="text-lg sm:text-xl">
+                      {t("marketing.marketingStrategy.promoAndOffres.nouvCompagneTitle")}
+                    </DialogTitle>
                     <DialogDescription className="text-sm">
-                      Configurez votre nouvelle campagne marketing avec tous les paramètres
+                      {t("marketing.marketingStrategy.promoAndOffres.nouvCompagneDescr")}
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleNewCampaignSubmit}>
                     <div className="grid gap-4 py-4">
                       {/* Magasins ciblés - Multi-select Checkboxes */}
-                      <div>
+                      <div className={rtlClasses.textAlign}>
                         <Label htmlFor="target-stores" className="text-sm">
-                          Magasins ciblés <span className="text-red-500">*</span>
+                          {t("marketing.marketingStrategy.promoAndOffres.magasinsCible")}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
                           {stores.length > 0 ? (
                             stores.map((store) => (
-                              <div key={store.magasin_id} className="flex items-center space-x-2">
+                              <div
+                                key={store.magasin_id}
+                                className={`flex items-center space-x-2 ${rtlClasses.flexDirection} ${rtlClasses.spaceReverse}`}
+                              >
                                 <Checkbox
                                   id={`store-${store.magasin_id}`}
                                   checked={selectedTargetStores.includes(store.magasin_id)}
@@ -944,7 +978,9 @@ export default function MarketingStrategyPage() {
                               </div>
                             ))
                           ) : (
-                            <p className="text-sm text-muted-foreground col-span-full">Aucun magasin disponible.</p>
+                            <p className="text-sm text-muted-foreground col-span-full">
+                              {t("marketing.marketingStrategy.promoAndOffres.aucunMagDispo")}
+                            </p>
                           )}
                         </div>
                         {submitCampaignError && submitCampaignError.includes("magasin ciblé") && (
@@ -953,70 +989,86 @@ export default function MarketingStrategyPage() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div className={rtlClasses.textAlign}>
                           <Label htmlFor="campaign-name" className="text-sm">
-                            Nom de la campagne <span className="text-red-500">*</span>
+                            {t("marketing.marketingStrategy.promoAndOffres.nomCompagne")}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <Input
                             id="campaign-name"
-                            placeholder="Ex: Flash Sale Électronique"
-                            className="text-sm"
+                            placeholder={t("marketing.marketingStrategy.promoAndOffres.nomCompagnePlaceholder")}
+                            className={`text-sm ${rtlClasses.textAlign}`}
                             value={campaignName}
                             onChange={(e) => setCampaignName(e.target.value)}
                             required
                           />
                         </div>
-                        <div>
+                        <div className={rtlClasses.textAlign}>
                           <Label htmlFor="campaign-type" className="text-sm">
-                            Type de promotion <span className="text-red-500">*</span>
+                            {t("marketing.marketingStrategy.promoAndOffres.typePromo")}{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <Select value={campaignType} onValueChange={setCampaignType} required>
-                            <SelectTrigger className="text-sm">
-                              <SelectValue placeholder="Sélectionner le type" />
+                            <SelectTrigger className={`text-sm ${rtlClasses.textAlign}`}>
+                              <SelectValue
+                                placeholder={t("marketing.marketingStrategy.promoAndOffres.selectoinnerType")}
+                              />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="remise %">Remise %</SelectItem>
-                              <SelectItem value="bundle">Bundle</SelectItem>
-                              <SelectItem value="bogo">2 pour 1</SelectItem>
-                              <SelectItem value="fixed">Prix fixe</SelectItem>
+                              <SelectItem value="remise %">
+                                {t("marketing.marketingStrategy.promoAndOffres.remise")} %
+                              </SelectItem>
+                              <SelectItem value="bundle">
+                                {t("marketing.marketingStrategy.promoAndOffres.byndle")}
+                              </SelectItem>
+                              <SelectItem value="bogo">
+                                {t("marketing.marketingStrategy.promoAndOffres.unPourDeux")}
+                              </SelectItem>
+                              <SelectItem value="fixed">
+                                {t("marketing.marketingStrategy.promoAndOffres.prixFixe")}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
 
-                      <div>
+                      <div className={rtlClasses.textAlign}>
                         <Label htmlFor="campaign-description" className="text-sm">
-                          Description de la campagne
+                          {t("marketing.marketingStrategy.promoAndOffres.descriptionCompagne")}
                         </Label>
                         <Textarea
                           id="campaign-description"
-                          placeholder="Décrivez les détails de la promotion..."
-                          className="text-sm"
+                          placeholder={t("marketing.marketingStrategy.promoAndOffres.descriptionCompagnePlaceholder")}
+                          className={`text-sm ${rtlClasses.textAlign}`}
                           value={campaignDescription}
                           onChange={(e) => setCampaignDescription(e.target.value)}
                         />
                       </div>
 
                       {/* Catégorie concernée (Dynamique) */}
-                      <div>
+                      <div className={rtlClasses.textAlign}>
                         <Label htmlFor="affected-category" className="text-sm">
-                          Catégorie concernée (Optionnel)
+                          {t("marketing.marketingStrategy.promoAndOffres.categorieConcerner")}
                         </Label>
                         <Select
                           value={selectedCategory}
                           onValueChange={setSelectedCategory}
                           disabled={selectedTargetStores.length === 0 || isCategoriesLoading}
                         >
-                          <SelectTrigger className="text-sm">
-                            <SelectValue placeholder="Sélectionner une catégorie" />
+                          <SelectTrigger className={`text-sm ${rtlClasses.textAlign}`}>
+                            <SelectValue
+                              placeholder={t(
+                                "marketing.marketingStrategy.promoAndOffres.categorieConcernerPlaceholder",
+                              )}
+                            />
                           </SelectTrigger>
                           <SelectContent className="w-full max-h-60 overflow-y-auto">
                             <SelectItem value="all" className="px-4 py-2 hover:bg-slate-50 cursor-pointer">
-                              Toutes les catégories
+                              {t("marketing.marketingStrategy.promoAndOffres.tousCategories")}
                             </SelectItem>
                             {isCategoriesLoading ? (
                               <SelectItem value="loading" disabled>
-                                Chargement des catégories...
+                                {t("marketing.marketingStrategy.promoAndOffres.chargementCategoris")}
                               </SelectItem>
                             ) : availableCategories.length > 0 ? (
                               availableCategories.map((category) => (
@@ -1026,7 +1078,7 @@ export default function MarketingStrategyPage() {
                               ))
                             ) : (
                               <SelectItem value="no-categories" disabled>
-                                Aucune catégorie disponible pour les magasins sélectionnés
+                                {t("marketing.marketingStrategy.promoAndOffres.aucuneCategorie")}
                               </SelectItem>
                             )}
                           </SelectContent>
@@ -1034,25 +1086,27 @@ export default function MarketingStrategyPage() {
                       </div>
 
                       {/* Produit concerné (Dynamique) */}
-                      <div>
+                      <div className={rtlClasses.textAlign}>
                         <Label htmlFor="affected-product" className="text-sm">
-                          Produit concerné (Optionnel)
+                          {t("marketing.marketingStrategy.promoAndOffres.produitConcerner")}
                         </Label>
                         <Select
                           value={selectedProduct}
                           onValueChange={setSelectedProduct}
                           disabled={!selectedCategory || selectedCategory === "all" || isProductsLoading}
                         >
-                          <SelectTrigger className="text-sm">
-                            <SelectValue placeholder="Sélectionner un produit" />
+                          <SelectTrigger className={`text-sm ${rtlClasses.textAlign}`}>
+                            <SelectValue
+                              placeholder={t("marketing.marketingStrategy.promoAndOffres.produitConcernerPlaceholder")}
+                            />
                           </SelectTrigger>
                           <SelectContent className="w-full max-h-60 overflow-y-auto">
                             <SelectItem value="all" className="px-4 py-2 hover:bg-slate-50 cursor-pointer">
-                              Tous les produits
+                              {t("marketing.marketingStrategy.promoAndOffres.tousProduits")}
                             </SelectItem>
                             {isProductsLoading ? (
                               <SelectItem value="loading" disabled>
-                                Chargement des produits...
+                                {t("marketing.marketingStrategy.promoAndOffres.chargementProduits")}
                               </SelectItem>
                             ) : availableProducts.length > 0 ? (
                               availableProducts.map((product) => (
@@ -1062,7 +1116,7 @@ export default function MarketingStrategyPage() {
                               ))
                             ) : (
                               <SelectItem value="no-products" disabled>
-                                Aucun produit disponible pour cette catégorie
+                                {t("marketing.marketingStrategy.promoAndOffres.aucunProduit")}
                               </SelectItem>
                             )}
                           </SelectContent>
@@ -1070,50 +1124,57 @@ export default function MarketingStrategyPage() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div className={rtlClasses.textAlign}>
                           <Label htmlFor="start-date" className="text-sm">
-                            Date de début <span className="text-red-500">*</span>
+                            {t("marketing.marketingStrategy.promoAndOffres.dateDebut")}{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <div className="relative">
                             <Input
                               type="date"
                               id="start-date"
-                              className="text-sm pr-10"
+                              className={`text-sm ${isRTL ? "pl-10 pr-3" : "pr-10 pl-3"} ${rtlClasses.textAlign}`}
                               value={startDate}
                               onChange={(e) => setStartDate(e.target.value)}
                               required
                             />
-                            <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <Calendar
+                              className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500`}
+                            />
                           </div>
                         </div>
-                        <div>
+                        <div className={rtlClasses.textAlign}>
                           <Label htmlFor="end-date" className="text-sm">
-                            Date de fin <span className="text-red-500">*</span>
+                            {t("marketing.marketingStrategy.promoAndOffres.dateFin")}{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <div className="relative">
                             <Input
                               type="date"
                               id="end-date"
-                              className="text-sm pr-10"
+                              className={`text-sm ${isRTL ? "pl-10 pr-3" : "pr-10 pl-3"} ${rtlClasses.textAlign}`}
                               value={endDate}
                               onChange={(e) => setEndDate(e.target.value)}
                               required
                             />
-                            <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <Calendar
+                              className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500`}
+                            />
                           </div>
                         </div>
                       </div>
 
                       {/* Discount field */}
-                      <div>
+                      <div className={rtlClasses.textAlign}>
                         <Label htmlFor="discount" className="text-sm">
-                          Discount (%) <span className="text-red-500">*</span>
+                          {t("marketing.marketingStrategy.promoAndOffres.discount")} (%){" "}
+                          <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="discount"
                           type="number"
                           placeholder="10"
-                          className="text-sm"
+                          className={`text-sm ${rtlClasses.textAlign}`}
                           value={discount}
                           onChange={(e) => setDiscount(e.target.value)}
                           required
@@ -1122,12 +1183,18 @@ export default function MarketingStrategyPage() {
                         />
                       </div>
                     </div>
-                    <DialogFooter className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
+                    <DialogFooter
+                      className={`flex flex-col sm:flex-row ${isRTL ? "sm:flex-row-reverse" : ""} justify-end gap-2 pt-4`}
+                    >
                       {submitCampaignError && (
-                        <p className="text-red-500 text-sm mb-2 sm:mb-0 sm:mr-auto">{submitCampaignError}</p>
+                        <p className={`text-red-500 text-sm mb-2 sm:mb-0 ${isRTL ? "sm:ml-auto" : "sm:mr-auto"}`}>
+                          {submitCampaignError}
+                        </p>
                       )}
                       {submitCampaignSuccess && (
-                        <p className="text-green-500 text-sm mb-2 sm:mb-0 sm:mr-auto">Campagne créée avec succès !</p>
+                        <p className={`text-green-500 text-sm mb-2 sm:mb-0 ${isRTL ? "sm:ml-auto" : "sm:mr-auto"}`}>
+                          {t("marketing.marketingStrategy.promoAndOffres.compagneCreerSuccess")}
+                        </p>
                       )}
                       <Button
                         variant="outline"
@@ -1135,27 +1202,35 @@ export default function MarketingStrategyPage() {
                         className="text-sm"
                         type="button"
                       >
-                        Annuler
+                        {t("marketing.marketingStrategy.promoAndOffres.annuler")}
                       </Button>
                       <Button type="submit" className="text-sm" disabled={isSubmittingCampaign}>
-                        {isSubmittingCampaign ? "Création en cours..." : "Créer la Campagne"}
+                        {isSubmittingCampaign
+                          ? t("marketing.marketingStrategy.promoAndOffres.creationEnCours")
+                          : t("marketing.marketingStrategy.promoAndOffres.creerCompagne")}
                       </Button>
                     </DialogFooter>
                   </form>
                 </DialogContent>
               </Dialog>
             </div>
+
             {/* Store Filter - Version améliorée */}
             <div className="bg-white/50 backdrop-blur-sm p-3 sm:p-4 rounded-lg border shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className={`flex flex-col sm:flex-row sm:items-end gap-4 ${isRTL ? "sm:flex-row-reverse" : ""}`}>
                 {/* Filtre principal */}
                 <div className="flex-1">
-                  <Label htmlFor="store-filter" className="block text-sm font-medium text-slate-700 mb-1">
-                    Filtrer par magasin
+                  <Label
+                    htmlFor="store-filter"
+                    className={`block text-sm font-medium text-slate-700 mb-1 ${rtlClasses.textAlign}`}
+                  >
+                    {t("marketing.marketingStrategy.promoAndOffres.filtreParMagasin")}
                   </Label>
                   <div className="relative">
                     <Select value={selectedMagasinId || "all"} onValueChange={setSelectedMagasinId}>
-                      <SelectTrigger className="w-full pl-3 pr-8 py-2 text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                      <SelectTrigger
+                        className={`w-full ${isRTL ? "pr-3 pl-8" : "pl-3 pr-8"} py-2 ${rtlClasses.textAlign} bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                      >
                         <SelectValue placeholder="Sélectionner un magasin" />
                       </SelectTrigger>
                       <SelectContent className="z-50 mt-1 w-full bg-white shadow-lg rounded-lg border border-slate-200 py-1 max-h-60 overflow-auto">
@@ -1163,7 +1238,7 @@ export default function MarketingStrategyPage() {
                           value="all"
                           className="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className={`flex items-center gap-2 ${rtlClasses.flexDirection}`}>
                             <svg
                               className="w-4 h-4 text-slate-400"
                               fill="none"
@@ -1177,7 +1252,7 @@ export default function MarketingStrategyPage() {
                                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                               />
                             </svg>
-                            <span>Tous les magasins</span>
+                            <span>{t("marketing.marketingStrategy.promoAndOffres.tousMagasins")}</span>
                           </div>
                         </SelectItem>
                         {stores.map((store) => (
@@ -1186,7 +1261,7 @@ export default function MarketingStrategyPage() {
                             value={store.magasin_id}
                             className="px-4 py-2 hover:bg-slate-50 cursor-pointer"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className={`flex items-center gap-2 ${rtlClasses.flexDirection}`}>
                               <svg
                                 className="w-4 h-4 text-blue-500"
                                 fill="none"
@@ -1201,7 +1276,9 @@ export default function MarketingStrategyPage() {
                                 />
                               </svg>
                               <span className="truncate">{store.nom_magasin}</span>
-                              <span className="ml-auto text-xs text-slate-500 hidden sm:inline">
+                              <span
+                                className={`text-xs text-slate-500 hidden sm:inline ${isRTL ? "mr-auto" : "ml-auto"}`}
+                              >
                                 {store.adresse.split(",")[0]}
                               </span>
                             </div>
@@ -1209,13 +1286,17 @@ export default function MarketingStrategyPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown
+                      className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none`}
+                    />
                   </div>
                 </div>
 
                 {/* Statistiques rapides */}
                 {selectedMagasinId !== "all" && (
-                  <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-2 sm:p-3 flex items-center gap-3">
+                  <div
+                    className={`bg-blue-50/50 border border-blue-100 rounded-lg p-2 sm:p-3 flex items-center gap-3 ${rtlClasses.flexDirection}`}
+                  >
                     <div className="bg-blue-100 p-2 rounded-full">
                       <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -1226,8 +1307,10 @@ export default function MarketingStrategyPage() {
                         />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-xs text-blue-800">Promotions actives</p>
+                    <div className={rtlClasses.textAlign}>
+                      <p className="text-xs text-blue-800">
+                        {t("marketing.marketingStrategy.promoAndOffres.promoActive")}
+                      </p>
                       <p className="font-semibold text-blue-900">
                         {allPromotionsList.filter((p) => p.magasin_id === selectedMagasinId).length}
                       </p>
@@ -1240,7 +1323,7 @@ export default function MarketingStrategyPage() {
                   <Button
                     variant="ghost"
                     onClick={() => setSelectedMagasinId("all")}
-                    className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1"
+                    className={`text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1 ${rtlClasses.flexDirection}`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -1250,65 +1333,85 @@ export default function MarketingStrategyPage() {
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                       />
                     </svg>
-                    Réinitialiser
+                    {t("marketing.marketingStrategy.promoAndOffres.reinitialiser")}
                   </Button>
                 )}
               </div>
             </div>
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Promotions Actives</CardTitle>
+                <CardHeader className={`flex ${rtlClasses.flexDirection} items-center justify-between space-y-0 pb-2`}>
+                  <CardTitle className={`text-xs sm:text-sm font-medium ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.promoAndOffres.promoActive")}
+                  </CardTitle>
                   <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">{activePromotionsCount}</div>
-                  <p className="text-xs text-muted-foreground">+2 depuis hier</p>
+                  <div className={`text-xl sm:text-2xl font-bold ${rtlClasses.textAlign}`}>{activePromotionsCount}</div>
+                  <p className={`text-xs text-muted-foreground ${rtlClasses.textAlign}`}>
+                    +2 {t("marketing.marketingStrategy.promoAndOffres.depuisHier")}
+                  </p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Revenus Promo</CardTitle>
+                <CardHeader className={`flex ${rtlClasses.flexDirection} items-center justify-between space-y-0 pb-2`}>
+                  <CardTitle className={`text-xs sm:text-sm font-medium ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.promoAndOffres.revenuPromo")}
+                  </CardTitle>
                   <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">€{totalRevenuePromo.toLocaleString("fr-FR")}</div>
-                  <p className="text-xs text-muted-foreground">+18% vs semaine dernière</p>
+                  <div className={`text-xl sm:text-2xl font-bold ${rtlClasses.textAlign}`}>
+                    €{totalRevenuePromo.toLocaleString("fr-FR")}
+                  </div>
+                  <p className={`text-xs text-muted-foreground ${rtlClasses.textAlign}`}>
+                    +18% {t("marketing.marketingStrategy.promoAndOffres.vsSemaine")}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="sm:col-span-2 lg:col-span-1">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs sm:text-sm font-medium">Coût total des réductions</CardTitle>
+                <CardHeader className={`flex ${rtlClasses.flexDirection} items-center justify-between space-y-0 pb-2`}>
+                  <CardTitle className={`text-xs sm:text-sm font-medium ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.promoAndOffres.couReduction")}
+                  </CardTitle>
                   <Target className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xl sm:text-2xl font-bold">
+                  <div className={`text-xl sm:text-2xl font-bold ${rtlClasses.textAlign}`}>
                     {typeof totalDiscountCost === "number"
                       ? totalDiscountCost.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })
                       : totalDiscountCost}
                   </div>
-                  <p className="text-xs text-muted-foreground">-8% vs semaine dernière</p>
+                  <p className={`text-xs text-muted-foreground ${rtlClasses.textAlign}`}>
+                    -8% {t("marketing.marketingStrategy.promoAndOffres.vsSemaine")}
+                  </p>
                 </CardContent>
               </Card>
             </div>
+
             {/* Campaigns List */}
             <Card>
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                  <div>
-                    <CardTitle className="text-lg sm:text-xl">Campagnes Actives</CardTitle>
+                <div
+                  className={`flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 ${isRTL ? "sm:flex-row-reverse" : ""}`}
+                >
+                  <div className={rtlClasses.textAlign}>
+                    <CardTitle className="text-lg sm:text-xl">
+                      {t("marketing.marketingStrategy.promoAndOffres.compagnesActives")}
+                    </CardTitle>
                     <CardDescription className="text-xs sm:text-sm">
-                      Gestion et suivi des campagnes en cours
+                      {t("marketing.marketingStrategy.promoAndOffres.compagnesActivesDescr")}
                     </CardDescription>
                   </div>
                   <Button
                     variant="outline"
                     onClick={() => setShowStoreReports(true)}
-                    className="text-sm w-full sm:w-auto"
+                    className={`text-sm w-full sm:w-auto flex items-center gap-2 ${rtlClasses.flexDirection}`}
                   >
-                    <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                    Retours Magasins
+                    <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                    {t("marketing.marketingStrategy.promoAndOffres.retourMagasins")}
                   </Button>
                 </div>
               </CardHeader>
@@ -1317,12 +1420,14 @@ export default function MarketingStrategyPage() {
                   {allPromotionsList.map((promo) => (
                     <div
                       key={promo.promotion_id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg gap-3"
+                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg gap-3 ${isRTL ? "sm:flex-row-reverse" : ""}`}
                     >
-                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                        <div className="min-w-0 flex-1">
+                      <div className={`flex items-center gap-3 sm:gap-4 min-w-0 flex-1 ${rtlClasses.flexDirection}`}>
+                        <div className={`min-w-0 flex-1 ${rtlClasses.textAlign}`}>
                           <h3 className="font-semibold text-sm sm:text-base truncate">{promo.nom_promotion}</h3>
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <div
+                            className={`flex flex-wrap items-center gap-2 mt-1 ${isRTL ? "justify-end" : "justify-start"}`}
+                          >
                             <Badge
                               variant={
                                 promo.etat === "active"
@@ -1333,7 +1438,11 @@ export default function MarketingStrategyPage() {
                               }
                               className="text-xs"
                             >
-                              {promo.etat === "active" ? "Actif" : promo.etat === "terminée" ? "Terminée" : "Planifiée"}
+                              {promo.etat === "active"
+                                ? t("marketing.marketingStrategy.planogrammeAndZone.actif")
+                                : promo.etat === "terminée"
+                                  ? t("marketing.marketingStrategy.planogrammeAndZone.termine")
+                                  : t("marketing.marketingStrategy.planogrammeAndZone.planifier")}
                             </Badge>
                             <span className="text-xs sm:text-sm text-slate-600">
                               {promo.type_promotion} - {promo.discount}%
@@ -1341,9 +1450,11 @@ export default function MarketingStrategyPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                        <div className="text-left sm:text-right">
-                          <div className="flex items-center gap-2 mt-1">
+                      <div
+                        className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 ${isRTL ? "sm:flex-row-reverse" : ""}`}
+                      >
+                        <div className={`${isRTL ? "text-left sm:text-left" : "text-left sm:text-right"}`}>
+                          <div className={`flex items-center gap-2 mt-1 ${rtlClasses.flexDirection}`}>
                             <Progress value={promo.taux_progression || 0} className="w-16 sm:w-20" />
                             <span className="text-xs sm:text-sm text-slate-600">{promo.taux_progression || 0}%</span>
                           </div>
@@ -1359,23 +1470,31 @@ export default function MarketingStrategyPage() {
                     </div>
                   ))}
                   {allPromotionsList.length === 0 && (
-                    <div className="text-center text-muted-foreground py-8">Aucune promotion trouvée.</div>
+                    <div className={`text-center text-muted-foreground py-8 ${rtlClasses.textAlign}`}>
+                      {t("marketing.marketingStrategy.promoAndOffres.aucunePromoTrouve")}
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="planograms" className="space-y-4 sm:space-y-6">
             {/* Store Filter for Planograms */}
             <div className="bg-white/50 backdrop-blur-sm p-3 sm:p-4 rounded-lg border shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className={`flex flex-col sm:flex-row sm:items-end gap-4 ${isRTL ? "sm:flex-row-reverse" : ""}`}>
                 <div className="flex-1">
-                  <Label htmlFor="planogram-store-filter" className="block text-sm font-medium text-slate-700 mb-1">
-                    Filtrer par magasin
+                  <Label
+                    htmlFor="planogram-store-filter"
+                    className={`block text-sm font-medium text-slate-700 mb-1 ${rtlClasses.textAlign}`}
+                  >
+                    {t("marketing.marketingStrategy.promoAndOffres.filtreParMagasin")}
                   </Label>
                   <div className="relative">
                     <Select value={selectedPlanogramMagasinId} onValueChange={setSelectedPlanogramMagasinId}>
-                      <SelectTrigger className="w-full pl-3 pr-8 py-2 text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                      <SelectTrigger
+                        className={`w-full ${isRTL ? "pr-3 pl-8" : "pl-3 pr-8"} py-2 ${rtlClasses.textAlign} bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                      >
                         <SelectValue placeholder="Sélectionner un magasin" />
                       </SelectTrigger>
                       <SelectContent className="z-50 mt-1 w-full bg-white shadow-lg rounded-lg border border-slate-200 py-1 max-h-60 overflow-auto">
@@ -1383,7 +1502,7 @@ export default function MarketingStrategyPage() {
                           value="all"
                           className="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className={`flex items-center gap-2 ${rtlClasses.flexDirection}`}>
                             <svg
                               className="w-4 h-4 text-slate-400"
                               fill="none"
@@ -1397,7 +1516,7 @@ export default function MarketingStrategyPage() {
                                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                               />
                             </svg>
-                            <span>Tous les magasins</span>
+                            <span>{t("marketing.marketingStrategy.promoAndOffres.tousMagasins")}</span>
                           </div>
                         </SelectItem>
                         {stores.map((store) => (
@@ -1406,7 +1525,7 @@ export default function MarketingStrategyPage() {
                             value={store.magasin_id}
                             className="px-4 py-2 hover:bg-slate-50 cursor-pointer"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className={`flex items-center gap-2 ${rtlClasses.flexDirection}`}>
                               <svg
                                 className="w-4 h-4 text-blue-500"
                                 fill="none"
@@ -1421,7 +1540,9 @@ export default function MarketingStrategyPage() {
                                 />
                               </svg>
                               <span className="truncate">{store.nom_magasin}</span>
-                              <span className="ml-auto text-xs text-slate-500 hidden sm:inline">
+                              <span
+                                className={`text-xs text-slate-500 hidden sm:inline ${isRTL ? "mr-auto" : "ml-auto"}`}
+                              >
                                 {store.adresse.split(",")[0]}
                               </span>
                             </div>
@@ -1429,14 +1550,16 @@ export default function MarketingStrategyPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown
+                      className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none`}
+                    />
                   </div>
                 </div>
                 {selectedPlanogramMagasinId !== "all" && (
                   <Button
                     variant="ghost"
                     onClick={() => setSelectedPlanogramMagasinId("all")}
-                    className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1"
+                    className={`text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1 ${rtlClasses.flexDirection}`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -1446,7 +1569,7 @@ export default function MarketingStrategyPage() {
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                       />
                     </svg>
-                    Réinitialiser Magasin
+                    {t("marketing.marketingStrategy.promoAndOffres.reinitialiserMagasin")}
                   </Button>
                 )}
               </div>
@@ -1455,134 +1578,169 @@ export default function MarketingStrategyPage() {
             {/* Date Range Selectors for Planograms */}
             <div className="bg-white/50 backdrop-blur-sm p-3 sm:p-4 rounded-lg border shadow-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div className={rtlClasses.textAlign}>
                   <Label htmlFor="planogram-start-date" className="text-sm">
-                    Date de début
+                    {t("marketing.marketingStrategy.promoAndOffres.dateDebut")}
                   </Label>
                   <div className="relative">
                     <Input
                       type="date"
                       id="planogram-start-date"
-                      className="text-sm pr-10"
+                      className={`text-sm ${isRTL ? "pl-10 pr-3" : "pr-10 pl-3"} ${rtlClasses.textAlign}`}
                       value={planogramStartDate}
                       onChange={(e) => setPlanogramStartDate(e.target.value)}
                     />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Calendar
+                      className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500`}
+                    />
                   </div>
                 </div>
-                <div>
+                <div className={rtlClasses.textAlign}>
                   <Label htmlFor="planogram-end-date" className="text-sm">
-                    Date de fin
+                    {t("marketing.marketingStrategy.promoAndOffres.dateFin")}
                   </Label>
                   <div className="relative">
                     <Input
                       type="date"
                       id="planogram-end-date"
-                      className="text-sm pr-10"
+                      className={`text-sm ${isRTL ? "pl-10 pr-3" : "pr-10 pl-3"} ${rtlClasses.textAlign}`}
                       value={planogramEndDate}
                       onChange={(e) => setPlanogramEndDate(e.target.value)}
                     />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <Calendar
+                      className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500`}
+                    />
                   </div>
                 </div>
               </div>
-              {planogramDateError && <p className="text-red-500 text-xs mt-2">{planogramDateError}</p>}
+              {planogramDateError && (
+                <p className={`text-red-500 text-xs mt-2 ${rtlClasses.textAlign}`}>{planogramDateError}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Performance par Planogramme</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Analyse des performances de vos planogrammes
+                  <CardTitle className={`text-lg sm:text-xl ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.planogrammeAndZone.performenceParPlanogramme")}
+                  </CardTitle>
+                  <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.planogrammeAndZone.performenceParPlanogrammeDescr")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 sm:space-y-4 max-h-[300px] overflow-y-auto">
                     {isPlanogramsLoading ? (
-                      <div className="text-center text-muted-foreground py-4">Chargement des planogrammes...</div>
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.chargementPlanogramme")}
+                      </div>
                     ) : availablePlanograms.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-4">
-                        Sélectionnez un magasin pour afficher les planogrammes.
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.selectMagasinPlanogramme")}
                       </div>
                     ) : (
                       availablePlanograms.map((planogram) => {
                         const conversionData = planogramConversionDataMap.get(String(planogram.planogram_id)) // Use String(planogram.planogram_id) for map key
                         const showStats =
                           planogramStartDate && planogramEndDate && conversionData && !planogramDateError
-                         return (
-                            <div key={planogram.planogram_id} className="p-3 border rounded-lg bg-slate-50">
-                              <h4 className="font-medium text-sm sm:text-base mb-1">
-                                {planogram.nom} - Zone: {planogram.zone_id}
-                              </h4>
-                              {isFetchingAllPlanogramConversions ? (
-                                <p className="text-xs text-muted-foreground">Chargement des statistiques...</p>
-                              ) : showStats ? (
-                                <>
-                                  <div className="grid grid-cols-2 gap-2 mb-1">
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Taux de conversion</p>
-                                      <p className="text-sm font-medium">{conversionData?.tauxConversion}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Chiffre d'affaires</p>
-                                      <p className="text-sm font-medium text-green-600">
-                                        {conversionData?.sommeTotale ? 
-                                          `${parseFloat(conversionData.sommeTotale).toLocaleString('fr-FR', {
-                                            style: 'currency',
-                                            currency: 'EUR'
-                                          })}` 
-                                          : 'N/A'}
-                                      </p>
-                                    </div>
+
+                        return (
+                          <div key={planogram.planogram_id} className="p-3 border rounded-lg bg-slate-50">
+                            <h4 className={`font-medium text-sm sm:text-base mb-1 ${rtlClasses.textAlign}`}>
+                              {planogram.nom} - {t("marketing.marketingStrategy.planogrammeAndZone.zone")}{" "}
+                              {planogram.zone_id}
+                            </h4>
+                            {isFetchingAllPlanogramConversions ? (
+                              <p className={`text-xs text-muted-foreground ${rtlClasses.textAlign}`}>
+                                {t("marketing.marketingStrategy.planogrammeAndZone.chargementStat")}
+                              </p>
+                            ) : showStats ? (
+                              <>
+                                <div className="grid grid-cols-2 gap-2 mb-1">
+                                  <div className={rtlClasses.textAlign}>
+                                    <p className="text-xs text-muted-foreground">
+                                      {t("marketing.marketingStrategy.planogrammeAndZone.tauxConversion")}
+                                    </p>
+                                    <p className="text-sm font-medium">{conversionData?.tauxConversion}</p>
                                   </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Achats</p>
-                                      <p className="text-sm font-medium">{conversionData?.nombreAchats}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-muted-foreground">Visites</p>
-                                      <p className="text-sm font-medium">{conversionData?.nombreVisites}</p>
-                                    </div>
+                                  <div className={rtlClasses.textAlign}>
+                                    <p className="text-xs text-muted-foreground">
+                                      {t("marketing.marketingStrategy.planogrammeAndZone.chiffreAffaires")}
+                                    </p>
+                                    <p className="text-sm font-medium text-green-600">
+                                      {conversionData?.sommeTotale
+                                        ? `${Number.parseFloat(conversionData.sommeTotale).toLocaleString("fr-FR", {
+                                            style: "currency",
+                                            currency: "EUR",
+                                          })}`
+                                        : "N/A"}
+                                    </p>
                                   </div>
-                                </>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">
-                                  {planogramDateError
-                                    ? planogramDateError
-                                    : "Sélectionnez une plage de dates pour voir les performances."}
-                                </p>
-                              )}
-                            </div>
-                          )
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className={rtlClasses.textAlign}>
+                                    <p className="text-xs text-muted-foreground">
+                                      {t("marketing.marketingStrategy.planogrammeAndZone.achats")}
+                                    </p>
+                                    <p className="text-sm font-medium">{conversionData?.nombreAchats}</p>
+                                  </div>
+                                  <div className={rtlClasses.textAlign}>
+                                    <p className="text-xs text-muted-foreground">
+                                      {t("marketing.marketingStrategy.planogrammeAndZone.visites")}
+                                    </p>
+                                    <p className="text-sm font-medium">{conversionData?.nombreVisites}</p>
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <p className={`text-xs text-muted-foreground ${rtlClasses.textAlign}`}>
+                                {planogramDateError
+                                  ? planogramDateError
+                                  : t("marketing.marketingStrategy.planogrammeAndZone.selectPlageDate")}
+                              </p>
+                            )}
+                          </div>
+                        )
                       })
                     )}
                   </div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl">Performance par Zone</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Analyse des ventes par emplacement</CardDescription>
+                  <CardTitle className={`text-lg sm:text-xl ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.planogrammeAndZone.performenceParZone")}
+                  </CardTitle>
+                  <CardDescription className={`text-xs sm:text-sm ${rtlClasses.textAlign}`}>
+                    {t("marketing.marketingStrategy.planogrammeAndZone.performenceParZoneDescr")}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 sm:space-y-4 max-h-[300px] overflow-y-auto">
                     {isZonesLoading ? (
-                      <div className="text-center text-muted-foreground py-4">Chargement des zones...</div>
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.chargementZones")}
+                      </div>
                     ) : selectedPlanogramMagasinId === "all" ? (
-                      <div className="text-center text-muted-foreground py-4">
-                        Sélectionnez un magasin pour afficher les zones.
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.selectMagasinZone")}
                       </div>
                     ) : availableZones.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-4">Aucune zone trouvée pour ce magasin.</div>
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.aucuneZoneTrouve")}
+                      </div>
                     ) : isZonePerformanceLoading ? (
-                      <div className="text-center text-muted-foreground py-4">Chargement des performances...</div>
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.chargementPerformence")}
+                      </div>
                     ) : planogramDateError ? (
-                      <div className="text-center text-red-500 py-4">{planogramDateError}</div>
+                      <div className={`text-center text-red-500 py-4 ${rtlClasses.textAlign}`}>
+                        {planogramDateError}
+                      </div>
                     ) : zonePerformanceData.length === 0 && planogramStartDate && planogramEndDate ? (
-                      <div className="text-center text-muted-foreground py-4">
-                        Aucune donnée de performance trouvée pour la période sélectionnée.
+                      <div className={`text-center text-muted-foreground py-4 ${rtlClasses.textAlign}`}>
+                        {t("marketing.marketingStrategy.planogrammeAndZone.aucuneDonnees")}
                       </div>
                     ) : (
                       availableZones.map((zone) => {
@@ -1591,21 +1749,33 @@ export default function MarketingStrategyPage() {
                           ? Number.parseFloat(performance.performance.replace("%", ""))
                           : 0
                         const showPerformance = planogramStartDate && planogramEndDate && performance
-
                         return (
-                          <div key={zone.zone_id} className="flex justify-between items-center">
-                            <span className="text-xs sm:text-sm min-w-0 flex-1 truncate">{zone.nom_zone}</span>
-                            <div className="flex items-center gap-2 ml-2">
+                          <div
+                            key={zone.zone_id}
+                            className={`flex justify-between items-center ${rtlClasses.flexDirection}`}
+                          >
+                            <span className={`text-xs sm:text-sm min-w-0 flex-1 truncate ${rtlClasses.textAlign}`}>
+                              {zone.nom_zone}
+                            </span>
+                            <div
+                              className={`flex items-center gap-2 ${isRTL ? "mr-2" : "ml-2"} ${rtlClasses.flexDirection}`}
+                            >
                               {showPerformance ? (
                                 <>
                                   <Progress value={performanceValue} className="w-16 sm:w-20" />
-                                  <span className="text-xs sm:text-sm font-medium w-12 text-right">
+                                  <span
+                                    className={`text-xs sm:text-sm font-medium w-12 ${isRTL ? "text-left" : "text-right"}`}
+                                  >
                                     {performance?.performance}
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-xs text-muted-foreground w-full text-right">
-                                  {planogramStartDate && planogramEndDate ? "Pas de données" : "Sélectionnez les dates"}
+                                <span
+                                  className={`text-xs text-muted-foreground w-full ${isRTL ? "text-left" : "text-right"}`}
+                                >
+                                  {planogramStartDate && planogramEndDate
+                                    ? t("marketing.marketingStrategy.planogrammeAndZone.pasDonne")
+                                    : t("marketing.marketingStrategy.planogrammeAndZone.selectDates")}
                                 </span>
                               )}
                             </div>
@@ -1618,31 +1788,35 @@ export default function MarketingStrategyPage() {
               </Card>
             </div>
           </TabsContent>
-        
         </Tabs>
+
         {/* Store Reports Dialog */}
         <Dialog open={showStoreReports} onOpenChange={setShowStoreReports}>
-          <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">Retours Magasins - Mise en Place</DialogTitle>
+          <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto" dir={textDirection}>
+            <DialogHeader className={rtlClasses.textAlign}>
+              <DialogTitle className="text-lg sm:text-xl">
+                {t("marketing.marketingStrategy.planogrammeAndZone.retoursMagasins")}
+              </DialogTitle>
               <DialogDescription className="text-sm">
-                Commentaires des équipes terrain de votre entreprise
+                {t("marketing.marketingStrategy.planogrammeAndZone.commentaires")}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-3 sm:gap-4 py-4">
               {isStoreReportsLoading ? (
-                <div className="text-center text-muted-foreground py-8">Chargement des retours magasins...</div>
+                <div className={`text-center text-muted-foreground py-8 ${rtlClasses.textAlign}`}>
+                  {t("marketing.marketingStrategy.planogrammeAndZone.chargementMagsins")}
+                </div>
               ) : storeReportsList.length > 0 ? (
                 storeReportsList.map((report) => (
                   <div
                     key={report.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg gap-3"
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg gap-3 ${isRTL ? "sm:flex-row-reverse" : ""}`}
                   >
-                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                    <div className={`flex items-center gap-3 sm:gap-4 min-w-0 flex-1 ${rtlClasses.flexDirection}`}>
                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-lg flex items-center justify-center text-lg sm:text-xl flex-shrink-0">
                         {report.piece_jointe_url ? "📷" : "💬"}
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className={`min-w-0 flex-1 ${rtlClasses.textAlign}`}>
                         <h4 className="font-medium text-sm sm:text-base">{report.userName}</h4>
                         <p className="text-xs sm:text-sm text-slate-600 break-words">{report.contenu}</p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -1651,13 +1825,15 @@ export default function MarketingStrategyPage() {
                       </div>
                     </div>
                     <Badge variant={report.piece_jointe_url ? "default" : "secondary"} className="text-xs w-fit">
-                      {report.piece_jointe_url ? "Validé (Photo)" : "Commentaire"}
+                      {report.piece_jointe_url
+                        ? t("marketing.marketingStrategy.planogrammeAndZone.photo")
+                        : t("marketing.marketingStrategy.planogrammeAndZone.comment")}
                     </Badge>
                   </div>
                 ))
               ) : (
-                <div className="text-center text-muted-foreground py-8">
-                  Aucun retour magasin trouvé pour votre entreprise.
+                <div className={`text-center text-muted-foreground py-8 ${rtlClasses.textAlign}`}>
+                  {t("marketing.marketingStrategy.planogrammeAndZone.pasRetoursMagasins")}
                 </div>
               )}
             </div>

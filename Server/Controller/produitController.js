@@ -8,12 +8,14 @@ import {
   Planogram, 
   Zone1, 
   Vente, 
-  StockMovement 
+  StockMovement,
+  magasin1,
+  PriceHistory
 } from '../Model/associations.js';
 import { Op } from 'sequelize';
-
-import {getPerformanceProduitMoyenByStore } from '../Services/produitService.js'
-
+import sequelize from "../Config/database1.js";
+//import {getPerformanceProduitMoyenByStore } from '../Services/produitService.js'
+import { getPerformanceProduitMoyenByStore,getHistoryPriceProduct, verifyAvailableTicketProduct, getZoneProduit, getProductsByEntreprise  } from "../Services/produitService.js";
 // Créer un produit
 export const createProduit = async (req, res) => {
   try {
@@ -320,5 +322,96 @@ export const getPerformanceProduitsController = async (req, res) => {
       message: "Erreur serveur lors de la récupération de la performance des produits",
       error: error.message
     });
+  }
+};
+
+
+export const getEntrepriseProduitsDetails = async (req, res) => {
+  try {
+    const { idEntreprise } = req.params;
+
+    // Utilisation directe de la méthode
+    const produits = await getProductsByEntreprise(idEntreprise);
+
+    if (!produits || produits.length === 0) {
+      return res.status(404).json({ error: "Aucun produit trouvé pour cette entreprise" });
+    }
+
+    const result = [];
+    for (const produit of produits) {
+      const historyPrice = await getHistoryPriceProduct(produit.produit_id);
+      const tickets = await verifyAvailableTicketProduct(produit.produit_id);
+      const zone = await getZoneProduit(produit.produit_id);
+
+      // Statut du stock
+      let stockStatus = "En stock";
+      if (produit.stock === 0) {
+        stockStatus = "Rupture";
+      } else if (produit.stock <= 10) {
+        stockStatus = "Stock faible";
+      }
+
+      result.push({
+        id: produit.produit_id,
+        imageUrl: produit.imageUrl,
+        nom: produit.nom,
+        prix: produit.prix,
+        ancienPrix: produit.prix || null,
+        stockStatus,
+        ticketStatus: tickets.length > 0 ? "Disponible" : "Aucun",
+        zone: zone?.nom_zone || "",
+        historyPrice,
+        tickets,
+      });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Erreur dans getEntrepriseProduitsDetails:", error);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+
+export const updateProductPrice = async (req, res) => {
+  try {
+    const { produit_id, new_price, change_type, reason, changed_by } = req.body;
+
+    if (!produit_id || !new_price || !change_type || !changed_by) {
+      return res.status(400).json({ error: "Champs obligatoires manquants" });
+    }
+
+    // 1. Récupérer le produit
+    const produit = await Produit.findOne({ where: { produit_id } });
+
+    if (!produit) {
+      return res.status(404).json({ error: "Produit introuvable" });
+    }
+
+    const old_price = produit.prix;
+    const change_value = new_price - old_price;
+
+    // 2. Mettre à jour le prix dans la table Produit
+    produit.prix = new_price;
+    await produit.save();
+
+    // 3. Créer une nouvelle entrée dans PriceHistory
+    await PriceHistory.create({
+      product_id: produit_id,
+      old_price,
+      new_price,
+      change_type,
+      change_value,
+      reason,
+      changed_by,
+    });
+
+    res.status(200).json({
+      message: "Prix mis à jour et historique enregistré avec succès",
+      produit,
+    });
+  } catch (error) {
+    console.error("Erreur dans updateProductPrice:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };

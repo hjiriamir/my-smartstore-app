@@ -30,6 +30,8 @@ export function AddChallengeForm({ onChallengeAdded, stores, initialSelectedMaga
   const [selectedMagasinId, setSelectedMagasinId] = useState<string>(initialSelectedMagasinId || "")
   const [isLoading, setIsLoading] = useState(false)
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -83,7 +85,7 @@ export function AddChallengeForm({ onChallengeAdded, stores, initialSelectedMaga
         recompense,
       }
 
-      const response = await fetch("http://localhost:8081/api/gamification/challenges", {
+      const response = await fetch(`${API_BASE_URL}/gamification/challenges`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -8,7 +8,7 @@ import {
 
 const router = express.Router();
 
-router.get("/", getAllStockAlerts);
+router.get("/getAllStockAlerts/:idEntreprise", getAllStockAlerts);
 router.post("/", createStockAlert);
 router.put("/:id", updateStockAlert);
 router.delete("/:id", deleteStockAlert);

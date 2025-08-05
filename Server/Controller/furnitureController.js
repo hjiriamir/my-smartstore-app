@@ -97,19 +97,21 @@ export const getFurnituresByUser = async (req, res) => {
   }
 };
 
-export const uploadFile = async(req,res) => {
-  console.log("Fichier reçu :1", req.file);
+export const uploadFile = async (req, res) => {
+  console.log("Fichier reçu :", req.file);
+
   if (!req.file) {
     return res.status(400).json({ error: 'Aucun fichier téléchargé.' });
   }
-  console.log("Fichier reçu :2", req.file);
-   // Exemple : uploads/1720033221345-file.pdf
-   const filePath = `uploads/${req.file.filename}`;
 
-   res.status(200).json({
+  // Créer une URL publique
+  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+  res.status(200).json({
     message: 'Fichier uploadé avec succès.',
-    filePath
+    fileUrl,
   });
 };
+
 
 
