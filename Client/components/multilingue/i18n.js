@@ -19,6 +19,15 @@ i18n
           marqueCommeLu: "Mark all as read",
           effacerTous: "Clear all",
           aucuneNotif: "No notifications",
+          appAletes: "All your alerts will appear here",
+          chargementAlertes: "Loading alerts...",
+          actul: "Refresh",
+          aInstant: "Just now",
+          ilYa: "ago",
+          minute: "minute",
+          heure: "hour",
+          jour: "day",
+
 
           marketing: {
             dashboard: {
@@ -2168,6 +2177,16 @@ largeur: "Width",
           marqueCommeLu:"Tout marquer comme lu",
           effacerTous:"Effacer tout",
           aucuneNotif:"Aucune notification",
+          aucuneAlert:"Aucune alerte de stock",
+          appAletes:"Toutes vos alertes apparaîtront ici",
+          chargementAlertes:"Chargement des alertes...",
+          actul:"Actualiser",
+
+          aInstant:"À l'instant",
+          ilYa:"Il y a",
+          minute:"minute",
+          heure:"heure",
+          jour:"jour",
           marketing: {
             dashboard: {
               titre: "Plateforme",
@@ -4343,7 +4362,16 @@ largeur: "Width",
           marqueCommeLu: "وضع الكل كمقروء",
           effacerTous: "مسح الكل",
           aucuneNotif: "لا توجد إشعارات",
+          appAletes: "ستظهر جميع التنبيهات الخاصة بك هنا",
+          chargementAlertes: "جاري تحميل التنبيهات...",
+          actul: "تحديث",
 
+          aInstant: "الآن",
+          ilYa: "منذ",
+          minute: "دقيقة",
+          heure: "ساعة",
+          jour: "يوم",
+          
           marketing: {
             dashboard: {
               titre: "منصة",

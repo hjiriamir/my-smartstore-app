@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
   const { t } = useTranslation()
   const isRTL = i18n.language === "ar"
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState([])
@@ -37,7 +38,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
           return
         }
 
-        const userResponse = await fetch(`http://localhost:8081/api/auth/me`, {
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -72,7 +73,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
 
       setIsLoadingNotifications(true)
       try {
-        const response = await fetch(`http://localhost:8081/api/stock-alerts/getAllStockAlerts/${idEntreprise}`)
+        const response = await fetch(`${API_BASE_URL}/stock-alerts/getAllStockAlerts/${idEntreprise}`)
 
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des alertes de stock")
@@ -85,7 +86,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
           id: alert.id,
           title: getAlertTitle(alert.alert_type, alert.Produit?.nom),
           message: getAlertMessage(alert.alert_type, alert.Produit?.nom, alert.Produit?.stock, alert.threshold),
-          time: formatNotificationTime(alert.notified_at),
+          time: formatNotificationTime(alert.notified_at, t),
           unread: true,
           type: alert.alert_type,
           productId: alert.product_id,
@@ -145,20 +146,23 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
     }
   }
 
-  const formatNotificationTime = (dateString) => {
-    const now = new Date()
-    const notificationDate = new Date(dateString)
-    const diffInMinutes = Math.floor((now - notificationDate) / (1000 * 60))
-
-    if (diffInMinutes < 1) return "À l'instant"
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""}`
-
-    const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) return `Il y a ${diffInHours} heure${diffInHours > 1 ? "s" : ""}`
-
-    const diffInDays = Math.floor(diffInHours / 24)
-    return `Il y a ${diffInDays} jour${diffInDays > 1 ? "s" : ""}`
-  }
+  const formatNotificationTime = (dateString, t) => {
+    const now = new Date();
+    const notificationDate = new Date(dateString);
+    const diffInMinutes = Math.floor((now - notificationDate) / (1000 * 60));
+  
+    if (diffInMinutes < 1) return t("aInstant");
+    if (diffInMinutes < 60)
+      return `${t("ilYa")} ${diffInMinutes} ${t("minute")}${diffInMinutes > 1 ? "s" : ""}`;
+  
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24)
+      return `${t("ilYa")} ${diffInHours} ${t("heure")}${diffInHours > 1 ? "s" : ""}`;
+  
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${t("ilYa")} ${diffInDays} ${t("jour")}${diffInDays > 1 ? "s" : ""}`;
+  };
+  
 
   useEffect(() => {
     i18n.changeLanguage(languages[selectedLanguageIndex].i18nCode)
@@ -205,7 +209,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
 
     setIsLoadingNotifications(true)
     try {
-      const response = await fetch(`http://localhost:8081/api/stock-alerts/getAllStockAlerts/${idEntreprise}`)
+      const response = await fetch(`${API_BASE_URL}/stock-alerts/getAllStockAlerts/${idEntreprise}`)
 
       if (!response.ok) {
         throw new Error("Erreur lors de la récupération des alertes de stock")
@@ -217,7 +221,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
         id: alert.id,
         title: getAlertTitle(alert.alert_type, alert.Produit?.nom),
         message: getAlertMessage(alert.alert_type, alert.Produit?.nom, alert.Produit?.stock, alert.threshold),
-        time: formatNotificationTime(alert.notified_at),
+        time: formatNotificationTime(alert.notified_at, t),
         unread: true,
         type: alert.alert_type,
         productId: alert.product_id,
@@ -282,26 +286,25 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
             {unreadCount > 0 ? <BellRing size={20} /> : <Bell size={20} />}
           </div>
           <span className="notification-text">
-            {isLoadingNotifications
-              ? "Chargement..."
-              : unreadCount > 0
-                ? `${unreadCount} nouvelle${unreadCount > 1 ? "s" : ""} alerte${unreadCount > 1 ? "s" : ""}`
-                : "Notifications"}
+            {unreadCount > 0
+              ? t("notificationMessage", { count: unreadCount })
+              : t("front.dashboard.notif")}
           </span>
+
           {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
         </div>
 
         {/* Dropdown des notifications */}
         <div className={`notifications-dropdown ${showNotifications ? "open" : ""}`}>
           <div className="notifications-header">
-            <h3>Alertes de Stock</h3>
+            <h3>{t("front.dashboard.notif")}</h3>
           </div>
 
           <div className="notifications-list">
             {isLoadingNotifications ? (
               <div className="loading-notifications">
                 <div className="loading-spinner"></div>
-                <p>Chargement des alertes...</p>
+                <p>{t("chargementAlertes")}</p>
               </div>
             ) : notifications.length > 0 ? (
               notifications.map((notification) => (
@@ -325,7 +328,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
                     <p>{notification.message}</p>
                     <div className="notification-details">
                       <span className="product-info">
-                        📦 {notification.productName} - Stock: {notification.currentStock}
+                        📦 {notification.productName} - {t("actionsRapide.createProduct.stock")}: {notification.currentStock}
                       </span>
                       <div className="notification-time">{notification.time}</div>
                     </div>
@@ -337,8 +340,8 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
                 <div className="no-notifications-icon">
                   <Package size={48} />
                 </div>
-                <p>Aucune alerte de stock</p>
-                <small>Toutes vos alertes apparaîtront ici</small>
+                <p>{t("aucuneAlert")}</p>
+                <small>{t("appAletes")}</small>
               </div>
             )}
           </div>
@@ -346,10 +349,10 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
           {notifications.length > 0 && (
             <div className="notifications-footer">
               <button onClick={refreshNotifications} disabled={isLoadingNotifications}>
-                {isLoadingNotifications ? "⟳" : "🔄"} Actualiser
+                {isLoadingNotifications ? "⟳" : "🔄"} {t("actul")}
               </button>
-              <button onClick={markAllAsRead}>✓ Tout marquer lu</button>
-              <button onClick={clearAllNotifications}>🗑️ Effacer tout</button>
+              <button onClick={markAllAsRead}>✓ {t("marqueCommeLu")}</button>
+              <button onClick={clearAllNotifications}>🗑️ {t("effacerTous")}</button>
             </div>
           )}
         </div>
