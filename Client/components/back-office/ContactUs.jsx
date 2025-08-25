@@ -19,8 +19,15 @@ const ContactUs = () => {
         company_name: '',
         message: '',
         name: '',
-        address: ''
+        address: '',
+        subject: '',
+        status: 'unread', 
+        category: 'support' 
     });
+
+    // Options for dropdowns
+    const statusOptions = ['unread', 'read', 'replied', 'archived'];
+    const categoryOptions = ['support', 'billing', 'feature', 'bug'];
 
     // State for popup
     const [showPopup, setShowPopup] = useState(false);
@@ -71,7 +78,10 @@ const ContactUs = () => {
                     company_name: '',
                     message: '',
                     name: '',
-                    address: ''
+                    address: '',
+                    subject: '',
+                    status: 'unread',
+                    category: 'support'
                 });
             } else {
                 console.error('Error sending message:', data.message);
@@ -112,7 +122,6 @@ const ContactUs = () => {
                     <p>{t("contactMessage")}</p>
                 </section>
 
-                {/* Rest of your existing JSX */}
                 <section className="contact-section">
                     <div className="main-container">
                         <div className="contact-container">
@@ -175,11 +184,51 @@ const ContactUs = () => {
                                 <div className="form-group">
                                     <input 
                                         type="text" 
+                                        name="subject"
+                                        placeholder={t("subjectPlaceholder")} 
+                                        value={formData.subject}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <input 
+                                        type="text" 
                                         name="company_name"
                                         placeholder={t("companyNamePlaceholder")} 
                                         value={formData.company_name}
                                         onChange={handleInputChange}
                                     />
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <select
+                                            name="status"
+                                            value={formData.status}
+                                            onChange={handleInputChange}
+                                        >
+                                            {statusOptions.map(option => (
+                                                <option key={option} value={option}>
+                                                    {t(`${option}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <select
+                                            name="category"
+                                            value={formData.category}
+                                            onChange={handleInputChange}
+                                        >
+                                            {categoryOptions.map(option => (
+                                                <option key={option} value={option}>
+                                                    {t(`solution.${option}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="form-group">

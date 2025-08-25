@@ -34,6 +34,20 @@ const contactMessage1 = sequelize.define('contactMessage1', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  subject: { 
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  status: {  
+    type: DataTypes.ENUM('unread', 'read', 'replied', 'archived'),
+    defaultValue: 'unread',
+    allowNull: false
+  },
+  category: {  
+    type: DataTypes.ENUM('support', 'billing', 'feature', 'bug'),
+    defaultValue: 'support',
+    allowNull: false
+  },
   created_at: {
     type: DataTypes.DATE,
     allowNull: false,

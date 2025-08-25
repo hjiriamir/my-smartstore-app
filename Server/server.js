@@ -8,7 +8,7 @@ import demandeAbonnRoute from './Routes/demandeAbonnRoute.js'
 import { verifyUser } from './Controller/authController.js';
 import { verifyToken } from './Middlewares/authMiddleware.js';
 import { verifyRole } from './Middlewares/authMiddleware.js';
-import entrepriceRoute from './Routes/entrepriseRoutes.js'
+import entrepriceRoute from './Routes/entreprisesRoutes.js'
 import emailRoutes from "./Routes/SendEmailRoute.js";
 import contactRoutes from "./Routes/contactMessageRoute.js";
 import ManagementRoute from "./Routes/CategoriesManagementRoute.js";
@@ -66,6 +66,7 @@ import ConversationParticipantRoutes from './Routes/conversationParticipantRoute
 import sessionRoutes from './Routes/sessionRoutes.js'
 import CommandeAchatRoute from './Routes/commandeAchatRoutes.js'
 import LigneCommandeAchatRoutes from './Routes/ligneCommandeAchatRoutes.js';
+
 import gamificationRoutes from './Routes/gamificationRoutes.js';
 import clientRoutes from './Routes/clientRoutes.js'
 import labelTemplateRoutes from "./Routes/labelTemplateRoutes.js";
@@ -74,6 +75,7 @@ import stockAlertRoutes from "./Routes/stockAlertRoutes.js";
 import priceHistoryRoutes from "./Routes/priceHistoryRoutes.js";
 import generatedLabelRoutes from './Routes/generatedLabelRoutes.js';
 import './Scheduler/stockAlertScheduler.js';
+import EtatAbonnementRoutes from './Routes/etatAbonnementRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -82,7 +84,8 @@ import {Planogram, Tache, Furniture,Zone1, FurnitureType, User, Fournisseur, Ven
     LabelTemplate,
     TemplateField,
     StockAlert,
-    GeneratedLabel
+    GeneratedLabel,
+    EtatAbonnement
 } from './Model/associations.js';
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -109,6 +112,9 @@ app.use("/api/emails", emailRoutes);
 //app.use("/api/message", contactRoutes);
 app.use("/api/management", ManagementRoute);
 app.use("/api/message", contactMessageRoutes);
+
+app.use("/api/entreprises", entrepriceRoute);
+
 
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/client', clientRoutes);
@@ -151,6 +157,8 @@ app.use("/api/template-fields", templateFieldRoutes);
 app.use("/api/stock-alerts", stockAlertRoutes);
 app.use("/api/price-history", priceHistoryRoutes);
 app.use('/api/generated-labels', generatedLabelRoutes);
+
+app.use('/api/etat-abonnement', EtatAbonnementRoutes);
 
 
 

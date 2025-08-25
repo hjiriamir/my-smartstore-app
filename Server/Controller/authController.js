@@ -3,10 +3,11 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import {createUser,findUserByEmail, getUserById} from './usersController.js'
 import transporter from '../Config/transporter.js'
-import db from '../Config/database.js';
+import db from '../Config/database1.js';
 import Users from '../Model/Users.js';
 import twilio from 'twilio';
 import Session from '../Model/Session.js';
+import { Sequelize } from 'sequelize';
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -249,95 +250,97 @@ export const getMe = async (req, res) => {
     }
 };
 
-export const forgotPassword = (req, res) => {
-    const { email } = req.body;
 
-    findUserByEmail(email, (err, data) => {
-        if (err) {
-            console.error("Erreur de recherche utilisateur :", err);
-            return res.status(500).json({ Error: "Erreur lors de la demande de réinitialisation" });
+export const forgotPassword = async (req, res) => {
+    try {
+      const { email } = req.body;
+  
+      // Récupérer utilisateur avec Sequelize
+      const user = await Users.findOne({ where: { email } });
+  
+      if (!user) {
+        return res.status(404).json({ Error: "Utilisateur non trouvé" });
+      }
+  
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  
+      // Mettre à jour resetPasswordToken et resetPasswordExpires via Sequelize
+      await Users.update(
+        {
+          resetPasswordToken: token,
+          resetPasswordExpires: Sequelize.literal('DATE_ADD(NOW(), INTERVAL 1 HOUR)')
+        },
+        {
+          where: { id: user.id }
         }
-        if (data.length === 0) {
-            return res.status(404).json({ Error: "Utilisateur non trouvé" });
-        }
-
-        const user = data[0];
-
-        // Générez un token de réinitialisation avec expiration d'1 heure
-        const token = jwt.sign({ id: user.idUtilisateur }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        // Mettez à jour l'utilisateur avec le token et la date d'expiration
-        const updateQuery = 'UPDATE utilisateur SET resetPasswordToken = ?, resetPasswordExpires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE idUtilisateur = ?';
-        db.query(updateQuery, [token, user.idUtilisateur], (err, result) => {
-            if (err) {
-                console.error("Erreur lors de la mise à jour de l'utilisateur :", err);
-                return res.status(500).json({ Error: "Erreur lors de la demande de réinitialisation" });
-            }
-
-            // Envoyez l'email avec le lien de réinitialisation
-            const resetUrl = `http://localhost:3000/reset-password/${token}`;
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Réinitialisation de votre mot de passe',
-                text: `Cliquez sur ce lien pour réinitialiser votre mot de passe : ${resetUrl}`,
-            };
-
-            transporter.sendMail(mailOptions, (err, info) => {
-                if (err) {
-                    console.error("Erreur lors de l'envoi de l'email :", err);
-                    return res.status(500).json({ Error: "Erreur lors de l'envoi de l'email" });
-                }
-                res.status(200).json({ status: "Success", message: "Email de réinitialisation envoyé" });
-            });
+      );
+  
+      const resetUrl = `http://localhost:3000/reset-password/${token}`;
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Réinitialisation de votre mot de passe',
+        text: `Cliquez sur ce lien pour réinitialiser votre mot de passe : ${resetUrl}`,
+      };
+  
+      await new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (err, info) => {
+          if (err) reject(err);
+          else resolve(info);
         });
-    });
-};
+      });
+  
+      res.status(200).json({ status: "Success", message: "Email de réinitialisation envoyé" });
+    } catch (err) {
+      console.error("Erreur dans forgotPassword :", err);
+      res.status(500).json({ Error: "Erreur lors de la demande de réinitialisation" });
+    }
+  };
 
 
-export const resetPassword = (req, res) => {
-    const { token } = req.params;
-    const { password } = req.body;
 
-    // Vérifiez si le token est valide et non expiré
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(400).json({ Error: "Token invalide ou expiré" });
+  export const resetPassword = async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { password } = req.body;
+  
+      // Vérifiez et décodez le token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.id;
+  
+      // Cherchez l’utilisateur par Sequelize
+      const user = await Users.findOne({
+        where: {
+          id: userId, // Assure-toi que dans ton modèle Sequelize, c'est bien `id`
+          resetPasswordToken: token,
+          resetPasswordExpires: { [Sequelize.Op.gt]: new Date() } // expiration non dépassée
         }
-
-        const userId = decoded.id;
-
-        // Vérifiez si le token correspond à l'utilisateur et n'est pas expiré
-        const query = 'SELECT * FROM utilisateur WHERE idUtilisateur = ? AND resetPasswordToken = ? AND resetPasswordExpires > NOW()';
-        db.query(query, [userId, token], (err, data) => {
-            if (err) {
-                console.error("Erreur lors de la vérification du token :", err);
-                return res.status(500).json({ Error: "Erreur lors de la réinitialisation du mot de passe" });
-            }
-            if (data.length === 0) {
-                return res.status(400).json({ Error: "Token invalide ou expiré" });
-            }
-
-            // Hachez le nouveau mot de passe
-            bcrypt.hash(password, saltRounds, (err, hash) => {
-                if (err) {
-                    console.error("Erreur lors du hachage du mot de passe :", err);
-                    return res.status(500).json({ Error: "Erreur lors de la réinitialisation du mot de passe" });
-                }
-
-                // Mettez à jour le mot de passe et effacez le token
-                const updateQuery = 'UPDATE utilisateur SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE idUtilisateur = ?';
-                db.query(updateQuery, [hash, userId], (err, result) => {
-                    if (err) {
-                        console.error("Erreur lors de la mise à jour du mot de passe :", err);
-                        return res.status(500).json({ Error: "Erreur lors de la réinitialisation du mot de passe" });
-                    }
-                    res.status(200).json({ status: "Success", message: "Mot de passe réinitialisé avec succès" });
-                });
-            });
-        });
-    });
-};
+      });
+  
+      if (!user) {
+        return res.status(400).json({ Error: "Token invalide ou expiré" });
+      }
+  
+      // Hachage du mot de passe
+      const hash = await bcrypt.hash(password, saltRounds);
+  
+      // Mise à jour du mot de passe
+      await Users.update(
+        {
+          password: hash,
+          resetPasswordToken: null,
+          resetPasswordExpires: null
+        },
+        { where: { id: userId } }
+      );
+  
+      res.status(200).json({ status: "Success", message: "Mot de passe réinitialisé avec succès" });
+    } catch (err) {
+      console.error("Erreur dans resetPassword :", err);
+      res.status(500).json({ Error: "Erreur lors de la réinitialisation du mot de passe" });
+    }
+  };
+  
 
 
 

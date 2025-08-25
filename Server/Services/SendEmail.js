@@ -103,3 +103,23 @@ export const sendAccountCreatedEmail = async (toEmail, userEmail, userPassword) 
     return transporter.sendMail(mailOptions);
   };
   
+
+  export const sendGenericMail = async (emetteur, recepteur, objet, contenuHtml) => {
+    try {
+      const mailOptions = {
+        from: {
+          name: "Smart Store",
+          address: emetteur || process.env.EMAIL_USER,
+        },
+        to: recepteur,
+        subject: objet,
+        html: contenuHtml,
+      };
+  
+      const info = await transporter.sendMail(mailOptions);
+      return info;
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du mail :", error);
+      throw error;
+    }
+  };

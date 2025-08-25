@@ -9,7 +9,9 @@ import { createUser,
         getNotificationPreferenceByUser,
         getActifUsersByEntreprise,
         getUtilisateursCeMoisParEntreprise,
-        getEntrepriseByUser
+        getEntrepriseByUser,
+        getAllUsersActif,
+        getStatistiquesUtilisateurs
      } from '../Controller/usersController.js';
 import { verifyToken } from '../Middlewares/authMiddleware.js';
 
@@ -24,8 +26,12 @@ router.get('/getUtilisateursCeMoisParEntreprise/:idEntreprise', getUtilisateursC
 router.get('/getEntrepriseByUser/:idUser', getEntrepriseByUser);
 
 router.get('/getUserById/:id', getUserById);
+router.get('/getAllUsersActif', getAllUsersActif);
+
 router.put('/updateUserName/:idUser', updateUserName);
 router.get('/getNotificationPreferenceByUser/:idUser', getNotificationPreferenceByUser);
+router.get('/getStatistiquesUtilisateurs', getStatistiquesUtilisateurs);
+
 
 router.put('/updateNotificationPreference/:idUser', updateNotificationPreference);
 

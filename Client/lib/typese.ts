@@ -3,27 +3,25 @@ export type ElementType =
   | "wall"
   | "door"
   | "window"
-  | "shelf"
-  | "rack"
-  | "display"
-  | "table"
-  | "fridge"
-  | "planogram"
-  | "gondola"
   | "line"
   | "rectangle"
   | "circle"
+  | "shelf"
+  | "display"
+  | "table"
   | "chair"
   | "sofa"
   | "bed"
-  | "plant"
+  | "fridge"
+  | "dairy_fridge"
   | "counter"
   | "cashier"
+  | "rack"
   | "mannequin"
-  | "cube"
-  | "dairy_fridge"
+  | "plant"
+  | "gondola"
 
-export type Element = {
+export interface Element {
   id: string
   type: ElementType
   x: number
@@ -32,12 +30,11 @@ export type Element = {
   height: number
   depth: number
   rotation: number
-  name?: string // Ajout du champ nom
-  valid?: boolean // Optionnel pour la compatibilité avec les éléments existants
-  // Add window-specific properties
+  name?: string
+  valid?: boolean
   windowTopDistance?: number
   windowBottomDistance?: number
-  parentWallId?: string // To track which wall the window belongs to
+  parentWallId?: string
 }
 
 // Type for floor plan
@@ -59,4 +56,6 @@ export interface FloorPlan3DViewerRef {
   updateAllElements: (elements: Element[]) => void
   renderScene: () => void
   getDomElement: () => HTMLCanvasElement | null
+  resetCamera: () => void
+  focusOnPlan: () => void
 }

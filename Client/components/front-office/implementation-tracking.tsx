@@ -8,16 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, Clock, AlertTriangle, Camera, MessageSquare, Upload, Calendar, User, Menu, X } from "lucide-react"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import axios from "axios"
 import { useTranslation } from "react-i18next"
-import "@/components/multilingue/i18n.js"
+import "@/components/multilingue/i18n"
 
 interface PlanogramImplementation {
   id: number
@@ -107,6 +101,7 @@ interface Implementation {
   actualTime: string | null
   tasks: Task[]
   comments: Comment[]
+  _raw: any
 }
 
 export default function ImplementationTracking() {
@@ -150,7 +145,7 @@ export default function ImplementationTracking() {
                     { value: "en_cours", label: t("mobileFront.tracking.enCours") },
                     { value: "a_implementer", label: t("mobileFront.tracking.aImplementer") },
                     { value: "termine", label: t("mobileFront.tracking.termine") },
-                    { value: "en_retard", label:t("mobileFront.tracking.enRetard")},
+                    { value: "en_retard", label: t("mobileFront.tracking.enRetard") },
                   ].map((status) => (
                     <Button
                       key={status.value}
@@ -590,36 +585,36 @@ export default function ImplementationTracking() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("front.library.enCours")}</CardTitle>
+            <CardTitle className="text-sm font-medium">En cours</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {implementations?.filter((i) => i?.status === "En cours").length || 0}
+              {implementations.reduce((total, impl) => total + (impl._raw?.nbEnCours || 0), 0)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("front.dashboard.aImplementer")}</CardTitle>
+            <CardTitle className="text-sm font-medium">À implémenter</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {implementations.filter((i) => i.status === "À implémenter").length}
+              {implementations.reduce((total, impl) => total + (impl._raw?.nbAFaire || 0), 0)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("front.tracing.termines")}</CardTitle>
+            <CardTitle className="text-sm font-medium">Terminés</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {implementations.filter((i) => i.status === "Terminé").length}
+              {implementations.reduce((total, impl) => total + (impl._raw?.nbTermine || 0), 0)}
             </div>
           </CardContent>
         </Card>

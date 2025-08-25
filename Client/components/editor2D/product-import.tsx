@@ -5,39 +5,52 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 import Papa from "papaparse"
-import {
-  FileSpreadsheet,
-  ImageIcon,
-  CheckCircle2,
-  AlertCircle,
-  ChevronRight,
-  FolderTree,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react"
-import { useTranslation } from "react-i18next"
+import { FileSpreadsheet, CheckCircle2, ChevronRight, FolderTree, ArrowLeft, Loader2, ImageIcon, AlertCircle, ChevronDown  } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import { useProductStore } from "@/lib/product-store"
 import { CategoryManager } from "@/components/editor2D/category-manager"
-import "@/components/multilingue/i18n.js"
+import { useTranslation } from "react-i18next"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Progress } from "@/components/ui/progress"
 
 interface ProductData {
   primary_id: string
-  name: string
-  supplier: string
-  category_id?: string
-  width?: number
-  height?: number
-  depth?: number
-  category_name?: string // Ajouté automatiquement après matching
+  name: string 
+  supplier?: string 
+  category_id: string 
+  width?: number 
+  height?: number 
+  depth?: number 
+  description?: string 
+  price?: number 
+  weight?: number 
+  packaging?: string 
+  seasonality?: "Hiver" | "Printemps" | "Été" | "Automne" | "Toute saison" 
+  priority_merchandising?: "Haute" | "Moyenne" | "Basse" 
+  temperature_constraint?: string 
+  conditioning_constraint?: string 
   [key: string]: any
+}
+
+interface Fournisseur {
+  fournisseur_id: number
+  nom: string
+  adresse: string
+  ville: string
+  code_postal: string
+  pays: string
+  telephone: string
+  email: string
+  contact_principal: string
+  siret: string
+  date_creation: string
+  statut: string
+  notes: string
 }
 
 interface Category {
@@ -60,10 +73,29 @@ interface Category {
   children?: Category[]
 }
 
+// Interface pour les données à envoyer à l'API
+interface ApiProductData {
+  produit_id: string;
+  nom: string;
+  description?: string;
+  prix?: number;
+  stock?: number;
+  categorie_id: string;
+  fournisseur_id: number;
+  entreprise_id: string;
+  longueur?: number;
+  largeur?: number;
+  hauteur?: number;
+  poids?: number;
+  saisonnalite?: string;
+  priorite_merchandising?: string;
+  contrainte_temperature?: string;
+  contrainte_conditionnement?: string;
+}
+
 export function ProductImport() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === "ar"
-  const textDirection = isRTL ? "rtl" : "ltr"
   const router = useRouter()
   const { toast } = useToast()
   const { addProducts, updateProductImage, products, categories, setActiveTab } = useProductStore()
@@ -78,6 +110,12 @@ export function ProductImport() {
   const [rawData, setRawData] = useState<any[]>([])
   const [categoriesWithIds, setCategoriesWithIds] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState<boolean>(false)
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [idEntreprise, setIdEntreprise] = useState<string | null>(null)
+  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([])
+  const [loadingFournisseurs, setLoadingFournisseurs] = useState<boolean>(false)
+
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const [categoryMatchingStats, setCategoryMatchingStats] = useState({
     matched: 0,
@@ -86,6 +124,76 @@ export function ProductImport() {
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+
+  const [selectedFournisseur, setSelectedFournisseur] = useState<string | null>(null)
+  const [isImportingToAPI, setIsImportingToAPI] = useState<boolean>(false)
+
+  const fetchCurrentUserDataAndStores = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        console.error("Token d'authentification manquant")
+        return
+      }
+
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+
+      if (!userResponse.ok) {
+        throw new Error("Erreur lors de la récupération des données utilisateur")
+      }
+
+      const userData = await userResponse.json()
+      const userId = userData.user?.idUtilisateur || userData.idUtilisateur || userData.id
+      const entrepriseId = userData.user?.entreprises_id || userData.entreprises_id
+
+      setCurrentUserId(userId)
+      setIdEntreprise(entrepriseId)
+
+      // Fetch suppliers after getting enterprise ID
+      if (entrepriseId) {
+        await fetchFournisseurs(entrepriseId)
+      }
+    } catch (error) {
+      console.error("Error fetching current user data:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les données utilisateur.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const fetchFournisseurs = async (entrepriseId: string) => {
+    setLoadingFournisseurs(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/fournisseur/getAllFournisseursByEntreprise/${entrepriseId}`)
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des fournisseurs")
+      }
+      const data = await response.json()
+      setFournisseurs(data)
+      toast({
+        title: "Fournisseurs chargés",
+        description: `${data.length} fournisseurs ont été récupérés avec succès.`,
+      })
+    } catch (error) {
+      console.error("Erreur lors de la récupération des fournisseurs:", error)
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les fournisseurs depuis l'API.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingFournisseurs(false)
+    }
+  }
 
   // Fonction pour récupérer les catégories depuis l'API
   const fetchCategories = async () => {
@@ -121,8 +229,8 @@ export function ProductImport() {
     }
   }
 
-  // Charger les catégories au montage du composant
   useEffect(() => {
+    fetchCurrentUserDataAndStores()
     fetchCategories()
   }, [])
 
@@ -183,7 +291,6 @@ export function ProductImport() {
     }
   }
 
-  // Process the parsed data
   const handleParsedData = (data: ProductData[]) => {
     if (data.length === 0) {
       toast({
@@ -198,112 +305,175 @@ export function ProductImport() {
     })
     setParsedData(filteredData)
 
-    // Auto-detect columns avec les nouvelles colonnes simplifiées
+    // Auto-detect columns avec les nouveaux attributs
     const firstRow = data[0]
     const mapping: Record<string, string> = {}
     Object.keys(firstRow).forEach((column) => {
       const lowerColumn = column.toLowerCase().trim()
-      // Détection de l'ID primaire
+
+      // Détection de primary_id
       if (
         lowerColumn === "primary_id" ||
         lowerColumn === "primaryid" ||
-        (lowerColumn.includes("id") &&
-          (lowerColumn.includes("primary") ||
-            lowerColumn.includes("principal") ||
-            lowerColumn === "id" ||
-            lowerColumn === "code" ||
-            lowerColumn === "reference" ||
-            lowerColumn === "ref" ||
-            lowerColumn === "sku" ||
-            lowerColumn === "article"))
+        lowerColumn === "product_id" ||
+        lowerColumn === "id" ||
+        lowerColumn === "code" ||
+        lowerColumn === "reference" ||
+        lowerColumn === "ref" ||
+        lowerColumn === "sku"
       ) {
         mapping[column] = "primary_id"
       }
-      // Détection du nom
+      // Détection de name
       else if (
         lowerColumn === "name" ||
-        lowerColumn.includes("nom") ||
-        lowerColumn.includes("name") ||
-        lowerColumn.includes("designation") ||
-        lowerColumn.includes("produit") ||
-        lowerColumn.includes("product") ||
-        lowerColumn === "libelle" ||
-        lowerColumn === "description"
+        lowerColumn === "nom" ||
+        lowerColumn === "product" ||
+        lowerColumn === "produit" ||
+        lowerColumn === "designation" ||
+        lowerColumn === "title" ||
+        lowerColumn === "titre"
       ) {
         mapping[column] = "name"
       }
-      // Détection du fournisseur
+      // Détection de supplier
       else if (
         lowerColumn === "supplier" ||
-        lowerColumn.includes("fournisseur") ||
-        lowerColumn.includes("supplier") ||
-        lowerColumn.includes("vendor")
+        lowerColumn === "fournisseur" ||
+        lowerColumn === "vendor" ||
+        lowerColumn === "fournisseur_id" ||
+        lowerColumn === "supplier_id"
       ) {
         mapping[column] = "supplier"
       }
-      // Détection de l'ID de catégorie (simplifié)
+      // Détection de category_id
       else if (
         lowerColumn === "category_id" ||
-        lowerColumn === "categoryid" ||
-        lowerColumn.includes("category") ||
-        lowerColumn.includes("categorie")
+        lowerColumn === "category" ||
+        lowerColumn === "categorie" ||
+        lowerColumn === "categorie_id" ||
+        lowerColumn === "cat_id" ||
+        lowerColumn === "categoryid"
       ) {
         mapping[column] = "category_id"
       }
-      // Détection des dimensions
+      // Détection de width
       else if (
         lowerColumn === "width" ||
-        lowerColumn.includes("larg") ||
-        lowerColumn.includes("width") ||
-        lowerColumn === "l"
+        lowerColumn === "largeur" ||
+        lowerColumn === "w" ||
+        lowerColumn === "large"
       ) {
         mapping[column] = "width"
-      } else if (
+      }
+      // Détection de height
+      else if (
         lowerColumn === "height" ||
-        lowerColumn.includes("haut") ||
-        lowerColumn.includes("height") ||
-        lowerColumn === "h"
+        lowerColumn === "hauteur" ||
+        lowerColumn === "h" ||
+        lowerColumn === "haut"
       ) {
         mapping[column] = "height"
-      } else if (
+      }
+      // Détection de depth
+      else if (
         lowerColumn === "depth" ||
-        lowerColumn.includes("prof") ||
-        lowerColumn.includes("depth") ||
-        lowerColumn === "p"
+        lowerColumn === "profondeur" ||
+        lowerColumn === "d" ||
+        lowerColumn === "epaisseur" ||
+        lowerColumn === "thickness"
       ) {
         mapping[column] = "depth"
       }
+      // Détection de description
+      else if (
+        lowerColumn === "description" ||
+        lowerColumn === "desc" ||
+        lowerColumn === "detail" ||
+        lowerColumn === "details"
+      ) {
+        mapping[column] = "description"
+      }
+      // Détection de price
+      else if (
+        lowerColumn === "price" ||
+        lowerColumn === "prix" ||
+        lowerColumn === "cost" ||
+        lowerColumn === "cout"
+      ) {
+        mapping[column] = "price"
+      }
+      // Détection de weight
+      else if (
+        lowerColumn === "weight" ||
+        lowerColumn === "poids" ||
+        lowerColumn === "mass" ||
+        lowerColumn === "poids_net"
+      ) {
+        mapping[column] = "weight"
+      }
+      // Détection de packaging
+      else if (
+        lowerColumn === "packaging" ||
+        lowerColumn === "conditionnement" ||
+        lowerColumn === "pack" ||
+        lowerColumn === "emballage"
+      ) {
+        mapping[column] = "packaging"
+      }
+      // Détection de seasonality
+      else if (
+        lowerColumn === "seasonality" ||
+        lowerColumn === "saisonnalite" ||
+        lowerColumn === "saison" ||
+        lowerColumn === "season"
+      ) {
+        mapping[column] = "seasonality"
+      }
+      // Détection de priority_merchandising
+      else if (
+        lowerColumn === "priority_merchandising" ||
+        lowerColumn === "priorite_merchandising" ||
+        lowerColumn === "priority" ||
+        lowerColumn === "priorite" ||
+        lowerColumn === "merch_priority"
+      ) {
+        mapping[column] = "priority_merchandising"
+      }
+      // Détection de temperature_constraint
+      else if (
+        lowerColumn === "temperature_constraint" ||
+        lowerColumn === "contrainte_temperature" ||
+        lowerColumn === "temp_constraint" ||
+        lowerColumn === "contrainte_temp"
+      ) {
+        mapping[column] = "temperature_constraint"
+      }
+      // Détection de conditioning_constraint
+      else if (
+        lowerColumn === "conditioning_constraint" ||
+        lowerColumn === "contrainte_conditionnement" ||
+        lowerColumn === "conditioning_constraint" ||
+        lowerColumn === "contrainte_cond"
+      ) {
+        mapping[column] = "conditioning_constraint"
+      }
     })
 
-    // Auto-mapping fallback
-    if (!Object.values(mapping).includes("primary_id")) {
-      const firstNumericColumn = Object.keys(firstRow).find(
-        (column) =>
-          typeof firstRow[column] === "number" ||
-          (typeof firstRow[column] === "string" && !isNaN(Number(firstRow[column]))),
-      )
-      if (firstNumericColumn) {
-        mapping[firstNumericColumn] = "primary_id"
-      }
-    }
-    if (!Object.values(mapping).includes("name")) {
-      const firstTextColumn = Object.keys(firstRow).find(
-        (column) => typeof firstRow[column] === "string" && !Object.values(mapping).includes(column),
-      )
-      if (firstTextColumn) {
-        mapping[firstTextColumn] = "name"
-      }
-    }
     setColumnMapping(mapping)
     setStep(2)
   }
 
-  // Fonction pour trouver une catégorie par son ID
   const findCategoryById = (categoryId: string): Category | undefined => {
     return categoriesWithIds.find((cat) => cat.categorie_id === categoryId)
   }
 
-  // Update column mapping
+  const findFournisseurByName = (supplierName: string): Fournisseur | undefined => {
+    return fournisseurs.find((fournisseur) => 
+      fournisseur.nom.toLowerCase() === supplierName.toLowerCase()
+    )
+  }
+
   const updateColumnMapping = (originalColumn: string, mappedColumn: string) => {
     setColumnMapping((prev) => ({
       ...prev,
@@ -311,55 +481,59 @@ export function ProductImport() {
     }))
   }
 
-  // Validate the data before import
   const validateData = () => {
     const errors: string[] = []
+
+    // Vérification des colonnes obligatoires
     if (!Object.values(columnMapping).includes("primary_id")) {
-      errors.push("L'identifiant primaire (primary_id) est requis - veuillez sélectionner une colonne pour l'ID")
+      errors.push("L'identifiant produit (primary_id) est requis - veuillez sélectionner une colonne pour l'ID")
     }
     if (!Object.values(columnMapping).includes("name")) {
       errors.push("Le nom du produit (name) est requis - veuillez sélectionner une colonne pour le nom")
     }
+    if (!Object.values(columnMapping).includes("category_id")) {
+      errors.push("L'ID de catégorie (category_id) est requis - veuillez sélectionner une colonne pour la catégorie")
+    }
 
-    // Validation des données avec matching des catégories
-    let matchedCategories = 0
-    let unmatchedCategories = 0
+    // Vérification des données
     parsedData.forEach((row, index) => {
-      const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_id")?.[0]
-      const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
-      const categoryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "category_id")?.[0]
+      const rowNumber = index + 2 // +2 car l'en-tête est la ligne 1 et on commence à 0
 
-      if (primaryIdColumn) {
-        const primaryIdValue = row[primaryIdColumn]
-        if (primaryIdValue === undefined || primaryIdValue === null || primaryIdValue === "") {
-          errors.push(`Ligne ${index + 1}: Identifiant primaire manquant`)
-        }
+      if (!row.primary_id) {
+        errors.push(`Ligne ${rowNumber}: L'identifiant produit (primary_id) est requis`)
       }
-      if (nameColumn) {
-        const nameValue = row[nameColumn]
-        if (nameValue === undefined || nameValue === null || nameValue === "") {
-          errors.push(`Ligne ${index + 1}: Nom du produit manquant`)
-        }
+      if (!row.name) {
+        errors.push(`Ligne ${rowNumber}: Le nom du produit (name) est requis`)
       }
-
-      // Vérification du matching des catégories
-      if (categoryIdColumn && row[categoryIdColumn]) {
-        const categoryId = row[categoryIdColumn]
-        const category = findCategoryById(categoryId)
-        if (category) {
-          matchedCategories++
-        } else {
-          unmatchedCategories++
-        }
-      } else {
-        unmatchedCategories++
+      if (!row.category_id) {
+        errors.push(`Ligne ${rowNumber}: L'ID de catégorie (category_id) est requis`)
+      }
+      if (row.price && isNaN(Number(row.price))) {
+        errors.push(`Ligne ${rowNumber}: Le prix doit être un nombre valide`)
+      }
+      if (row.width && isNaN(Number(row.width))) {
+        errors.push(`Ligne ${rowNumber}: La largeur doit être un nombre valide`)
+      }
+      if (row.height && isNaN(Number(row.height))) {
+        errors.push(`Ligne ${rowNumber}: La hauteur doit être un nombre valide`)
+      }
+      if (row.depth && isNaN(Number(row.depth))) {
+        errors.push(`Ligne ${rowNumber}: La profondeur doit être un nombre valide`)
+      }
+      if (row.weight && isNaN(Number(row.weight))) {
+        errors.push(`Ligne ${rowNumber}: Le poids doit être un nombre valide`)
       }
     })
 
-    // Mise à jour des statistiques de matching
+    // Calculer les statistiques de matching des catégories
+    const matchedCategories = parsedData.filter((row) => {
+      const categoryId = row.category_id
+      return categoryId && findCategoryById(categoryId)
+    }).length
+
     setCategoryMatchingStats({
       matched: matchedCategories,
-      unmatched: unmatchedCategories,
+      unmatched: parsedData.length - matchedCategories,
       total: parsedData.length,
     })
 
@@ -369,23 +543,35 @@ export function ProductImport() {
     }
   }
 
-  // Map a row using the column mapping
   const mapRow = (row: ProductData): ProductData => {
     const mappedRow: ProductData = {
       primary_id: "",
       name: "",
-      supplier: "",
+      category_id: "",
     }
+
     Object.entries(columnMapping).forEach(([originalColumn, mappedColumn]) => {
-      if (mappedColumn) {
-        mappedRow[mappedColumn] =
-          row[originalColumn] !== undefined && row[originalColumn] !== null ? row[originalColumn] : ""
+      if (mappedColumn && row[originalColumn] !== undefined && row[originalColumn] !== null) {
+        const value = row[originalColumn]
+
+        // Conversion des types pour les champs numériques
+        if (
+          mappedColumn === "price" ||
+          mappedColumn === "width" ||
+          mappedColumn === "height" ||
+          mappedColumn === "depth" ||
+          mappedColumn === "weight"
+        ) {
+          mappedRow[mappedColumn] = Number(value) || 0
+        } else {
+          mappedRow[mappedColumn] = value
+        }
       }
     })
+
     return mappedRow
   }
 
-  // Handle image files selection
   const handleImageFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
@@ -393,7 +579,6 @@ export function ProductImport() {
     }
   }
 
-  // Fonction pour mapper automatiquement les catégories
   const mapCategories = (product: ProductData): ProductData => {
     const mappedProduct = { ...product }
     // Matching automatique via category_id
@@ -403,15 +588,67 @@ export function ProductImport() {
         mappedProduct.category_name = category.nom
       }
     }
+    // Matching automatique via supplier
+    if (product.supplier) {
+      const fournisseur = findFournisseurByName(product.supplier)
+      if (fournisseur) {
+        mappedProduct.fournisseur_id = fournisseur.fournisseur_id
+        mappedProduct.fournisseur_nom = fournisseur.nom
+      }
+    }
     return mappedProduct
   }
 
-  // Import the products
-  const importProducts = () => {
+  // Fonction pour envoyer les produits à l'API
+  const sendProductsToAPI = async (productsToSend: ApiProductData[]) => {
+    setIsImportingToAPI(true)
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("Token d'authentification manquant")
+      }
+
+      const response = await fetch("http://localhost:8081/api/produits/createProduitsList", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(productsToSend),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Erreur lors de l'importation des produits")
+      }
+
+      const result = await response.json()
+      toast({
+        title: "Succès",
+        description: `${productsToSend.length} produits ont été importés avec succès dans la base de données.`,
+      })
+      return result
+    } catch (error) {
+      console.error("Erreur lors de l'envoi des produits à l'API:", error)
+      toast({
+        title: "Erreur API",
+        description: "Impossible d'importer les produits dans la base de données. Ils ont été ajoutés localement seulement.",
+        variant: "destructive",
+      })
+      throw error
+    } finally {
+      setIsImportingToAPI(false)
+    }
+  }
+
+  const importProducts = async () => {
     const validProducts = parsedData
       .map(mapRow)
       .map(mapCategories)
-      .filter((product) => product.primary_id && product.name)
+      .filter(
+        (product) =>
+          product.primary_id && product.name && product.category_id
+      )
 
     if (validProducts.length === 0) {
       toast({
@@ -461,6 +698,33 @@ export function ProductImport() {
       })
       addProducts(productsWithImages)
 
+      // Préparer les données pour l'API
+      const apiProducts: ApiProductData[] = validProducts.map(product => ({
+        produit_id: product.primary_id,
+        nom: product.name,
+        description: product.description || "",
+        prix: product.price || 0,
+        stock: 0, // Valeur par défaut, peut être modifiée si nécessaire
+        categorie_id: product.category_id,
+        fournisseur_id: product.fournisseur_id || 1, // Valeur par défaut si non trouvé
+        entreprise_id: idEntreprise || "14", // Récupéré depuis l'utilisateur connecté
+        longueur: product.depth || 0,
+        largeur: product.width || 0,
+        hauteur: product.height || 0,
+        poids: product.weight || 0,
+        saisonnalite: product.seasonality || "Toute saison",
+        priorite_merchandising: product.priority_merchandising || "Moyenne",
+        contrainte_temperature: product.temperature_constraint || "Température ambiante",
+        contrainte_conditionnement: product.conditioning_constraint || "Boîte en carton"
+      }))
+
+      // Envoyer les produits à l'API
+      try {
+        await sendProductsToAPI(apiProducts)
+      } catch (error) {
+        console.error("Erreur lors de l'envoi à l'API, mais les produits ont été ajoutés localement", error)
+      }
+
       // Complete progress
       setTimeout(() => {
         clearInterval(interval)
@@ -473,7 +737,6 @@ export function ProductImport() {
     processImages()
   }
 
-  // Go to planogram editor
   const goToPlanogramEditor = () => {
     setActiveTab("library")
     router.push("/planogram-editor")
@@ -484,39 +747,27 @@ export function ProductImport() {
     console.log("Données parsées:", parsedData)
     console.log("Mapping des colonnes:", columnMapping)
     console.log("Catégories:", categoriesWithIds)
+    console.log("Fournisseurs:", fournisseurs)
     console.log("Statistiques matching:", categoryMatchingStats)
-    parsedData.forEach((row, index) => {
-      const primaryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "primary_id")?.[0]
-      const nameColumn = Object.entries(columnMapping).find(([_, value]) => value === "name")?.[0]
-      const categoryIdColumn = Object.entries(columnMapping).find(([_, value]) => value === "category_id")?.[0]
-      console.log(`Ligne ${index + 1}:`)
-      console.log(`   ID (${primaryIdColumn}):`, row[primaryIdColumn])
-      console.log(`   Nom (${nameColumn}):`, row[nameColumn])
-      if (categoryIdColumn) {
-        console.log(`   Category ID (${categoryIdColumn}):`, row[categoryIdColumn])
-        const category = findCategoryById(row[categoryIdColumn])
-        console.log(`   Category trouvée:`, category?.nom || "Non trouvée")
-      }
-    })
   }
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8" dir={textDirection}>
+    <div className="container max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
       <Button
         variant="outline"
         onClick={() => (window.location.href = "/Editor")}
-        className={`flex items-center gap-2 mb-4 mt-14 ${isRTL ? "flex-row-reverse" : ""}`}
+        className="flex items-center gap-2 mb-4 mt-14"
       >
         <ArrowLeft className="h-4 w-4" />
-        {t("productImport.backToEditor")}
+        Retour à l'Éditeur
       </Button>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{t("productImport.title")}</CardTitle>
-          <CardDescription>{t("productImport.description")}</CardDescription>
+          <CardTitle className="text-2xl">Import de Produits</CardTitle>
+          <CardDescription>Importez vos produits depuis des fichiers CSV ou Excel</CardDescription>
           <div className="text-sm text-muted-foreground mt-2">
             <p>
-              <strong>Format attendu :</strong> primary_id, name, supplier, category_id, width, height, depth
+              <strong>Format attendu :</strong> primary_id, name, supplier, category_id, width, height, depth, description, price, weight, packaging, seasonality, priority_merchandising, temperature_constraint, conditioning_constraint
             </p>
           </div>
         </CardHeader>
@@ -548,19 +799,13 @@ export function ProductImport() {
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
                 <div className="flex flex-wrap items-center gap-2 md:space-x-2">
                   <Badge variant={step >= 1 ? "default" : "outline"}>1</Badge>
-                  <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>
-                    {t("productImport.step1")}
-                  </span>
+                  <span className={step >= 1 ? "font-medium" : "text-muted-foreground"}>Sélectionner le Fichier</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant={step >= 2 ? "default" : "outline"}>2</Badge>
-                  <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>
-                    {t("productImport.step2")}
-                  </span>
+                  <span className={step >= 2 ? "font-medium" : "text-muted-foreground"}>Mapper les Colonnes</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant={step >= 3 ? "default" : "outline"}>3</Badge>
-                  <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>
-                    {t("productImport.step3")}
-                  </span>
+                  <span className={step >= 3 ? "font-medium" : "text-muted-foreground"}>Importer les Images</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <Badge variant={step >= 4 ? "default" : "outline"}>4</Badge>
                   <span className={step >= 4 ? "font-medium" : "text-muted-foreground"}>Terminé</span>
@@ -572,7 +817,7 @@ export function ProductImport() {
                     className="flex items-center gap-2"
                   >
                     <FolderTree className="h-4 w-4" />
-                    {t("productImport.manageCategories")}
+                    Gérer les Catégories
                   </Button>
                   {loadingCategories && (
                     <Badge variant="secondary" className="flex items-center gap-2">
@@ -580,16 +825,56 @@ export function ProductImport() {
                       Chargement des catégories...
                     </Badge>
                   )}
+                  {loadingFournisseurs && (
+                    <Badge variant="secondary" className="flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Chargement des fournisseurs...
+                    </Badge>
+                  )}
                   {categoriesWithIds.length > 0 && (
                     <Badge variant="secondary">{categoriesWithIds.length} catégories disponibles</Badge>
                   )}
+                  {fournisseurs.length > 0 && (
+                    <div className="relative group">
+                      <Badge 
+                        variant="secondary" 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setSelectedFournisseur(selectedFournisseur ? null : 'open')}
+                      >
+                        {fournisseurs.length} fournisseurs disponibles
+                        <ChevronDown className="h-3 w-3" />
+                      </Badge>
+                      
+                      {selectedFournisseur && (
+                        <div className="absolute top-full right-0 mt-1 w-48 bg-background border rounded-md shadow-lg z-10">
+                          <div className="p-2 max-h-60 overflow-y-auto">
+                            <div className="text-xs font-medium text-muted-foreground px-2 py-1">
+                              Liste des fournisseurs
+                            </div>
+                            {fournisseurs.map((fournisseur) => (
+                              <div
+                                key={fournisseur.fournisseur_id}
+                                className="px-2 py-1 text-sm hover:bg-muted rounded cursor-pointer"
+                                onClick={() => setSelectedFournisseur(fournisseur.nom)}
+                              >
+                                {fournisseur.nom}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
+
               {step === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-medium">{t("productImport.fileStep.title")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("productImport.fileStep.description")}</p>
+                    <h3 className="text-lg font-medium">Sélectionnez votre fichier</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Choisissez un fichier CSV ou Excel contenant vos produits
+                    </p>
                   </div>
                   <div
                     className={`
@@ -619,7 +904,7 @@ export function ProductImport() {
                             }
                           }}
                         >
-                          {t("productImport.fileStep.changeFile")}
+                          Changer de Fichier
                         </Button>
                       </div>
                     ) : (
@@ -627,8 +912,8 @@ export function ProductImport() {
                         <div className="flex justify-center">
                           <FileSpreadsheet className="h-12 w-12 text-muted-foreground" />
                         </div>
-                        <p className="text-lg font-medium">{t("productImport.fileStep.selectFile")}</p>
-                        <p className="text-sm text-muted-foreground">{t("productImport.fileStep.dragDrop")}</p>
+                        <p className="text-lg font-medium">Sélectionner un Fichier</p>
+                        <p className="text-sm text-muted-foreground">Ou glissez-déposez votre fichier ici</p>
                       </div>
                     )}
                     <Input
@@ -646,16 +931,17 @@ export function ProductImport() {
                   )}
                 </div>
               )}
+
               {step === 2 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-medium">{t("productImport.columnsStep.title")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("productImport.columnsStep.description")}</p>
+                    <h3 className="text-lg font-medium">Mapper les colonnes</h3>
+                    <p className="text-sm text-muted-foreground">Associez chaque colonne de votre fichier au champ correspondant dans le système</p>
                   </div>
                   <div className="border rounded-md">
                     <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 font-medium border-b">
-                      <div>{t("productImport.columnsStep.fileColumn")}</div>
-                      <div>{t("productImport.columnsStep.mappedField")}</div>
+                      <div>Colonne du fichier</div>
+                      <div>Champ correspondant</div>
                     </div>
                     <ScrollArea className="h-[300px]">
                       <div className="p-4 space-y-4">
@@ -676,6 +962,14 @@ export function ProductImport() {
                                 <option value="width">Largeur (width)</option>
                                 <option value="height">Hauteur (height)</option>
                                 <option value="depth">Profondeur (depth)</option>
+                                <option value="description">Description (description)</option>
+                                <option value="price">Prix (price)</option>
+                                <option value="weight">Poids (weight)</option>
+                                <option value="packaging">Conditionnement (packaging)</option>
+                                <option value="seasonality">Saisonnalité (seasonality)</option>
+                                <option value="priority_merchandising">Priorité merchandising (priority_merchandising)</option>
+                                <option value="temperature_constraint">Contrainte température (temperature_constraint)</option>
+                                <option value="conditioning_constraint">Contrainte conditionnement (conditioning_constraint)</option>
                               </select>
                             </div>
                           ))}
@@ -702,21 +996,54 @@ export function ProductImport() {
                       </div>
                     </div>
                   )}
+                  {/* Statistiques de matching des fournisseurs */}
+                  {fournisseurs.length > 0 && (
+                    <div className="bg-muted/50 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">Matching automatique des fournisseurs</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {parsedData.filter(row => {
+                              const supplier = mapRow(row).supplier;
+                              return supplier && findFournisseurByName(supplier);
+                            }).length}
+                          </div>
+                          <div className="text-muted-foreground">Fournisseurs trouvés</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">
+                            {parsedData.filter(row => {
+                              const supplier = mapRow(row).supplier;
+                              return supplier && !findFournisseurByName(supplier);
+                            }).length}
+                          </div>
+                          <div className="text-muted-foreground">Non trouvés</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold">
+                            {parsedData.filter(row => mapRow(row).supplier).length}
+                          </div>
+                          <div className="text-muted-foreground">Avec fournisseur</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-4">
-                    <h4 className="font-medium">{t("productImport.columnsStep.previewTitle")}</h4>
-                    <ScrollArea className="h-[200px] border rounded-md">
-                      <div className="p-4">
+                    <h4 className="font-medium">Aperçu des données</h4>
+                    <div className="border rounded-md overflow-auto"> 
+                      <div className="min-w-full"> 
                         <table className="w-full text-sm">
                           <thead className="border-b">
                             <tr>
                               {Object.values(columnMapping)
                                 .filter(Boolean)
                                 .map((mappedColumn, index) => (
-                                  <th key={index} className="p-2 text-left font-medium">
+                                  <th key={index} className="p-2 text-left font-medium whitespace-nowrap">
                                     {mappedColumn}
                                   </th>
                                 ))}
-                              <th className="p-2 text-left font-medium">Catégorie trouvée</th>
+                              <th className="p-2 text-left font-medium whitespace-nowrap">Catégorie trouvée</th>
+                              <th className="p-2 text-left font-medium whitespace-nowrap">Fournisseur trouvé</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -725,18 +1052,23 @@ export function ProductImport() {
                               const category = mappedProduct.category_id
                                 ? findCategoryById(mappedProduct.category_id)
                                 : null
+                              const fournisseur = mappedProduct.supplier
+                                ? findFournisseurByName(mappedProduct.supplier)
+                                : null
                               return (
                                 <tr key={rowIndex} className="border-b">
                                   {Object.entries(columnMapping)
                                     .filter(([_, mappedColumn]) => mappedColumn)
                                     .map(([originalColumn, _], colIndex) => (
-                                      <td key={colIndex} className="p-2">
+                                      <td key={colIndex} className="p-2 whitespace-nowrap">
                                         {row[originalColumn] !== undefined && row[originalColumn] !== null
-                                          ? row[originalColumn]
+                                          ? String(row[originalColumn]).length > 50
+                                            ? String(row[originalColumn]).substring(0, 50) + '...'
+                                            : row[originalColumn]
                                           : ""}
                                       </td>
                                     ))}
-                                  <td className="p-2">
+                                  <td className="p-2 whitespace-nowrap">
                                     {category ? (
                                       <Badge variant="secondary" className="text-xs">
                                         {category.nom}
@@ -749,6 +1081,19 @@ export function ProductImport() {
                                       <span className="text-muted-foreground text-xs">Aucune</span>
                                     )}
                                   </td>
+                                  <td className="p-2 whitespace-nowrap">
+                                    {fournisseur ? (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {fournisseur.nom}
+                                      </Badge>
+                                    ) : mappedProduct.supplier ? (
+                                      <Badge variant="destructive" className="text-xs">
+                                        Non trouvé
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs">Aucun</span>
+                                    )}
+                                  </td>
                                 </tr>
                               )
                             })}
@@ -756,16 +1101,16 @@ export function ProductImport() {
                         </table>
                         {parsedData.length > 5 && (
                           <div className="p-2 text-center text-muted-foreground">
-                            + {parsedData.length - 5} {t("productImport.columnsStep.otherProducts")}
+                            + {parsedData.length - 5} autres produits
                           </div>
                         )}
                       </div>
-                    </ScrollArea>
+                    </div>
                   </div>
                   {validationErrors.length > 0 && (
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>{t("productImport.validation.errors")}</AlertTitle>
+                      <AlertTitle>Erreurs de validation</AlertTitle>
                       <AlertDescription>
                         <ul className="list-disc pl-5 mt-2 space-y-1">
                           {validationErrors.slice(0, 5).map((error, index) => (
@@ -778,13 +1123,13 @@ export function ProductImport() {
                   )}
                   <div className="flex flex-col sm:flex-row justify-between gap-2">
                     <Button variant="outline" onClick={() => setStep(1)}>
-                      {t("productImport.back")}
+                      Retour
                     </Button>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={debugData}>
-                        {t("productImport.debug")}
+                        Debug
                       </Button>
-                      <Button onClick={validateData}>{t("productImport.validateContinue")}</Button>
+                      <Button onClick={validateData}>Valider et continuer</Button>
                     </div>
                   </div>
                 </div>
@@ -792,8 +1137,8 @@ export function ProductImport() {
               {step === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-medium">{t("productImport.imagesStep.title")}</h3>
-                    <p className="text-sm text-muted-foreground">{t("productImport.imagesStep.description")}</p>
+                    <h3 className="text-lg font-medium">Importer les images</h3>
+                    <p className="text-sm text-muted-foreground">Associez des images à vos produits (optionnel)</p>
                   </div>
                   <div
                     className={`
@@ -810,7 +1155,7 @@ export function ProductImport() {
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
                         </div>
                         <p className="font-medium">
-                          {imageFiles.length} {t("productImport.imagesStep.imagesSelected")}
+                          {imageFiles.length} images sélectionnées
                         </p>
                         <div className="flex flex-wrap justify-center gap-2 mt-4">
                           {imageFiles.slice(0, 5).map((file, index) => (
@@ -839,7 +1184,7 @@ export function ProductImport() {
                             }
                           }}
                         >
-                          {t("productImport.imagesStep.changeImages")}
+                          Changer les images
                         </Button>
                       </div>
                     ) : (
@@ -847,10 +1192,10 @@ export function ProductImport() {
                         <div className="flex justify-center">
                           <ImageIcon className="h-12 w-12 text-muted-foreground" />
                         </div>
-                        <p className="text-lg font-medium">{t("productImport.imagesStep.selectImages")}</p>
-                        <p className="text-sm text-muted-foreground">{t("productImport.imagesStep.dragDropImages")}</p>
+                        <p className="text-lg font-medium">Sélectionner des images</p>
+                        <p className="text-sm text-muted-foreground">Glissez-déposez vos images ici</p>
                         <p className="text-xs text-muted-foreground mt-4">
-                          {t("productImport.imagesStep.namingConvention")}
+                          Nommez vos images avec l'ID du produit (ex: PROD001.jpg)
                         </p>
                       </div>
                     )}
@@ -864,7 +1209,7 @@ export function ProductImport() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <h4 className="font-medium">{t("productImport.imagesStep.matchingTitle")}</h4>
+                    <h4 className="font-medium">Correspondance des images</h4>
                     <ScrollArea className="h-[200px] border rounded-md">
                       <div className="p-4 space-y-2">
                         {parsedData.slice(0, 10).map((product, index) => {
@@ -899,7 +1244,7 @@ export function ProductImport() {
                                 </div>
                               ) : (
                                 <Badge variant="outline" className="text-muted-foreground">
-                                  {t("productImport.imagesStep.noImage")}
+                                  Aucune image
                                 </Badge>
                               )}
                             </div>
@@ -907,7 +1252,7 @@ export function ProductImport() {
                         })}
                         {parsedData.length > 10 && (
                           <div className="p-2 text-center text-muted-foreground">
-                            + {parsedData.length - 10} {t("productImport.columnsStep.otherProducts")}
+                            + {parsedData.length - 10} autres produits
                           </div>
                         )}
                       </div>
@@ -915,9 +1260,12 @@ export function ProductImport() {
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between gap-2">
                     <Button variant="outline" onClick={() => setStep(2)}>
-                      {t("productImport.back")}
+                      Retour
                     </Button>
-                    <Button onClick={importProducts}>{t("productImport.importProducts")}</Button>
+                    <Button onClick={importProducts} disabled={isImportingToAPI}>
+                      {isImportingToAPI && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Importer les produits
+                    </Button>
                   </div>
                 </div>
               )}
@@ -925,18 +1273,21 @@ export function ProductImport() {
                 <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50 p-4">
                   <Card className="w-full max-w-sm">
                     <CardHeader>
-                      <CardTitle>{t("productImport.importProgress.title")}</CardTitle>
-                      <CardDescription>{t("productImport.importProgress.description")}</CardDescription>
+                      <CardTitle>Import en cours</CardTitle>
+                      <CardDescription>Veuillez patienter pendant l'importation des produits</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <Progress value={importProgress} className="h-2" />
                       <p className="text-center text-sm">
-                        {t(
-                          importProgress < 100
-                            ? "productImport.importProgress.processing"
-                            : "productImport.importProgress.complete",
-                        )}
+                        {importProgress < 100
+                          ? "Traitement des données..."
+                          : "Importation terminée!"}
                       </p>
+                      {isImportingToAPI && (
+                        <p className="text-center text-sm text-muted-foreground">
+                          Envoi des données à l'API...
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -948,23 +1299,21 @@ export function ProductImport() {
                       <div className="flex justify-center">
                         <CheckCircle2 className="h-16 w-16 text-green-500" />
                       </div>
-                      <h3 className="text-2xl font-medium">{t("productImport.completeStep.title")}</h3>
+                      <h3 className="text-2xl font-medium">Importation terminée!</h3>
                       <p className="text-muted-foreground">
-                        {parsedData.length} {t("productImport.completeStep.productsImported")}
+                        {parsedData.length} produits importés avec succès
                       </p>
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <h4 className="font-medium">{t("productImport.completeStep.summary")}</h4>
+                    <h4 className="font-medium">Résumé de l'importation</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="border rounded-md p-4 space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          {t("productImport.completeStep.importedProducts")}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Produits importés</p>
                         <p className="text-2xl font-bold">{parsedData.length}</p>
                       </div>
                       <div className="border rounded-md p-4 space-y-2">
-                        <p className="text-sm text-muted-foreground">{t("productImport.completeStep.matchedImages")}</p>
+                        <p className="text-sm text-muted-foreground">Images associées</p>
                         <p className="text-2xl font-bold">{imageFiles.length}</p>
                       </div>
                       <div className="border rounded-md p-4 space-y-2">
@@ -987,9 +1336,9 @@ export function ProductImport() {
                         setCategoryMatchingStats({ matched: 0, unmatched: 0, total: 0 })
                       }}
                     >
-                      {t("productImport.completeStep.importMore")}
+                      Importer d'autres produits
                     </Button>
-                    <Button onClick={goToPlanogramEditor}>{t("productImport.completeStep.goToEditor")}</Button>
+                    <Button onClick={goToPlanogramEditor}>Aller à l'éditeur de planogramme</Button>
                   </div>
                 </div>
               )}

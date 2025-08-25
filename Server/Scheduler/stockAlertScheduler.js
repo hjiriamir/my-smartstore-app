@@ -1,6 +1,9 @@
 import cron from "node-cron";
 import Stock from "../Model/Stock.js";
 import StockAlert from "../Model/StockAlert.js";
+import { mettreStatutInactif } from '../Services/entrepriseService.js';
+import { Op } from 'sequelize';
+import EtatAbonnement from "../Model/EtatAbonnement.js";
 
 const seuil = 10; // seuil d'alerte
 
@@ -65,3 +68,36 @@ cron.schedule("*/5 * * * *", async () => {
     console.error("❌ Erreur dans le scheduler de désactivation des alertes obsolètes :", err);
   }
 });
+
+
+export const startAbonnementScheduler = () => {
+  // Planifier la tâche pour s'exécuter tous les jours à 00h00
+  cron.schedule('0 0 * * *', async () => {
+    console.log(`[Scheduler] Vérification des abonnements expirés - ${new Date().toISOString()}`);
+
+    try {
+      const abonnements = await EtatAbonnement.findAll({
+        where: {
+          statut: {
+            [Op.in]: ['actif', 'suspendu']
+          }
+        }
+      });
+
+      const now = new Date();
+
+      for (const abonnement of abonnements) {
+        const dateFin = new Date(abonnement.date_fin);
+
+        if (dateFin < now) {
+          console.log(`Abonnement expiré pour entreprise ID: ${abonnement.entreprise_id}`);
+          await mettreStatutInactif(abonnement.entreprise_id);
+        }
+      }
+
+      console.log("[Scheduler] Vérification terminée.");
+    } catch (error) {
+      console.error("[Scheduler] Erreur lors de la vérification des abonnements :", error);
+    }
+  });
+};

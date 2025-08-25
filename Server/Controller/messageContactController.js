@@ -1,5 +1,6 @@
 import contactMessage1 from '../Model/contactMessage1.js';
-
+import { sendGenericMail } from '../Services/SendEmail.js';
+import { mettreStatusRead, mettreStatusRepondus } from '../Services/contactMessageService.js';
 // Créer un nouveau message de contact
 export const createContactMessage = async (req, res) => {
     try {
@@ -48,3 +49,46 @@ export const deleteContactMessage = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const envoyerEmail = async (req, res) => {
+    const { emetteur, recepteur, objet, contenuHtml } = req.body;
+  
+    try {
+      // Validation minimale
+      if (!recepteur || !objet || !contenuHtml) {
+        return res.status(400).json({ message: 'Les champs recepteur, objet et contenuHtml sont obligatoires.' });
+      }
+  
+      const info = await sendGenericMail(emetteur, recepteur, objet, contenuHtml);
+  
+      return res.status(200).json({ message: 'Email envoyé avec succès.', info });
+    } catch (error) {
+      console.error("Erreur dans envoyerEmail:", error);
+      return res.status(500).json({ message: "Erreur lors de l'envoi de l'email.", error: error.message });
+    }
+  };
+
+
+  export const marquerCommeLu = async (req, res) => {
+    const { idMessage } = req.params;
+  
+    try {
+      await mettreStatusRead(idMessage);
+      res.status(200).json({ message: "Le message a été marqué comme lu." });
+    } catch (error) {
+      console.error("Erreur dans marquerCommeLu:", error);
+      res.status(500).json({ error: error.message });
+    }
+  };
+  
+  export const marquerCommeRepondu = async (req, res) => {
+    const { idMessage } = req.params;
+  
+    try {
+      await mettreStatusRepondus(idMessage);
+      res.status(200).json({ message: "Le message a été marqué comme répondu." });
+    } catch (error) {
+      console.error("Erreur dans marquerCommeRepondu:", error);
+      res.status(500).json({ error: error.message });
+    }
+  };

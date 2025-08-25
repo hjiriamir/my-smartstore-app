@@ -48,6 +48,16 @@ const Produit = sequelize.define('Produit', {
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT'
   },
+  entreprise_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'entreprises',  
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE', 
+  },  
   // Dimensions physiques
   longueur: {
     type: DataTypes.FLOAT,

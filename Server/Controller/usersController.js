@@ -3,7 +3,16 @@ import bcrypt, { hash } from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import Entreprises from '../Model/Entreprises.js';
-import { sendAccountCreatedEmail } from "../Services/SendEmail.js"; // adapte le chemin si besoin
+import { sendAccountCreatedEmail } from "../Services/SendEmail.js"; 
+
+import {
+  getTotalUtilisateursAdmin,
+  getTotalUtilisateurConnectes,
+  getUtilisateursAvecEntreprise
+} from '../Services/userService.js';
+import {
+  getTotalUtilisateurs,
+} from '../Services/entrepriseService.js';
 
 // Créer un utilisateur
 /*export const createUser = async (req, res) => {
@@ -409,3 +418,53 @@ export const getEntrepriseByUser = async(req,res) =>{
     });
   }
 }
+
+
+export const getAllUsersActif = async (req, res) => {
+  try {
+    const { count } = await Users.findAndCountAll();
+    res.status(200).json({ totalUtilisateurs: count });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des utilisateurs :", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur"
+    }); 
+  }
+};
+
+export const getStatistiquesUtilisateurs = async (req, res) => {
+  try {
+    const [
+      totalUtilisateurs,
+      totalAdmins,
+      totalConnectes,
+      utilisateurs
+    ] = await Promise.all([
+      getTotalUtilisateurs(),
+      getTotalUtilisateursAdmin(),
+      getTotalUtilisateurConnectes(),
+      getUtilisateursAvecEntreprise()
+    ]);
+
+    const utilisateursFormates = utilisateurs.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      entreprise: user.entreprise || null,
+      derniereConnexion: user.sessions?.[0]?.createdAt || null
+    }));
+
+    return res.status(200).json({
+      totalUtilisateurs,
+      totalAdmins,
+      totalConnectes,
+      utilisateurs: utilisateursFormates
+    });
+
+  } catch (error) {
+    console.error("Erreur dans getStatistiquesUtilisateurs:", error);
+    return res.status(500).json({ error: "Erreur serveur." });
+  }
+};

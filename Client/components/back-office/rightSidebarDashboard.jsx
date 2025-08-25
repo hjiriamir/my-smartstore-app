@@ -141,15 +141,15 @@ const RightSidebarDashboard = ({ isOpen, onClose, isAnimating }) => {
             <span style={{ color: activeItem === "user-management" ? "white" : "" }}>{t("user_management")}</span>
           </Link>
 
-          <a
-            href="#"
+          <Link
+            href="/carte-magasin"
             className={`menu-item ${activeItem === "sales-strategy" ? "active" : ""}`}
             style={{ backgroundColor: activeItem === "sales-strategy" ? "#0f766e" : "" }}
             onClick={() => handleClick("sales-strategy")}
           >
             <img src="/target.png" className="menu-icon" alt="Category Icon" />
             <span style={{ color: activeItem === "sales-strategy" ? "white" : "" }}>{t("push_sales")}</span>
-          </a>
+          </Link>
 
           <p className="menu-label support-label">{t("support")}</p>
           <div className="support">

@@ -32,6 +32,8 @@ import TemplateField from "./TemplateField.js";
 import StockAlert from "./StockAlert.js";
 import GeneratedLabel from './GeneratedLabel.js';
 
+import EtatAbonnement from './EtatAbonnement.js'
+import Session from './Session.js';
 //import zone1 from './zone1.js';
 import ZoneVisites from './ZoneVisites.js'
 //import Conversation from './Conversation.js';
@@ -337,6 +339,44 @@ Produit.hasMany(GeneratedLabel, { foreignKey: 'produit_id', sourceKey: 'produit_
 GeneratedLabel.belongsTo(Produit, { foreignKey: 'produit_id', targetKey: 'produit_id' });
 
 
+EtatAbonnement.belongsTo(Entreprises, { foreignKey: 'entreprise_id',as: 'entreprise' });
+Entreprises.hasMany(EtatAbonnement, { foreignKey: 'entreprise_id', as: 'etatAbonnements' });
+
+Users.hasMany(Session, {
+  foreignKey: 'userId',
+  as: 'sessions'
+});
+
+Session.belongsTo(Users, {
+  foreignKey: 'userId',
+  as: 'utilisateur'
+});
+
+
+Entreprises.hasMany(Produit, {
+  foreignKey: 'entreprise_id',
+  as: 'produits',
+});
+Produit.belongsTo(Entreprises, {
+  foreignKey: 'entreprise_id',
+  as: 'entreprise',
+});
+
+
+// Une zone appartient à un magasin
+Zone1.belongsTo(magasin1, {
+  as: 'magasin',           
+  foreignKey: 'magasin_id', 
+  targetKey: 'magasin_id'   
+});
+// Un magasin peut avoir plusieurs zones
+magasin1.hasMany(Zone1, {
+  as: 'zones',            
+  foreignKey: 'magasin_id', 
+  sourceKey: 'magasin_id'   
+});
+
+
 export {
   Conversation,
   ConversationParticipant,
@@ -368,5 +408,7 @@ export {
   LabelTemplate,
   TemplateField,
   StockAlert,
-  GeneratedLabel
+  GeneratedLabel,
+  EtatAbonnement,
+  Session
 };

@@ -11,6 +11,19 @@ i18n
     resources: {
       en: {
         translation: {
+          read:"Read",
+          unread:"UnRead",
+          replied:"Replied",
+          archived:"Archived",
+         
+          solution: {
+            feature:"feature",
+            bug:"bug",
+            support:"support",
+            billing:"billing",
+          },     
+         
+          subjectPlaceholder: "Enter the subject of your message",
           notificationMessage: "{{count}} new notification",
           notificationMessage_plural: "{{count}} new notifications",
           notif1: "No new notifications",
@@ -19,6 +32,7 @@ i18n
           marqueCommeLu: "Mark all as read",
           effacerTous: "Clear all",
           aucuneNotif: "No notifications",
+          aucuneAlert: "No stock alerts",
           appAletes: "All your alerts will appear here",
           chargementAlertes: "Loading alerts...",
           actul: "Refresh",
@@ -1780,6 +1794,9 @@ largeur: "Width",
           }
           ,
           productImport: {
+            cellWidth:"Cell Width",
+            cellHeight:"Cell Height",
+            productSize3D:"Product Size 3D",
             filterByStore:"Filter by Store",
             allStores:"All Store",
             title: "Product Import",
@@ -2169,6 +2186,19 @@ largeur: "Width",
       },
       fr: {
         translation: {
+          read: "Lu",
+          unread: "Non lu",
+          replied: "Répondu",
+          archived: "Archivé",
+          
+          solution: {
+            feature: "Fonctionnalité",
+            bug: "Bug",
+            support: "Support",
+          billing: "Facturation",
+          },
+          
+          subjectPlaceholder:"Entrez l'objet de votre message",
           notificationMessage: "{{count}} nouvelle notification",
           notificationMessage_plural: "{{count}} nouvelles notifications",
           notif1: "Aucune nouvelle notification",
@@ -3968,6 +3998,9 @@ largeur: "Width",
 
           },
           productImport: {
+            cellWidth: "Largeur de la cellule",      
+            cellHeight: "Hauteur de la cellule",     
+            productSize3D: "Taille du produit 3D",
             filterByStore:"Filtrer par magasin",
             allStores:"Tous les magasins",
             title: "Importation de Produits",
@@ -4355,6 +4388,20 @@ largeur: "Width",
       },
       ar: {
         translation: {
+          read: "مقروء",
+          unread: "غير مقروء",
+          replied: "تم الرد",
+          archived: "مؤرشف",
+          
+          solution: {
+            feature: "الميزة",
+            bug: "خلل",
+            support: "الدعم",
+          billing: "الفوترة",
+          },
+          
+          
+          subjectPlaceholder: "أدخل موضوع رسالتك",
           notificationMessage: "{{count}} إشعار جديد",
           notificationMessage_plural: "{{count}} إشعارات جديدة",
           notif1: "لا توجد إشعارات جديدة",
@@ -4362,6 +4409,7 @@ largeur: "Width",
           marqueCommeLu: "وضع الكل كمقروء",
           effacerTous: "مسح الكل",
           aucuneNotif: "لا توجد إشعارات",
+          aucuneAlert: "لا توجد تنبيهات مخزون",
           appAletes: "ستظهر جميع التنبيهات الخاصة بك هنا",
           chargementAlertes: "جاري تحميل التنبيهات...",
           actul: "تحديث",
@@ -6117,6 +6165,9 @@ largeur: "العرض",
         }
         ,
           productImport: {
+            cellWidth: "عرض الخلية",      
+            cellHeight: "ارتفاع الخلية",  
+            productSize3D: "حجم المنتج ثلاثي الأبعاد",
             filterByStore:"تصفية حسب المتجر",
             allStores:"كل المتاجر",
             title: "استيراد المنتجات",

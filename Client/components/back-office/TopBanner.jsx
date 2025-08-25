@@ -1,12 +1,15 @@
 "use client"
 import { useState, useEffect } from "react"
 import "./TopBanner.css"
-import { Bell, Menu, BellRing, Package } from "lucide-react"
+import { Bell, Menu, BellRing, Package, RefreshCw, Check, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import i18n from "../multilingue/i18n"
 import { useRouter } from "next/navigation"
 
-const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
+const TopBanner = ({ 
+  onMenuClick = () => {}, 
+  onRightMenuClick = () => {} 
+}) => {
   const { t } = useTranslation()
   const isRTL = i18n.language === "ar"
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -16,6 +19,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false)
   const [currentUserId, setCurrentUserId] = useState(null)
   const [idEntreprise, setIdEntreprise] = useState(null)
+  const [isScrolled, setIsScrolled] = useState(false)
 
   const router = useRouter()
 
@@ -27,6 +31,15 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
 
   const defaultLanguageIndex = languages.findIndex((lang) => lang.i18nCode === "en")
   const [selectedLanguageIndex, setSelectedLanguageIndex] = useState(defaultLanguageIndex)
+
+  // Gestion du scroll pour l'effet de réduction
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Récupération des données utilisateur
   useEffect(() => {
@@ -55,7 +68,6 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
         const userId = userData.user?.idUtilisateur || userData.idUtilisateur || userData.id
         const entrepriseId = userData.user?.entreprises_id || userData.entreprises_id
 
-        console.log("Entreprise récupérée:", entrepriseId)
         setCurrentUserId(userId)
         setIdEntreprise(entrepriseId)
       } catch (error) {
@@ -116,22 +128,22 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
   const getAlertTitle = (alertType, productName) => {
     switch (alertType) {
       case "out_of_stock":
-        return `🚨 Rupture de stock`
+        return `🚨 ${t("stockAlert.outOfStock")}`
       case "low_stock":
-        return `⚠️ Stock faible`
+        return `⚠️ ${t("stockAlert.lowStock")}`
       default:
-        return `📦 Alerte stock`
+        return `📦 ${t("stockAlert.default")}`
     }
   }
 
   const getAlertMessage = (alertType, productName, currentStock, threshold) => {
     switch (alertType) {
       case "out_of_stock":
-        return `Le produit "${productName}" est en rupture de stock (0 unité)`
+        return t("stockAlert.outOfStockMessage", { productName })
       case "low_stock":
-        return `Le produit "${productName}" a un stock faible (${currentStock} unités, seuil: ${threshold})`
+        return t("stockAlert.lowStockMessage", { productName, currentStock, threshold })
       default:
-        return `Alerte pour le produit "${productName}"`
+        return t("stockAlert.defaultMessage", { productName })
     }
   }
 
@@ -162,7 +174,6 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
     const diffInDays = Math.floor(diffInHours / 24);
     return `${t("ilYa")} ${diffInDays} ${t("jour")}${diffInDays > 1 ? "s" : ""}`;
   };
-  
 
   useEffect(() => {
     i18n.changeLanguage(languages[selectedLanguageIndex].i18nCode)
@@ -184,7 +195,6 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
     const selectedLanguage = languages[index]
     i18n.changeLanguage(selectedLanguage.i18nCode)
     setSelectedLanguageIndex(index)
-    console.log("Selected language:", selectedLanguage.i18nCode)
   }
 
   const toggleNotifications = () => {
@@ -240,22 +250,21 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
   }
 
   const unreadCount = notifications.filter((notif) => notif.unread).length
-
-  const navigateToShelfLabels = (productId, event) => {
-    event.stopPropagation() // Empêcher le clic sur la notification
-    router.push("/shelf-labels")
-    setShowNotifications(false) // Fermer le dropdown
-  }
-
   const hasNotifications = notifications.length > 0
 
+  const navigateToShelfLabels = (productId, event) => {
+    event.stopPropagation()
+    router.push("/shelf-labels")
+    setShowNotifications(false)
+  }
+
   return (
-    <section className="top-banner">
+    <section className={`top-banner ${isScrolled ? 'scrolled' : ''}`}>
       {/* Bouton menu mobile gauche */}
       <button
         className={`mobile-menu-button ${onMenuClick ? "active" : ""}`}
         onClick={onMenuClick}
-        aria-label="Toggle left menu"
+        aria-label={t("toggleMenu")}
       >
         <Menu size={24} />
       </button>
@@ -320,7 +329,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
                       <button
                         className="shelf-labels-btn"
                         onClick={(e) => navigateToShelfLabels(notification.productId, e)}
-                        title="Gérer les étiquettes"
+                        title={t("manageLabels")}
                       >
                         🏷️
                       </button>
@@ -349,10 +358,14 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
           {notifications.length > 0 && (
             <div className="notifications-footer">
               <button onClick={refreshNotifications} disabled={isLoadingNotifications}>
-                {isLoadingNotifications ? "⟳" : "🔄"} {t("actul")}
+                <RefreshCw size={16} /> {t("actul")}
               </button>
-              <button onClick={markAllAsRead}>✓ {t("marqueCommeLu")}</button>
-              <button onClick={clearAllNotifications}>🗑️ {t("effacerTous")}</button>
+              <button onClick={markAllAsRead}>
+                <Check size={16} /> {t("marqueCommeLu")}
+              </button>
+              <button onClick={clearAllNotifications}>
+                <Trash2 size={16} /> {t("effacerTous")}
+              </button>
             </div>
           )}
         </div>
@@ -362,7 +375,7 @@ const TopBanner = ({ onMenuClick, onRightMenuClick }) => {
       <button
         className={`mobile-right-menu-button ${onRightMenuClick ? "active" : ""}`}
         onClick={onRightMenuClick}
-        aria-label="Toggle right menu"
+        aria-label={t("toggleMenu")}
       >
         <Menu size={24} />
       </button>

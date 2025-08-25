@@ -13,59 +13,6 @@ body {
     background-color: #f5f5f5;
 }
 
-/* Header Styles */
-.navbar {
-    /* background-color: #fff;*/
-    padding: 1rem 2rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    position: fixed; /* Make the navbar fixed */
-    top: 0; /* Position it at the top */
-    width: 100%; /* Full width */
-    z-index: 100; /* Ensure it's above other content */
-}
-
-nav {
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.menu a {
-    color: white; /* Change text color for better contrast */
-    text-decoration: none;
-    margin-left: 4rem;
-    font-weight: 800;
-
-}
-.menu .separator {
-    margin: 0 1rem; /* Espace uniforme autour du séparateur */
-    color: white;
-}
-/* boutton */
-.contact-us {
-    display: inline-block;
-    background-color: #006d77; /* Couleur bleu */
-    color: white;
-    font-size: 1.2rem;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.contact-us:hover {
-    background-color: #006d77; /* Bleu foncé au survol */
-    transform: translateY(-3px); /* Légère élévation */
-}
-
-.contact-us:active {
-    transform: translateY(1px); /* Effet de clic */
-}
 
 /* 00000 */
 
@@ -78,6 +25,7 @@ nav {
     background-position: center;
     color: white;
 }
+
 .hero h1 {
     text-align: center;
     font-size: 2.5rem;
@@ -119,6 +67,7 @@ nav {
     gap: 20px;
     max-width: 100%;
 }
+
 .contact-item {
     background: white;
     padding: 25px;
@@ -131,8 +80,6 @@ nav {
     direction: rtl; /* Direction du texte */
     max-width: 80%;
 }
-
-
 
 .contact-item img {
     font-size: 24px;
@@ -156,15 +103,13 @@ nav {
     margin: 0;
     font-size: 16px;
 }
-/* */
+
 /* Ajouts et modifications CSS */
 .main-container {
     display: flex;
     gap: 10px;
     align-items: flex-start;
 }
-
-
 
 .contact-container {
     flex: 1;
@@ -177,10 +122,6 @@ nav {
 }
 
 /* Nouveaux styles pour le container gauche */
-
-/* new */
-
-
 .left-container {
     background: white;
     padding: 40px;
@@ -199,7 +140,8 @@ nav {
 }
 
 .form-group input::placeholder,
-.form-group textarea::placeholder {
+.form-group textarea::placeholder,
+.form-group select::placeholder {
     color: #95a5a6;
     font-size: 14px;
 }
@@ -210,6 +152,7 @@ nav {
     letter-spacing: -0.5px;
     margin-top: 10px;
 }
+
 .left-container h3 {
     color: #2c3e50;
     border-bottom: 2px solid #3498db;
@@ -223,12 +166,35 @@ nav {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+/* Styles spécifiques pour les listes déroulantes */
+.form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 30px;
+    cursor: pointer;
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: #0b746b;
+    box-shadow: 0 0 0 2px rgba(11, 116, 107, 0.2);
 }
 
 .form-group textarea {
@@ -244,12 +210,12 @@ nav {
     border-radius: 5px;
     cursor: pointer;
     width: 100%;
+    transition: background-color 0.3s ease;
 }
 
 .submit-btn:hover {
     background-color: #085e55;
 }
-/**/
 
 .info-box {
     background: #f8f9fa;
@@ -274,7 +240,12 @@ nav {
     .contact-container {
         width: 100%;
     }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
 }
+
 /* Footer Styles */
 footer {
     background-color: #222;
@@ -348,8 +319,6 @@ h3 {
     word-break: break-word; /* Assure la répartition correcte du texte */
 }
 
-
-
 .social-icons {
     font-size: 1.5rem;
     text-align: right;
@@ -401,8 +370,8 @@ h3 {
         font-size: 1.2rem; /* Taille des icônes */
         color: teal; /* Couleur des icônes */
     }
-
 }
+
 /* Popup Styles */
 .popup {
     position: fixed;

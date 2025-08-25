@@ -9,11 +9,18 @@ const publicRoutes = [
   '/Forfaits', 
   '/services',
   '/blog',
+  '/Contact',
   '/LoginSignup',
   '/AbonnementList',
-  '/reset-password',
   '/ListeDemandes',
-  '/about'
+  '/about',
+  '/reset-password',
+  '/demande-abonnements',
+  '/demande-abonnements/demandes',
+  '/demande-abonnements/utilisateurs',
+  '/demande-abonnements/messages',
+  '/demande-abonnements/entreprises',
+  '/demande-abonnements/analytics'
 ];
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -24,16 +31,27 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!loading) {
       // Si la route n'est pas publique, ne commence pas par /Forfaits/ et l'utilisateur n'est pas connecté
-      if (!publicRoutes.includes(pathname) && !pathname.startsWith('/Forfaits/') && !user) {
+      if (
+        !publicRoutes.includes(pathname) &&
+        !pathname.startsWith('/reset-password') &&  
+        !pathname.startsWith('/Forfaits/') &&
+        !user
+      ) {
         router.push('/LoginSignup');
       }
     }
   }, [user, loading, pathname, router]);
 
   // Si la route est publique, commence par /Forfaits/ ou si l'utilisateur est connecté, afficher les enfants
-  if (publicRoutes.includes(pathname) || pathname.startsWith('/Forfaits/') || user) {
+  if (
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith('/reset-password') ||  
+    pathname.startsWith('/Forfaits/') ||
+    user
+  ) {
     return <>{children}</>;
   }
+  
 
   // Si en cours de chargement, vous pouvez retourner un loader ou null
   if (loading) {

@@ -104,3 +104,55 @@ export const fetchUsers = async (entreprises_id) => {
         return [];
     }
 };
+
+// 🔹 Refuser une demande
+export const refuserDemande = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/demande/refuserDemande/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur lors du refus de la demande: ${response.status} - ${errorText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+  
+  // 🔹 Accepter une demande (mise à jour du statut)
+  export const accepterDemande = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/demande/accepterDemande/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur lors de l'acceptation de la demande: ${response.status} - ${errorText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+
+  export const createEtatAbonnement = async (data) => {
+    const response = await fetch(`${API_BASE_URL}/etat-abonnement/createEtatAbonnement`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to create etat abonnement')
+    }
+    return response.json()
+  }
+  

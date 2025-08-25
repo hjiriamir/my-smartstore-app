@@ -49,9 +49,9 @@ const DemandeAbonnement = sequelize.define('DemandeAbonnement', {
         allowNull: false,
     },
     forfait: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
+        type: DataTypes.ENUM('basic', 'advanced', 'gold'),
+    allowNull: false
+  },
     status: {
         type: DataTypes.ENUM('Refuser', 'Accepter', 'En attente'),
         allowNull: false,

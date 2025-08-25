@@ -88,3 +88,52 @@ export const updateDemandeStatus = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+
+// refuser une demande
+export const refuserDemande = async (req, res) => {
+  try {
+    const demande = await DemandeAbonnement.findByPk(req.params.id);
+    if (!demande) {
+      return res.status(404).json({ message: 'Demande non trouvée' });
+    }
+    demande.status = "Refuser";
+    await demande.save();
+    res.json(demande);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+export const accepterDemande = async (req, res) => {
+  try {
+    const demande = await DemandeAbonnement.findByPk(req.params.id);
+    if (!demande) {
+      return res.status(404).json({ message: 'Demande non trouvée' });
+    }
+    demande.status = "Accepter";
+    await demande.save();
+    res.json(demande);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+export const getDemmandesAttente = async (req, res) => {
+  try {
+    const demandes = await DemandeAbonnement.findAndCountAll({
+      where: { status: "En attente" }
+    });
+
+    if (!demandes || demandes.length === 0) {
+      return res.status(404).json({ message: 'Aucune demande en attente trouvée.' });
+    }
+
+    res.status(200).json(demandes);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des demandes en attente :', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+

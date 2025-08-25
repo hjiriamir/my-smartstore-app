@@ -9,7 +9,9 @@ import {
   getMagasinsByEntrepriseId,
   getMagasinByUser,
   getMagasinIdByCode,
-  getPerformanceZones
+  getPerformanceZones,
+  getEntrepriseStats,
+  getMagasinDetailsController
 } from '../Controller/magasinUpdateController.js';
 
 const router = express.Router();
@@ -26,4 +28,9 @@ router.get('/getPerformanceZones', getPerformanceZones);
 router.get('/getMagasinsByEntrepriseId/:id', getMagasinsByEntrepriseId);
 router.put('/updateMagasin/:id', updateMagasin);
 router.delete('/deleteMagasin/:id', deleteMagasin);
+
+router.get('/getEntrepriseStats/:idEntreprise', getEntrepriseStats);
+router.get('/getMagasinDetails/:idMagasin', getMagasinDetailsController);
+
+
 export default router;

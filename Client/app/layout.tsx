@@ -47,6 +47,13 @@ const noHeaderFooterRoutes = [
   "/marketing-strategy",
   "/shelf-labels",
   "/shop-pillars",
+  "/demande-abonnements",
+  "/demande-abonnements/demandes",
+  "/demande-abonnements/entreprises",
+  "/demande-abonnements/utilisateurs",
+  "/demande-abonnements/analytics",
+  "/demande-abonnements/messages",
+  "/carte-magasin"
    
 ]
 

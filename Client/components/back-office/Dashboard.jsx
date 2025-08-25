@@ -31,12 +31,52 @@ const Dashboard = () => {
   const [touchStart, setTouchStart] = useState(null)
   const [touchEnd, setTouchEnd] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+
 
   useEffect(() => {
-    if (user) {
-      fetchDashboardData()
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        if (!token) {
+          throw new Error("Token d'authentification manquant")
+        }
+  
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        })
+  
+        if (!response.ok) {
+          throw new Error(`Erreur ${response.status} lors de la récupération des données utilisateur`)
+        }
+  
+        const data = await response.json()
+        setCurrentUser(data.user || data)
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur :", error)
+        setCurrentUser(null)
+      }
     }
-  }, [user, selectedStore])
+  
+    fetchCurrentUser()
+  }, [])
+  
+
+ useEffect(() => {
+  if (currentUser) {
+    const timer = setTimeout(() => {
+      fetchDashboardData(currentUser.entreprises_id)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }
+}, [currentUser, selectedStore])
+
 
   // Gestion des raccourcis clavier
   useEffect(() => {
@@ -139,29 +179,28 @@ const Dashboard = () => {
     setTimeout(() => setIsAnimating(false), 300)
   }
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (entreprises_id) => {
     try {
       setLoadingData(true)
       setError(null)
-
-      if (!user || !user.entreprises_id) {
+  
+      if (!entreprises_id) {
         throw new Error("Informations utilisateur manquantes")
       }
-
-      let url = `${API_BASE_URL}/vente/fetchStat/${user.entreprises_id}`
+  
+      let url = `${API_BASE_URL}/vente/fetchStat/${entreprises_id}`
       if (selectedStore) {
         url += `?magasinId=${selectedStore}`
       }
-
+  
       const response = await fetch(url)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(
-          errorData.error || errorData.message || `Erreur ${response.status} lors de la récupération des données`,
+          errorData.error || errorData.message || `Erreur ${response.status} lors de la récupération des données`
         )
       }
-
+  
       const data = await response.json()
 
       const hasStores = data.magasinsDisponibles?.length > 0

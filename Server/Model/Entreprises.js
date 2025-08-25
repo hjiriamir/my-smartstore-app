@@ -27,7 +27,7 @@ const Entreprises = sequelize.define('Entreprises', {
   },
 }, {
   tableName: 'entreprises',
-  timestamps: false, // car tu as date_creation explicite
+  timestamps: false, 
 });
 
 export default Entreprises;

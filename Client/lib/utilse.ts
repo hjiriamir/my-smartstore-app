@@ -1,10 +1,19 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { ElementType, FloorPlan } from "@/lib/types"
+import type { ElementType, FloorPlan } from "./typese"
 
 // Local storage keys
 const FLOOR_PLANS_STORAGE_KEY = "store-floor-plans"
 const ACTIVE_FLOOR_PLAN_KEY = "active-floor-plan"
+
+// Constantes pour la conversion pixels -> unités réelles
+export const PIXELS_PER_METER = 100 // 100 pixels = 1 mètre
+export const PIXELS_PER_CM = 1 // 1 pixel = 1 cm
+
+// Fonction utilitaire pour gérer className avec Tailwind
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 // Save a floor plan to local storage
 export const saveFloorPlan = (plan: FloorPlan): void => {
@@ -15,18 +24,20 @@ export const saveFloorPlan = (plan: FloorPlan): void => {
 
     // Check if plan already exists
     const planIndex = existingPlans.findIndex((p) => p.id === plan.id)
+    const now = new Date().toISOString()
+    
     if (planIndex >= 0) {
       // Update existing plan
       existingPlans[planIndex] = {
         ...plan,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       }
     } else {
       // Add new plan
       existingPlans.push({
         ...plan,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       })
     }
 
@@ -40,17 +51,9 @@ export const saveFloorPlan = (plan: FloorPlan): void => {
   }
 }
 
-// Constante pour la conversion pixels -> unités réelles
-export const PIXELS_PER_METER = 100 // 100 pixels = 1 mètre
-export const PIXELS_PER_CM = 1 // 1 pixel = 1 cm
-
 // Fonction pour convertir les pixels en unités réelles
 export const pixelsToUnit = (pixels: number, unitSystem: "m" | "cm"): number => {
-  if (unitSystem === "m") {
-    return pixels / PIXELS_PER_METER
-  } else {
-    return pixels / PIXELS_PER_CM
-  }
+  return unitSystem === "m" ? pixels / PIXELS_PER_METER : pixels / PIXELS_PER_CM
 }
 
 // Fonction pour formater les dimensions
@@ -61,108 +64,131 @@ export const formatDimension = (pixels: number, unitSystem: "m" | "cm"): string 
 
 // Fonction pour obtenir la couleur d'un élément selon son type
 export const getElementColor = (type: ElementType): string => {
-  switch (type) {
-    case "wall":
-      return "#555555"
-    case "door":
-      return "#8B4513"
-    case "window":
-      return "#87CEEB"
-    case "shelf":
-      return "#A0522D"
-    case "rack":
-      return "#708090"
-    case "display":
-      return "#4682B4"
-    case "table":
-      return "#CD853F"
-    case "fridge":
-      return "#B0C4DE"
-    case "dairy_fridge":
-      return "#000000"
-    case "planogram":
-      return "#6A5ACD"
-    case "gondola":
-      return "#20B2AA"
-    case "line":
-      return "#333333"
-    case "rectangle":
-      return "#5D8AA8"
-    case "circle":
-      return "#6495ED"
-    case "chair":
-      return "#8B8970"
-    case "sofa":
-      return "#9370DB"
-    case "bed":
-      return "#8B008B"
-    case "plant":
-      return "#228B22"
-    case "counter":
-      return "#D2691E"
-    case "cashier":
-      return "#FF7F50"
-    case "mannequin":
-      return "#E6E6FA"
-    case "cube":
-      return "#5D4037" // Brun foncé pour le cube
-    default:
-      return "#CCCCCC"
+  const colors: Record<ElementType, string> = {
+    wall: "#555555",
+    door: "#8B4513",
+    window: "#87CEEB",
+    shelf: "#A0522D",
+    rack: "#708090",
+    display: "#4682B4",
+    table: "#CD853F",
+    fridge: "#B0C4DE",
+    dairy_fridge: "#000000",
+    line: "#333333",
+    rectangle: "#5D8AA8",
+    circle: "#6495ED",
+    chair: "#8B8970",
+    sofa: "#9370DB",
+    bed: "#8B008B",
+    plant: "#228B22",
+    counter: "#D2691E",
+    cashier: "#FF7F50",
+    mannequin: "#E6E6FA",
+    gondola: "#20B2AA",
   }
+
+  return colors[type] || "#CCCCCC"
 }
 
 // Fonction pour obtenir le libellé d'un élément selon son type
 export const getElementLabel = (type: ElementType): string => {
-  switch (type) {
-    case "wall":
-      return "Mur"
-    case "door":
-      return "Porte"
-    case "window":
-      return "Fenêtre"
-    case "shelf":
-      return "Étagère"
-    case "rack":
-      return "Portant"
-    case "display":
-      return "Présentoir"
-    case "table":
-      return "Table"
-    case "fridge":
-      return "Frigo"
-    case "dairy_fridge":
-      return "Frigo Produits Laitiers"
-    case "planogram":
-      return "Planogramme"
-    case "gondola":
-      return "Gondole"
-    case "line":
-      return "Ligne"
-    case "rectangle":
-      return "Rectangle"
-    case "circle":
-      return "Cercle"
-    case "chair":
-      return "Chaise"
-    case "sofa":
-      return "Canapé"
-    case "bed":
-      return "Lit"
-    case "plant":
-      return "Plante"
-    case "counter":
-      return "Comptoir"
-    case "cashier":
-      return "Caisse"
-    case "mannequin":
-      return "Mannequin"
-    case "cube":
-      return "Cube"
-    default:
-      return ""
+  const labels: Record<ElementType, string> = {
+    wall: "Mur",
+    door: "Porte",
+    window: "Fenêtre",
+    shelf: "Étagère",
+    rack: "Portant",
+    display: "Présentoir",
+    table: "Table",
+    fridge: "Frigo",
+    dairy_fridge: "Frigo Produits Laitiers",
+    line: "Ligne",
+    rectangle: "Rectangle",
+    circle: "Cercle",
+    chair: "Chaise",
+    sofa: "Canapé",
+    bed: "Lit",
+    plant: "Plante",
+    counter: "Comptoir",
+    cashier: "Caisse",
+    mannequin: "Mannequin",
+    gondola: "Gondole",
+  }
+
+  return labels[type] || type
+}
+// Fonction throttle pour limiter la fréquence d'exécution
+export const throttle = <T extends (...args: any[]) => void>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let lastExec = 0;
+
+  return (...args: Parameters<T>) => {
+    const elapsed = Date.now() - lastExec;
+
+    const execute = () => {
+      func(...args);
+      lastExec = Date.now();
+    };
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    if (elapsed > delay) {
+      execute();
+    } else {
+      timeoutId = setTimeout(execute, delay - elapsed);
+    }
+  };
+};
+
+// Fonction debounce pour retarder l'exécution jusqu'à ce que les actions soient terminées
+export const debounce = <T extends (...args: any[]) => void>(
+  func: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
+// Fonctions pour gérer les plans dans le localStorage
+export const getFloorPlans = (): FloorPlan[] => {
+  try {
+    const plansJSON = localStorage.getItem(FLOOR_PLANS_STORAGE_KEY)
+    return plansJSON ? JSON.parse(plansJSON) : []
+  } catch (error) {
+    console.error("Error getting floor plans:", error)
+    return []
   }
 }
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export const getActiveFloorPlanId = (): string | null => {
+  return localStorage.getItem(ACTIVE_FLOOR_PLAN_KEY)
+}
+
+export const deleteFloorPlan = (id: string): void => {
+  try {
+    const plans = getFloorPlans()
+    const updatedPlans = plans.filter(plan => plan.id !== id)
+    localStorage.setItem(FLOOR_PLANS_STORAGE_KEY, JSON.stringify(updatedPlans))
+    
+    // Si on supprime le plan actif, on le retire aussi
+    const activePlanId = getActiveFloorPlanId()
+    if (activePlanId === id) {
+      localStorage.removeItem(ACTIVE_FLOOR_PLAN_KEY)
+    }
+  } catch (error) {
+    console.error("Error deleting floor plan:", error)
+    throw new Error("Failed to delete floor plan")
+  }
 }

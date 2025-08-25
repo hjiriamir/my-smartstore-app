@@ -7,12 +7,12 @@ const magasin1 = sequelize.define('magasin1', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,  // clé primaire technique auto-incrémentée
+    autoIncrement: true,  
   },
   magasin_id: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,       // identifiant saisi par utilisateur, unique
+    unique: true,      
   },
   nom_magasin: {
     type: DataTypes.STRING,

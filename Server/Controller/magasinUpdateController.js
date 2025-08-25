@@ -4,7 +4,7 @@ import Magasin from '../Model/magasin1.js';
 import Users from '../Model/Users.js'
 import { Op } from 'sequelize';
 
-import {getVenteTotalByMagasin} from '../Services/magasinService.js'
+import {getVenteTotalByMagasin, getTotalMagasinByEntreprises, getTotalZonesByEntreprises, getTotalSurfaceByEntreprises, getMagasinDetails } from '../Services/magasinService.js'
 import {getVenteTotalByZone, getZonesByMagasin} from '../Services/zoneService.js'
 
 
@@ -208,5 +208,60 @@ export const createMagasinsList = async (req, res) => {
         error: error.message,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
+    }
+  };
+
+  export const getEntrepriseStats = async (req, res) => {
+    try {
+      const { idEntreprise } = req.params;
+  
+      if (!idEntreprise) {
+        return res.status(400).json({ error: "Le paramètre idEntreprise est obligatoire" });
+      }
+  
+      // Appeler les trois fonctions en parallèle
+      const [magasinsData, zonesData, surfaceTotal] = await Promise.all([
+        getTotalMagasinByEntreprises(idEntreprise),
+        getTotalZonesByEntreprises(idEntreprise),
+        getTotalSurfaceByEntreprises(idEntreprise)
+      ]);
+  
+      return res.status(200).json({
+        totalMagasins: magasinsData.totalMagasins,
+        magasins: magasinsData.magasins, // <-- ajout de la liste des magasins
+        totalZones: zonesData.totalZones,
+        surfaceTotal: surfaceTotal
+      });
+  
+    } catch (error) {
+      console.error("Erreur dans getEntrepriseStats:", error);
+      return res.status(500).json({ error: "Erreur serveur" });
+    }
+  };
+  
+  export const getMagasinDetailsController = async (req, res) => {
+    try {
+      const { idMagasin } = req.params;
+  
+      if (!idMagasin) {
+        return res.status(400).json({ error: "Le paramètre idMagasin est obligatoire" });
+      }
+  
+      const magasin = await getMagasinDetails(idMagasin);
+  
+      return res.status(200).json({
+        success: true,
+        magasin
+      });
+  
+    } catch (error) {
+      console.error("Erreur dans getMagasinDetailsController:", error);
+  
+      // Gestion des erreurs selon le type
+      if (error.message === "Magasin introuvable") {
+        return res.status(404).json({ error: error.message });
+      }
+  
+      return res.status(500).json({ error: "Erreur serveur" });
     }
   };

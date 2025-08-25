@@ -7,12 +7,12 @@ const Zone1 = sequelize.define('Zone1', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true, // clé primaire technique auto-incrémentée
+    autoIncrement: true,
   },
   zone_id: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,       // zone_id saisi par utilisateur, unique
+    unique: true,       
   },
   nom_zone: {
     type: DataTypes.STRING,
@@ -61,6 +61,21 @@ const Zone1 = sequelize.define('Zone1', {
     allowNull: true,
     comment: 'Type d\'éclairage',
   },
+  position_x: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    comment: 'Coordonnée X de départ de la zone (en mètres depuis l’entrée)'
+  },
+  position_y: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    comment: 'Coordonnée Y de départ de la zone (en mètres depuis le mur gauche)'
+  },
+  orientation: {
+    type: DataTypes.ENUM('Nord', 'Sud', 'Est', 'Ouest'),
+    allowNull: true,
+    comment: 'Orientation de la zone dans le magasin'
+  },    
 }, {
   tableName: 'zones',
   timestamps: true,
